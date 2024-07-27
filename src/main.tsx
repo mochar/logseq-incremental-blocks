@@ -25,6 +25,7 @@ function main() {
   function createModel() {
     return {
       show() {
+        // The MainUI is our App
         logseq.showMainUI();
       },
     };
