@@ -6,41 +6,50 @@ import IncrementalBlock from "./IncrementalBlock";
 import { jStat } from "jstat";
 
 import "react-datepicker/dist/react-datepicker.css";
+import { dateDiffInDays } from "./utils";
 
 export default function Popover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [canvas, setCanvas] = useState<HTMLCanvasElement>();
-  const height = 40;
-  const width = 100;
+  const height = 60;
+  const width = 120;
   const [meanPriority, setMeanPriority] = useState<number>(.5);
   const [dueDate, setDueDate] = useState<Date>();
+  const [multiplier, setMultiplier] = useState<number>(2.);
+  const [interval, setInterval] = useState<number>();
+  const [schedule, setSchedule] = useState<number[]>([]);
   const [busy, setBusy] = useState<boolean>(false);
 
   useEffect(() => {
-      // Set position above bar
-      const div = top?.document.getElementById(slot);
-      if (!div) return;
-      const elemBoundingRect = div.getBoundingClientRect();
-      ref.current!.style.top = `${elemBoundingRect.top - (ref.current?.clientHeight ?? 0) - 10}px`;
-      ref.current!.style.left = `${elemBoundingRect.left}px`;
+    // Set position above bar
+    const div = top?.document.getElementById(slot);
+    if (!div) return;
+    const elemBoundingRect = div.getBoundingClientRect();
+    ref.current!.style.top = `${elemBoundingRect.top - (ref.current?.clientHeight ?? 0) - 10}px`;
+    ref.current!.style.left = `${elemBoundingRect.left}px`;
 
-      // Set mean priority
-      //@ts-ignore
-      const beta = Beta.fromProps(block.properties);
-      if (beta) setMeanPriority(beta.mean);
-  }, [block]);
-
-  useEffect(() => {
-    // Priority beta graph
+    // Block properties
     const props = block.properties!;
     const ib = new IncrementalBlock(props);
-    if (ib.beta) updateCanvas(ib.beta);
+    if (ib.beta) {
+      setMeanPriority(ib.beta.mean);
+      updateCanvas(ib.beta);
+    }
     if (ib.dueDate) {
       setDueDate(ib.dueDate);
     } else {
       updatePriority();
     }
+    if (ib.interval) setInterval(ib.interval);
+    setMultiplier(ib.multiplier);
+
+    // Schedule
+    updateSchedule();
   }, [block]);
+
+  useEffect(() => {
+    updateSchedule();
+  }, [multiplier, interval, dueDate]);
 
   function updateCanvas(beta: Beta) {
       const canvas = document.createElement('canvas');
@@ -86,15 +95,39 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
 
   }
 
+  function updateSchedule() {
+    if (!dueDate || !interval) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    let diff = dateDiffInDays(today, dueDate);
+    setSchedule([diff]);
+    if (diff < 0) { // past due date
+      return;
+    }
+
+    const schedule = [diff];
+    const nPred = 4;
+    let _interval = interval;
+    for (let i=0; i < nPred; i++) {
+      _interval = Math.ceil(_interval * multiplier);
+      diff = diff + _interval;
+      // schedule.push(diff);
+      schedule.push(_interval);
+    }
+    setSchedule(schedule);
+
+  }
+
   async function updatePriority() {
     setBusy(true);
-    const props = await logseq.Editor.getBlockProperties(block.uuid);
+    const ib = await IncrementalBlock.fromUuid(block.uuid);
 
     const minMean = 0.2;
     const maxMean = 0.8;
     const mean = minMean + (maxMean-minMean)*meanPriority;
 
-    let beta = Beta.fromProps(props);
+    let beta = ib.beta ? new Beta(ib.beta.a, ib.beta.b) : null;
     if (beta) {
       // Has valid params, update
       beta.mean = mean;
@@ -120,25 +153,45 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     // Update interval.
     // For now only the initial interval.
     // See topic_interval.ipynb
-    const reps = props['ibReps'];
-    if (!Number.isInteger(reps) || reps === 0) {
+    if (ib.reps === 0) {
       const rate = (1-meanPriority)*25;
       const interval = jStat.poisson.sample(rate) + 1;
       const due = new Date();
       due.setDate(due.getDate() + interval);
       await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', due.toISOString());
+      await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-interval', interval);
       await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-reps', 0);
       setDueDate(due);
+      setInterval(interval);
     }
     setBusy(false);
   }
 
-  async function updateDueDate(dueDate: Date | null) {
-    if (dueDate === null) return;
+  async function updateDueDate(date: Date | null) {
+    if (date === null) return;
     setBusy(true);
-    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', dueDate.toISOString());
-    setDueDate(dueDate);
+    // Set the time of 'today' to midnight to only compare dates, not times
+    date.setHours(0, 0, 0, 0);
+    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', date.toISOString());
+    setDueDate(date);
     setBusy(false);
+  }
+
+  async function updateMultiplier(multiplier: number) {
+    setBusy(true);
+    if (!isFinite(multiplier)) multiplier = logseq.settings?.defaultMultiplier as number ?? 2.;
+    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-multiplier', multiplier);
+    setMultiplier(multiplier);
+    setBusy(false);
+  }
+
+  const scheduleList = [];
+  if (schedule.length > 0) {
+    for (let i = 0; i < schedule.length-1; i++) {
+      scheduleList.push(<span>{schedule[i]}d</span>);
+      scheduleList.push(<span> →</span>)
+    }
+    scheduleList.push(<span>{schedule[schedule.length-1]}d</span>);
   }
 
   return (
@@ -176,10 +229,16 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
             dateFormat="dd/MM/yyyy"
           />
           <p>Multiplier</p>
-          
-        </div>
-
-        <div>
+          <input 
+            className="border" 
+            type="number" 
+            value={multiplier}
+            onChange={(e) => updateMultiplier(parseFloat(e.target.value))}
+            min="1" 
+            max="5" 
+            step="0.1"
+          ></input>
+          <p className="text-neutral-400 text-xs">{scheduleList}</p>
         </div>
       </div></fieldset></form>
     </div>

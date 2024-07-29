@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import App from "./App";
 import Beta from "./beta";
 import "./index.css";
+import settings from './settings';
 
 import { logseq as PL } from "../package.json";
 import IncrementalBlock from "./IncrementalBlock";
@@ -154,4 +155,4 @@ function main() {
   });
 }
 
-logseq.ready(main).catch(console.error);
+logseq.useSettingsSchema(settings).ready(main).catch(console.error);
