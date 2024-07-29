@@ -1,28 +1,72 @@
-import React, { useRef } from "react";
-import { useAppVisible } from "./utils";
+import React, { useEffect, useRef, useState } from "react";
+import { queryIncrementalBlocks, useAppVisible } from "./utils";
+import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
+import Popover from "./Popover";
+import MainWindow from "./MainWindow";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
 function App() {
-  const innerRef = useRef<HTMLDivElement>(null);
   const visible = useAppVisible();
-  if (visible) {
-    return (
-      <main
-        className="bg-transparent fixed inset-0 flex"
-        onClick={(e) => {
-          if (!innerRef.current?.contains(e.target as any)) {
-            window.logseq.hideMainUI();
+  const [hovered, setHovered] = useState<{block: BlockEntity, slot: string} | null>(null);
+  const [mainVisible, setMainVisible] = useState<boolean>(false);
+
+  useEffect(() => {
+    logseq.provideModel({
+      toggleMain() {
+        if (!mainVisible) {
+          logseq.showMainUI();
+        } else if (mainVisible && !hovered) {
+          logseq.hideMainUI();
+        }
+        setMainVisible(!mainVisible);
+      },
+      async togglePopover(e: any) {
+        const { blockUuid, slotId } = e.dataset;
+
+        console.log('current', hovered, 'event', blockUuid);
+
+        if (blockUuid == hovered?.block.uuid) {
+          console.log('finna toggle');
+          setHovered(null);
+          if (!mainVisible && !hovered) {
+            logseq.hideMainUI();
           }
-        }}
-      >
-        <div ref={innerRef} className="absolute top-10 right-10 bg-white rounded-lg p-3 w-96 border flex flex-col">
-          Damn fam
-        </div>
-      </main>
-    );
+          return;
+        }
+
+        logseq.showMainUI();
+
+        const block = await logseq.Editor.getBlock(blockUuid);
+        if (block) {
+          setHovered({ block, slot: slotId });
+        }
+      },
+      hidePopover(e: any) {
+        setHovered(null);
+      }
+    });
+  }, []);
+
+  function tryHide(e: any) {
+    if (document.getElementById('ib-main')?.contains(e.target) || 
+        document.getElementById('ib-popover')?.contains(e.target)) {
+          return;
+        }
+    setMainVisible(false);
+    setHovered(null);
+    window.logseq.hideMainUI();
   }
-  return null;
+
+  console.log('hovered', hovered?.block.uuid);
+
+  if (!visible) return null;
+  return (
+    <main onClick={tryHide} className="bg-transparent fixed inset-0 flex">
+      {mainVisible && <MainWindow />}
+      {hovered && <Popover block={hovered!.block} slot={hovered!.slot} />}
+    </main>
+  );
 }
 
 export default App;
