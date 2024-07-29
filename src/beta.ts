@@ -21,7 +21,7 @@ class Beta {
     this.setMoments();
   }
 
-  static fromProps(props: {ibA: any, ibB: any}) {
+  static fromProps(props: Record<string, any>) {
     const a = parseFloat(props['ibA']);
     if (!Beta.isValidParam(a)) return null;
     const b = parseFloat(props['ibB']);

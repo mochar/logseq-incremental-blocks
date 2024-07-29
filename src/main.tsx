@@ -2,11 +2,13 @@ import "@logseq/libs";
 
 import React, { useEffect, useRef, useState } from "react";
 import * as ReactDOM from "react-dom/client";
+import { format } from 'date-fns';
 import App from "./App";
 import Beta from "./beta";
 import "./index.css";
 
 import { logseq as PL } from "../package.json";
+import IncrementalBlock from "./IncrementalBlock";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -96,22 +98,21 @@ function main() {
     const [type] = payload.arguments
     if (!type?.startsWith(':ib')) return;
     const props = await logseq.Editor.getBlockProperties(payload.uuid);
+    const ib = new IncrementalBlock(props);
 
     let sampleHtml = '';
-    const sample = parseFloat(props['ibSample']);
-    if (Beta.isValidSample(sample)) {
+    if (ib.sample) {
       sampleHtml = `
         <div class="border px-px">
-          <span>${(sample*100).toFixed(2)}</span>
+          <span>${(ib.sample*100).toFixed(2)}</span>
         </div>
       `;
     }
 
     let priorityHtml = '';
-    const beta = Beta.fromProps(props);
-    if (beta) {
-      const mean = (beta.mean*100).toFixed(2);
-      const std = (beta.std()*100).toFixed(1);
+    if (ib.beta) {
+      const mean = (ib.beta.mean*100).toFixed(2);
+      const std = (ib.beta.std()*100).toFixed(1);
       priorityHtml = `<span>${mean} (± ${std})</span>`;
     } else {
       priorityHtml = '<span class="text-red-800">Not set</span>';
@@ -123,7 +124,15 @@ function main() {
     `;
 
     let scheduleHtml = '';
-    const due = props['ibDue'];
+    if (ib.dueDate) {
+      const dateNice = format(ib.dueDate, 'yyyy-MM-dd');
+      scheduleHtml = `
+      <div class="border flex space-x-1">
+        <span class="font-semibold text-violet-600">D</span>
+        <span>${dateNice}</span>
+      </div>
+      `;
+    }
 
     logseq.provideUI({
       key: `ib__${slot}`,
@@ -139,6 +148,7 @@ function main() {
       >
         ${sampleHtml}
         ${priorityHtml}
+        ${scheduleHtml}
       </button>`
     });
   });

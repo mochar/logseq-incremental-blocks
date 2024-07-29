@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import DatePicker from "react-datepicker";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 import Beta from "./beta";
+import IncrementalBlock from "./IncrementalBlock";
+import { jStat } from "jstat";
 
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -11,7 +13,7 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
   const height = 40;
   const width = 100;
   const [meanPriority, setMeanPriority] = useState<number>(.5);
-  const [dueDate, setDueDate] = useState<Date>(new Date());
+  const [dueDate, setDueDate] = useState<Date>();
   const [busy, setBusy] = useState<boolean>(false);
 
   useEffect(() => {
@@ -28,11 +30,16 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
       if (beta) setMeanPriority(beta.mean);
   }, [block]);
 
-  // Priority beta graph
   useEffect(() => {
+    // Priority beta graph
     const props = block.properties!;
-    const beta = new Beta(parseFloat(props['ibA']), parseFloat(props['ibB']));
-    updateCanvas(beta);
+    const ib = new IncrementalBlock(props);
+    if (ib.beta) updateCanvas(ib.beta);
+    if (ib.dueDate) {
+      setDueDate(ib.dueDate);
+    } else {
+      updatePriority();
+    }
   }, [block]);
 
   function updateCanvas(beta: Beta) {
@@ -57,8 +64,6 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
       // let pdMode = beta.pdf(beta.mode());
       const ps = [0, ...[...Array(nBins-1).keys()].map((i) => beta.pdf((i+1) / nBins))];
       const pdMax = Math.max(...ps);
-      console.log(pdMax);
-      console.log(ps);
       for (let i = 0; i < nBins; i++) {
         const x = i / nBins;
         // const pd = beta.pdf(x);
@@ -111,6 +116,28 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-a', beta.a);
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-b', beta.b);
     updateCanvas(beta);
+
+    // Update interval.
+    // For now only the initial interval.
+    // See topic_interval.ipynb
+    const reps = props['ibReps'];
+    if (!Number.isInteger(reps) || reps === 0) {
+      const rate = (1-meanPriority)*25;
+      const interval = jStat.poisson.sample(rate) + 1;
+      const due = new Date();
+      due.setDate(due.getDate() + interval);
+      await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', due.toISOString());
+      await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-reps', 0);
+      setDueDate(due);
+    }
+    setBusy(false);
+  }
+
+  async function updateDueDate(dueDate: Date | null) {
+    if (dueDate === null) return;
+    setBusy(true);
+    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', dueDate.toISOString());
+    setDueDate(dueDate);
     setBusy(false);
   }
 
@@ -143,7 +170,7 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
           <DatePicker
             className="border"
             selected={dueDate}
-            onChange={(date) => setDueDate(date!)}
+            onChange={(date) => updateDueDate(date)}
             minDate={new Date()}
             monthsShown={1}
             dateFormat="dd/MM/yyyy"
