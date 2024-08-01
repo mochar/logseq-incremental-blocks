@@ -52,6 +52,10 @@ function main() {
     #ib-popover {
       position: fixed;
     }
+
+    .muted {
+      color: grey;
+    }
   `);
 
   logseq.App.registerUIItem("toolbar", {

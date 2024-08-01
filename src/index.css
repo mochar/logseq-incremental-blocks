@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 input[type='range'] { 
   height: 5px;
 }

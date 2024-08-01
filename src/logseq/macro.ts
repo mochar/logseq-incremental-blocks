@@ -9,20 +9,15 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
   console.log('IB MACRO SLOTTED');
   const ib = await IncrementalBlock.fromUuid(payload.uuid);
 
-  let sampleHtml = '';
-  if (ib.sample && (ib.dueDays() ?? 1) <= 0) {
-    sampleHtml = `
-      <div class="border px-px">
-        <span>${(ib.sample*100).toFixed(2)}</span>
-      </div>
-    `;
-  }
-
   let priorityHtml = '';
   if (ib.beta) {
     const mean = (ib.beta.mean*100).toFixed(2);
     const std = (ib.beta.std()*100).toFixed(1);
-    priorityHtml = `<span>${mean} (± ${std})</span>`;
+    priorityHtml = `<span>${mean} (± ${std})`;
+    if (ib.sample && (ib.dueDays() ?? 1) <= 0) {
+      priorityHtml += `<span class="muted"> [${(ib.sample*100).toFixed(2)}%]</span>`;
+    }
+    priorityHtml += '</span>';
   } else {
     priorityHtml = '<span class="text-red-800">Not set</span>';
   }
@@ -36,10 +31,14 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
   if (ib.dueDate) {
     const dateNice = format(ib.dueDate, 'yyyy-MM-dd');
     const diff = dateDiffInDays(new Date(), ib.dueDate);
+    scheduleHtml = `${dateNice} (${diff}d)`;
+    if (ib.interval) {
+      scheduleHtml += `<span class="muted"> [${ib.interval}d]</span>`;
+    }
     scheduleHtml = `
     <div class="border flex space-x-1">
       <span class="font-semibold text-yellow-900">S</span>
-      <span>${dateNice} (${diff}d)</span>
+      <span>${scheduleHtml}</span>
     </div>
     `;
   }
@@ -56,7 +55,6 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
       data-block-uuid="${payload.uuid}"
       data-slot-id="${slot}"
     >
-      ${sampleHtml}
       ${priorityHtml}
       ${scheduleHtml}
     </button>`

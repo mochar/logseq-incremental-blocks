@@ -28,12 +28,34 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     }
   }, []);
 
-  async function nextIb() {
+  async function nextIb(postpone: boolean = false) {
     setReady(false);
 
     if (currentIb) {
-      // Update priority and schedule
-      // TODO
+      const ib = currentIb;
+      const newDue = addDays(todayMidnight(), interval!);
+
+      if (postpone) {
+        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-due', newDue.getTime());
+      } else {
+        // Update priority 
+        const newBeta = ib.beta!.copy();
+        if (manualPriority) {
+          newBeta.mean = manualPriority;
+        } else {
+          const updates = (await getPriorityUpdates())!;
+          newBeta.a = newBeta.a + updates.a;
+        }
+        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-a', newBeta.a);
+        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-b', newBeta.b);
+
+        // Update schedule
+        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-interval', Math.ceil(interval!));
+        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-due', newDue.getTime());
+
+        // Others
+        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-reps', ib.reps + 1);
+      }
     }
 
     // Clean up
@@ -57,13 +79,14 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
   async function updateCurrentIb(ib: IncrementalBlock | undefined) {
     setCurrentIb(ib);
-    if (!ib) return;
-    await getPriorityUpdates();
-    setManualPriority(GLOBALS.current?.manualPriority);
-    if (GLOBALS.current?.manualInterval) {
-      setInterval(GLOBALS.current.manualInterval);
-    } else {
-      setInterval(nextInterval(ib));
+    if (ib) {
+      await getPriorityUpdates();
+      setManualPriority(GLOBALS.current?.manualPriority);
+      if (GLOBALS.current?.manualInterval) {
+        setInterval(GLOBALS.current.manualInterval);
+      } else {
+        setInterval(nextInterval(ib));
+      }
     }
     setReady(true);
   }
@@ -81,17 +104,16 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     setInterval(val);
   }
 
-  async function getPriorityUpdates() {
-    if (!GLOBALS.current) return;
+  async function getPriorityUpdates() : Promise<PriorityUpdate | null> {
+    if (!GLOBALS.current) return null;
     GLOBALS.current.newContents = await getBlockHierarchyContent(GLOBALS.current.ib.uuid, 3);
     const updates = getPriorityUpdate(GLOBALS.current);
     setPriorityUpdates(updates);
+    return updates;
   }
 
   async function postpone() {
-    setReady(false);
-    // TODO: postpone
-    nextIb();
+    nextIb(true);
   }
 
   if (!ready) return <div>Loading...</div>;
@@ -233,7 +255,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
       <div className="flex justify-between py-2">
         <button 
           className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-4 border-blue-700 hover:border-blue-500 rounded" 
-          onClick={nextIb}
+          onClick={() => nextIb()}
         >
           Next rep
         </button>
