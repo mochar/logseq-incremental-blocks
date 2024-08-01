@@ -1,4 +1,5 @@
 import IncrementalBlock from "./IncrementalBlock";
+import IbQueue from "./queue";
 
 export interface CurrentIBData {
     ib: IncrementalBlock,
@@ -11,12 +12,12 @@ export interface CurrentIBData {
 
 interface Globals {
     learning: boolean,
-    queue: IncrementalBlock[],
+    queue: IbQueue,
     current?: CurrentIBData
 }
 
 const GLOBALS: Globals = {
     learning: false,
-    queue: [],
+    queue: new IbQueue(),
 }
 export default GLOBALS;

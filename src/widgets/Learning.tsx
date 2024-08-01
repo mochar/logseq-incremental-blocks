@@ -62,7 +62,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     delete GLOBALS.current;
 
     // Get next Ib in queue
-    const ib = GLOBALS.queue.shift();
+    const ib = GLOBALS.queue.next();
 
     if (ib) {
       // Populate the global current ib data
@@ -223,7 +223,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
             className="border grow"
             selected={nextDue}
             onChange={(date) => date && setInterval(dateDiffInDays(todayMidnight(), date))}
-            minDate={new Date()}
+            minDate={addDays(new Date(), 1)}
             monthsShown={1}
             dateFormat="dd/MM/yyyy"
           />
