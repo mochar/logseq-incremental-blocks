@@ -13,10 +13,29 @@ class IbQueue {
   public next() : IncrementalBlock | undefined {
     // Make sure ib has not been moved to another day
     let ib = this._ibs.shift();
-    while (ib && ib.dueDays() != 0) {
+    while (ib && !ib.dueToday()) {
       ib = this._ibs.shift();
     }
     return ib;
+  }
+
+  public add(ib: IncrementalBlock) {
+    if (!ib.dueToday() || !ib.beta) return;
+    const sample = ib.beta.sample({ seedToday: true });
+    for (let i = 0; i < this.ibs.length; i++) {
+      if (this.ibs[i].sample! < sample) {
+        this.ibs.splice(i, 0, ib);
+        break;
+      }
+    }
+  }
+
+  public remove(uuid: string) {
+    for (let i = 0; i < this._ibs.length; i++) {
+      if (this._ibs[i].uuid == uuid) {
+        this._ibs.splice(i, 1);
+      }
+    }
   }
 
   public get current() : IncrementalBlock {

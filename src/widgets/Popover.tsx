@@ -10,6 +10,7 @@ import { betaFromMean } from "../algorithm/priority";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import BetaGraph from "./BetaGraph";
 import PrioritySlider from "./PrioritySlider";
+import GLOBALS from "../globals";
 
 export default function Popover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -105,6 +106,18 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     // Set the time of 'today' to midnight to only compare dates, not times
     date.setHours(0, 0, 0, 0);
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', date.getTime());
+
+    // Update queue
+    const today = todayMidnight();
+    const curIsToday = dueDate && dateDiffInDays(today, dueDate) == 0;
+    const newIsToday = dateDiffInDays(today, date) == 0;
+    if (curIsToday && !newIsToday) {
+      GLOBALS.queue.remove(block.uuid);
+    } else if (!curIsToday && newIsToday) {
+      const ib = await IncrementalBlock.fromUuid(block.uuid);
+      GLOBALS.queue.add(ib);
+    }
+
     setDueDate(date);
     setBusy(false);
   }

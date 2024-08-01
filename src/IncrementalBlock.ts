@@ -1,6 +1,6 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import Beta from "./algorithm/beta";
-import { dateDiffInDays } from "./utils";
+import { dateDiffInDays, todayMidnight } from "./utils";
 
 class IncrementalBlock {
   readonly uuid: string;
@@ -72,10 +72,15 @@ class IncrementalBlock {
 
   public dueDays(): number | null {
     if (!this.dueDate) return null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = todayMidnight();
     const diff = dateDiffInDays(today, this.dueDate);
     return diff;
+  }
+
+  public dueToday() : boolean {
+    const dueDays = this.dueDays();
+    if (dueDays == null) return false;
+    return dueDays <= 0;
   }
 }
 
