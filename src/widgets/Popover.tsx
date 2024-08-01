@@ -1,19 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
 import DatePicker from "react-datepicker";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
-import Beta from "./beta";
-import IncrementalBlock from "./IncrementalBlock";
-import { jStat } from "jstat";
+import Beta from "../algorithm/beta";
+import IncrementalBlock from "../IncrementalBlock";
 
 import "react-datepicker/dist/react-datepicker.css";
-import { dateDiffInDays } from "./utils";
+import { dateDiffInDays, todayMidnight } from "../utils";
+import { betaFromMean } from "../algorithm/priority";
+import { initialIntervalFromMean } from "../algorithm/scheduling";
+import BetaGraph from "./BetaGraph";
+import PrioritySlider from "./PrioritySlider";
 
 export default function Popover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [canvas, setCanvas] = useState<HTMLCanvasElement>();
-  const height = 60;
-  const width = 120;
-  const [meanPriority, setMeanPriority] = useState<number>(.5);
+  const [beta, setBeta] = useState<Beta>();
   const [dueDate, setDueDate] = useState<Date>();
   const [multiplier, setMultiplier] = useState<number>(2.);
   const [interval, setInterval] = useState<number>();
@@ -23,22 +23,23 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
   useEffect(() => {
     // Set position above bar
     const div = top?.document.getElementById(slot);
-    if (!div) return;
-    const elemBoundingRect = div.getBoundingClientRect();
-    ref.current!.style.top = `${elemBoundingRect.top - (ref.current?.clientHeight ?? 0) - 10}px`;
-    ref.current!.style.left = `${elemBoundingRect.left}px`;
+    console.log('div', div);
+    // if (!div) return;
+    if (div) {
+      const elemBoundingRect = div.getBoundingClientRect();
+      ref.current!.style.top = `${elemBoundingRect.top - (ref.current?.clientHeight ?? 0) - 10}px`;
+      ref.current!.style.left = `${elemBoundingRect.left}px`;
+    }
 
     // Block properties
     const props = block.properties!;
-    const ib = new IncrementalBlock(props);
-    if (ib.beta) {
-      setMeanPriority(ib.beta.mean);
-      updateCanvas(ib.beta);
-    }
+    const ib = new IncrementalBlock(block.uuid, props);
+    const beta = ib.beta ?? new Beta(1, 1);
+    setBeta(beta);
     if (ib.dueDate) {
       setDueDate(ib.dueDate);
     } else {
-      updatePriority();
+      updatePriority(beta.mean);
     }
     if (ib.interval) setInterval(ib.interval);
     setMultiplier(ib.multiplier);
@@ -51,55 +52,10 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     updateSchedule();
   }, [multiplier, interval, dueDate]);
 
-  function updateCanvas(beta: Beta) {
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      let ctx = canvas.getContext("2d")!;
-
-      const h = height;
-      const w = width;
-      const hOffset = 3;
-      const lingradPath = ctx.createLinearGradient(w/2, hOffset, w/2, h);
-      lingradPath.addColorStop(0, "#4682B4");
-      // lingradPath.addColorStop(0.3, "#4682B4");
-      lingradPath.addColorStop(1, "rgba(256, 256, 256, 0.98)");
-      ctx.strokeStyle = lingradPath;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.moveTo(0, h);
-
-      const nBins = 100;
-      // let pdMode = beta.pdf(beta.mode());
-      const ps = [0, ...[...Array(nBins-1).keys()].map((i) => beta.pdf((i+1) / nBins))];
-      const pdMax = Math.max(...ps);
-      for (let i = 0; i < nBins; i++) {
-        const x = i / nBins;
-        // const pd = beta.pdf(x);
-        const pd = ps[i];
-        ctx.lineTo(x*w, h - h*(pd/pdMax) + hOffset);
-        // ctx.stroke();
-      }
-      ctx.lineTo(w, h);
-      ctx.lineTo(0, h);
-      ctx.stroke();
-      ctx.clip()
-
-      const lingrad = ctx.createLinearGradient(w/2, hOffset, w/2, h);
-      lingrad.addColorStop(0, "#F2F2F2");
-      lingrad.addColorStop(0.3, "#F2F2F2");
-      lingrad.addColorStop(1, "rgba(256, 256, 256, 0.9)");
-      ctx.fillStyle = lingrad;
-      ctx.fillRect(0, 0, w, h);
-      setCanvas(canvas);
-
-  }
-
   function updateSchedule() {
     if (!dueDate || !interval) return;
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = todayMidnight();
     let diff = dateDiffInDays(today, dueDate);
     setSchedule([diff]);
     if (diff < 0) { // past due date
@@ -119,46 +75,22 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
 
   }
 
-  async function updatePriority() {
+  async function updatePriority(meanPriority: number) {
     setBusy(true);
     const ib = await IncrementalBlock.fromUuid(block.uuid);
-
-    const minMean = 0.2;
-    const maxMean = 0.8;
-    const mean = minMean + (maxMean-minMean)*meanPriority;
-
-    let beta = ib.beta ? new Beta(ib.beta.a, ib.beta.b) : null;
-    if (beta) {
-      // Has valid params, update
-      beta.mean = mean;
-    } else {
-      let a: number, b: number;
-      // No or invalid params, set
-      if (mean == 0.5) {
-        a = 1;
-        b = 1;
-      } else if (mean > 0.5) {
-        a = 1;
-        b = a * (1 / mean - 1);
-      } else {
-        b = 1;
-        a = b * (mean / (1 - mean));
-      }
-      beta = new Beta(a, b);
-    }
+    const beta = betaFromMean(meanPriority, ib.beta);
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-a', beta.a);
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-b', beta.b);
-    updateCanvas(beta);
+    setBeta(beta);
 
     // Update interval.
     // For now only the initial interval.
     // See topic_interval.ipynb
     if (ib.reps === 0) {
-      const rate = (1-meanPriority)*25;
-      const interval = jStat.poisson.sample(rate) + 1;
+      const interval = initialIntervalFromMean(meanPriority);
       const due = new Date();
       due.setDate(due.getDate() + interval);
-      await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', due.toISOString());
+      await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', due.getTime());
       await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-interval', interval);
       await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-reps', 0);
       setDueDate(due);
@@ -172,7 +104,13 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     setBusy(true);
     // Set the time of 'today' to midnight to only compare dates, not times
     date.setHours(0, 0, 0, 0);
-    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', date.toISOString());
+    let diff = dateDiffInDays(new Date(), date);
+    if (diff <= 0) { // past due date
+      const ib = await IncrementalBlock.fromUuid(block.uuid);
+      const sample = ib.beta!.sample();
+      await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-sample', sample);
+    }
+    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', date.getTime());
     setDueDate(date);
     setBusy(false);
   }
@@ -204,17 +142,13 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
       <form><fieldset disabled={busy}><div className="flex divide-x">
         <div className="p-2 py-0">
           <p className="font-semibold text-gray-90">Priority</p>
-          {canvas && <img className="border" width={width} height={height} src={canvas.toDataURL()} />}
-          <div className="flex">
-            <input 
-              className="w-32"
-              type="range" min="0" max="10000" step="1" 
-              value={meanPriority*10000} 
-              onChange={(e) => setMeanPriority(parseFloat(e.target.value)/10000)}
-              onMouseUp={updatePriority}
-            ></input>
-            <p className="w-14">{(meanPriority*100).toFixed(2)}%</p>
+          <div className="border">
+            {beta && <BetaGraph beta={beta} width={120} height={60}></BetaGraph>}
           </div>
+          {beta && <PrioritySlider
+            init={beta.mean}
+            onChange={updatePriority}
+          ></PrioritySlider>}
         </div>
 
         <div className="p-2 py-0">

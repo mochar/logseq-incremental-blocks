@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from "react";
-import { queryIncrementalBlocks, useAppVisible } from "./utils";
+import React, { useEffect, useState } from "react";
+import { useAppVisible } from "./utils";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
-import Popover from "./Popover";
-import MainWindow from "./MainWindow";
+import Popover from "./widgets/Popover";
+import MainWindow from "./widgets/MainWindow";
+import GLOBALS from "./globals";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
@@ -24,14 +25,18 @@ function App() {
       async togglePopover(e: any) {
         const { blockUuid, slotId } = e.dataset;
 
-        console.log('current', hovered, 'event', blockUuid);
-
+        // Close if already selected
         if (blockUuid == hovered?.block.uuid) {
-          console.log('finna toggle');
           setHovered(null);
           if (!mainVisible && !hovered) {
             logseq.hideMainUI();
           }
+          return;
+        }
+
+        // Don't show when currently learning
+        if (GLOBALS.learning) {
+          logseq.UI.showMsg('Stop learning to update incremental blocks.')
           return;
         }
 
@@ -57,8 +62,6 @@ function App() {
     setHovered(null);
     window.logseq.hideMainUI();
   }
-
-  console.log('hovered', hovered?.block.uuid);
 
   if (!visible) return null;
   return (

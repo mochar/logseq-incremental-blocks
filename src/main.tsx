@@ -1,15 +1,14 @@
 import "@logseq/libs";
 
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 import * as ReactDOM from "react-dom/client";
-import { format } from 'date-fns';
 import App from "./App";
-import Beta from "./beta";
+import Beta from "./algorithm/beta";
 import "./index.css";
-import settings from './settings';
+import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
-import IncrementalBlock from "./IncrementalBlock";
+import { handleMacroRendererSlotted } from "./logseq/macro";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -95,64 +94,7 @@ function main() {
     }
   `)
 
-  logseq.App.onMacroRendererSlotted(async ({ slot, payload }) => {
-    const [type] = payload.arguments
-    if (!type?.startsWith(':ib')) return;
-    const props = await logseq.Editor.getBlockProperties(payload.uuid);
-    const ib = new IncrementalBlock(props);
-
-    let sampleHtml = '';
-    if (ib.sample) {
-      sampleHtml = `
-        <div class="border px-px">
-          <span>${(ib.sample*100).toFixed(2)}</span>
-        </div>
-      `;
-    }
-
-    let priorityHtml = '';
-    if (ib.beta) {
-      const mean = (ib.beta.mean*100).toFixed(2);
-      const std = (ib.beta.std()*100).toFixed(1);
-      priorityHtml = `<span>${mean} (± ${std})</span>`;
-    } else {
-      priorityHtml = '<span class="text-red-800">Not set</span>';
-    }
-    priorityHtml = `
-    <div class="border flex space-x-1">
-      <span class="font-semibold text-indigo-700">P</span>${priorityHtml}
-    </div>
-    `;
-
-    let scheduleHtml = '';
-    if (ib.dueDate) {
-      const dateNice = format(ib.dueDate, 'yyyy-MM-dd');
-      scheduleHtml = `
-      <div class="border flex space-x-1">
-        <span class="font-semibold text-violet-600">D</span>
-        <span>${dateNice}</span>
-      </div>
-      `;
-    }
-
-    logseq.provideUI({
-      key: `ib__${slot}`,
-      slot,
-      reset: true,
-      template: `
-      <button
-        class="ib__container rounded-lg border text-sm flex" 
-        data-on-click="togglePopover" 
-        data-on-focusout="hidePopover"
-        data-block-uuid="${payload.uuid}"
-        data-slot-id="${slot}"
-      >
-        ${sampleHtml}
-        ${priorityHtml}
-        ${scheduleHtml}
-      </button>`
-    });
-  });
+  logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
 }
 
 logseq.useSettingsSchema(settings).ready(main).catch(console.error);
