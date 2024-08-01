@@ -4,26 +4,34 @@ import React from "react";
 import { Virtuoso } from "react-virtuoso";
 
 export default function Queue({ onLearn } : { onLearn: () => void }) {
+  const [refreshing, setRefreshing] = React.useState<boolean>(false);
   const [iblocks, setIblocks] = React.useState<IncrementalBlock[]>([]);
 
   React.useEffect(() => {
-    let ignore = false;
-
-    async function getBlocks() {
-      try {
-        await GLOBALS.queue.refresh();
-        if (!ignore) {
-          setIblocks(GLOBALS.queue.ibs);
-        }
-      } catch (e) {
-        console.error(e)
+    if (!GLOBALS.queue.refreshed.completed) {
+      setRefreshing(true);
+      GLOBALS.queue.refreshed.promise.then(() => {
+        setIblocks(GLOBALS.queue.ibs);
+        setRefreshing(false);
+      });
+    } else {
+      const minutesSinceLastRefresh = GLOBALS.queue.minutesSinceLastRefresh();
+      if (minutesSinceLastRefresh != null && minutesSinceLastRefresh > 1) {
+        refresh();
+      } else {
+        setIblocks(GLOBALS.queue.ibs)
       }
     }
-
-    getBlocks();
-
-    return () => { ignore = true };
   }, []);
+
+  async function refresh() {
+    setRefreshing(true);
+    console.log('refreshing...');
+    await GLOBALS.queue.refresh();
+    setIblocks(GLOBALS.queue.ibs);
+    setRefreshing(false);
+    console.log('refreshed!');
+  }
 
   function createBlockItem(i: number) {
     const ib = iblocks[i];
@@ -64,7 +72,7 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
   }
 
   return (
-    <div>
+    <form><fieldset disabled={refreshing}><div>
       <div className="flex justify-between">
         <button 
           className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-4 border-blue-700 hover:border-blue-500 rounded ${iblocks.length == 0 && "cursor-not-allowed"}`}
@@ -75,12 +83,18 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
         </button>
         <button 
           className="hover:bg-gray-100 border py-1 px-1 rounded" 
-          onClick={() => {}}
+          onClick={refresh}
         >
           🔄
         </button>
       </div>
-      {queueView}
-    </div>
+
+    {refreshing && 
+      <div className="text-neutral-500 flex justify-center">
+        <span>Refreshing queue...</span>
+      </div>
+    }
+    {!refreshing && queueView}
+    </div></fieldset></form>
   );
 }

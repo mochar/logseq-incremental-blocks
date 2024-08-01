@@ -116,6 +116,16 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     nextIb(true);
   }
 
+  function finish() {
+    // Return back to top of the queue, since we're not finished
+    // with it yet.
+    if (currentIb) {
+      GLOBALS.queue.ibs.splice(0, 0, currentIb);
+    }
+    // Parent callback
+    offLearn();
+  }
+
   if (!ready) return <div>Loading...</div>;
 
   if (currentIb == null) {
@@ -262,7 +272,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
         <div className="flex-grow"></div>
         <button 
           className="hover:bg-gray-100 border py-1 px-1 w-1/6 rounded" 
-          onClick={offLearn}
+          onClick={finish}
         >
           Finish
         </button>

@@ -59,3 +59,24 @@ export function addDays(date: Date, days: number) : Date {
   newDate.setDate(date.getDate() + days);
   return newDate;
 }
+
+// https://stackoverflow.com/questions/34673902/typescript-equivalent-to-dart-completer
+export class Completer<T> {
+  public readonly promise: Promise<T>;
+  private _complete!: (value: (PromiseLike<T> | T)) => void;
+  private reject!: (reason?: any) => void;
+  public completed = false;
+
+  public constructor() {
+    this.promise = new Promise<T>((resolve, reject) => {
+        this._complete = resolve;
+        this.reject = reject;
+    })
+  }
+
+  public complete(value: (PromiseLike<T> | T)) : Completer<T> {
+    this.completed = true;
+    this._complete(value);
+    return this;
+  }
+}

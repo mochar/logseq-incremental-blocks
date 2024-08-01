@@ -1,13 +1,20 @@
 import IncrementalBlock from "./IncrementalBlock";
 import { queryDueIbs } from "./logseq/query";
+import { Completer } from "./utils";
 
 class IbQueue {
   private _ibs: IncrementalBlock[] = [];
+  private _refreshDate: Date | undefined;
+  private _refreshed = (new Completer()).complete(true);
 
   public async refresh() {
+    this._refreshed = new Completer();
+    // await new Promise(resolve => setTimeout(resolve, 5000));
     let ibs = await queryDueIbs();
     ibs = ibs.sort((a, b) => b.sample! - a.sample!);
     this._ibs = ibs;
+    this._refreshDate = new Date();
+    this._refreshed.complete(true);
   }
 
   public next() : IncrementalBlock | undefined {
@@ -48,6 +55,20 @@ class IbQueue {
 
   public get length() : number {
     return this._ibs.length;
+  }
+
+  public get refreshed() {
+    return this._refreshed;
+  }
+
+  public get refreshDate() : Date | undefined {
+    return this._refreshDate;
+  }
+
+  public minutesSinceLastRefresh() : number | undefined {
+    if (!this._refreshDate) return;
+    const diff = (new Date()).getTime() - this._refreshDate.getTime();
+    return diff / (1000 * 60);
   }
 }
 
