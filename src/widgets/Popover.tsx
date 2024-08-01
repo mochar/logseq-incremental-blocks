@@ -104,12 +104,6 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     setBusy(true);
     // Set the time of 'today' to midnight to only compare dates, not times
     date.setHours(0, 0, 0, 0);
-    let diff = dateDiffInDays(new Date(), date);
-    if (diff <= 0) { // past due date
-      const ib = await IncrementalBlock.fromUuid(block.uuid);
-      const sample = ib.beta!.sample();
-      await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-sample', sample);
-    }
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', date.getTime());
     setDueDate(date);
     setBusy(false);

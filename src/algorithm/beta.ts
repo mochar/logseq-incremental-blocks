@@ -1,4 +1,6 @@
 import { jStat } from "jstat";
+import seedrandom from "seedrandom";
+import { todayMidnight } from "../utils";
 
 function toBetaParams(mean: number, variance: number): {a: number, b: number} {
   let a = ((1 - mean) / variance - 1 / mean) * mean * mean;
@@ -53,7 +55,10 @@ class Beta {
     return jStat.beta.pdf(x, this._a, this._b);
   }
 
-  public sample(): number {
+  public sample({ seedToday }: { seedToday?: boolean }): number {
+    if (seedToday) {
+      jStat.setRandom(seedrandom(todayMidnight().getTime().toString()));
+    }
     return jStat.beta.sample(this._a, this._b);
   }
 

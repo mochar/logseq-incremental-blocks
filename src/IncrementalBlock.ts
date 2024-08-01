@@ -22,6 +22,8 @@ class IncrementalBlock {
     const sample = parseFloat(props['ibSample']);
     if (Beta.isValidSample(sample)) {
       this.sample = sample;
+    } else if (this.beta) {
+      this.sample = this.beta.sample({ seedToday: true });
     } else {
       this.sample = null;
     }
@@ -62,6 +64,10 @@ class IncrementalBlock {
   static async fromUuid(uuid: string) {
     const props = await logseq.Editor.getBlockProperties(uuid);
     return new this(uuid, props);
+  }
+
+  static fromBlock(block: BlockEntity) {
+    return new this(block.uuid, block.properties!, block);
   }
 
   public dueDays(): number | null {

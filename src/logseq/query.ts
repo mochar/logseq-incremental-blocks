@@ -2,8 +2,17 @@ import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
 import { todayMidnight } from "../utils";
 
-export async function queryIncrementalBlocks(query: string): Promise<IncrementalBlock[]> {
-  // TODO: Figure out this sorting query
+export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
+  // Identify by ib-due. Put in ?due var. Used downstream.
+  const query = `
+  [
+    :find (pull ?b [*])
+    :where
+      [?b :block/properties ?prop]
+      [(get ?prop :ib-due) ?due]
+      ${where}
+  ]
+  `;
   const ret = await logseq.DB.datascriptQuery(query);
   const ibs = (ret || []).flat().map((b: BlockEntity) => {
     // Query doesn't transform property keys to camelCase...
@@ -14,12 +23,36 @@ export async function queryIncrementalBlocks(query: string): Promise<Incremental
     });
     props = Object.assign({}, ...keyValues);
     b.properties = props;
-    return new IncrementalBlock(b.uuid, b.properties!, b);
+    return IncrementalBlock.fromBlock(b);
   });
   return ibs;
 }
 
-export async function queryDueIBlocks() : Promise<IncrementalBlock[]> {
+export async function queryDueIbs(where: string = '') : Promise<IncrementalBlock[]> {
+  where = `
+  [(<= ?due ${todayMidnight().getTime()})]
+  ${where}
+  `;
+  return await queryIncrementalBlocks(where);
+}
+
+export async function queryDueIbsWithoutSample() : Promise<IncrementalBlock[]> {
+  const query = `
+  [
+    :find (pull ?b [*])
+    :where
+      [?b :block/properties ?prop]
+
+      [(get ?prop :ib-due) ?due]
+      [(<= ?due ${todayMidnight().getTime()})]
+
+      (not [(get ?prop :ib-sample) _])
+  ]
+  `;
+  return await queryIncrementalBlocks(query);
+}
+
+export async function queryDueIbsOld() : Promise<IncrementalBlock[]> {
   const query = `
   [
     :find (pull ?b [*])

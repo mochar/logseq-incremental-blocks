@@ -1,6 +1,7 @@
+import Beta from "../algorithm/beta";
 import GLOBALS from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
-import { queryDueIBlocks } from "../logseq/query";
+import { queryDueIbs, queryDueIbsWithoutSample } from "../logseq/query";
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
 
@@ -12,10 +13,12 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
 
     async function getBlocks() {
       try {
-        let ibs = await queryDueIBlocks();
+        let ibs = await queryDueIbs();
         ibs = ibs.sort((a, b) => b.sample! - a.sample!);
-        setIblocks(ibs);
-        GLOBALS.queue = ibs;
+        if (!ignore) {
+          setIblocks(ibs);
+          GLOBALS.queue = ibs;
+        }
       } catch (e) {
         console.error(e)
       }
