@@ -115,6 +115,10 @@ class Beta {
     this._variance = variance;
     this.setParams();
   }
+
+  public copy() : Beta {
+    return new Beta(this._a, this._b);
+  }
 }
 
 export default Beta;

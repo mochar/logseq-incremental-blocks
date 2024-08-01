@@ -53,3 +53,9 @@ export function todayMidnight(): Date {
   date.setHours(0, 0, 0, 0);
   return date;
 }
+
+export function addDays(date: Date, days: number) : Date {
+  const newDate = new Date(date.getTime());
+  newDate.setDate(date.getDate() + days);
+  return newDate;
+}

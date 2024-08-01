@@ -5,7 +5,8 @@ export interface CurrentIBData {
     start: Date,
     contents: Record<string, string>,
     newContents: Record<string, string>,
-    manualPriority?: number
+    manualPriority?: number,
+    manualInterval?: number,
 }
 
 interface Globals {

@@ -9,7 +9,7 @@ export default function PrioritySlider({ init, onChange } : SliderParams) {
   const [value, setValue] = React.useState<number>(init);
 
   return (
-    <div className="flex">
+    <div className="flex items-center">
       <input 
         className="w-full"
         type="range" min="0" max="10000" step="1" 

@@ -7,30 +7,26 @@ import { getBlockHierarchyContent } from "../logseq/utils";
 import { getPriorityUpdate, PriorityUpdate } from "../algorithm/priority";
 import DatePicker from "react-datepicker";
 import PrioritySlider from "./PrioritySlider";
+import { nextInterval } from "../algorithm/scheduling";
+import { dateDiffInDays, todayMidnight } from "../utils";
+import { addDays, format } from "date-fns";
 
 export default function Learning({ offLearn }: { offLearn: () => void }) {
   const [ready, setReady] = React.useState<boolean>(false);
   const [currentIb, setCurrentIb] = React.useState<IncrementalBlock | null>();
   const [priorityUpdates, setPriorityUpdates] = React.useState<PriorityUpdate>();
-  const manualPriority = React.useRef<number>();
+  const [manualPriority, setManualPriority] = React.useState<number>();
+  const [interval, setInterval] = React.useState<number>();
 
   React.useEffect(() => {
     if (GLOBALS.current) {
-      setCurrentIb(GLOBALS.current.ib);
-      setReady(true);
+      updateCurrentIb(GLOBALS.current.ib);
     } else if (GLOBALS.queue.length == 0) {
-      setCurrentIb(null);
-      setReady(true);
+      updateCurrentIb(undefined);
     } else {
       nextIb();
     }
   }, []);
-
-  React.useEffect(() => {
-    if (currentIb) {
-      getPriorityUpdates();
-    }
-  }, [currentIb]);
 
   async function nextIb() {
     setReady(false);
@@ -38,38 +34,43 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     if (currentIb) {
       // Update priority and schedule
       // TODO
-
-      // Empty current ib data in globals
-      delete GLOBALS.current;
     }
 
     // Clean up
-    manualPriority.current = undefined;
+    delete GLOBALS.current;
 
+    // Get next Ib in queue
     const ib = GLOBALS.queue.shift();
-    if (!ib) {
-      // Queue exhausted, learning finished.
-      setCurrentIb(null);
-      setReady(true);
-      return;
-    }
 
-    // If there's a new ib in the queue, populate the global
-    // current ib data, and then set.
-    const contents = await getBlockHierarchyContent(ib.uuid, 3);
-    GLOBALS.current = {
-      ib: ib,
-      start: new Date(),
-      contents: contents,
-      newContents: contents
+    if (ib) {
+      // Populate the global current ib data
+      const contents = await getBlockHierarchyContent(ib.uuid, 3);
+      GLOBALS.current = {
+        ib: ib,
+        start: new Date(),
+        contents: contents,
+        newContents: contents
+      }
     }
-    setCurrentIb(ib); 
+    updateCurrentIb(ib);
+  }
+
+  async function updateCurrentIb(ib: IncrementalBlock | undefined) {
+    setCurrentIb(ib);
+    if (!ib) return;
+    await getPriorityUpdates();
+    setManualPriority(GLOBALS.current?.manualPriority);
+    if (GLOBALS.current?.manualInterval) {
+      setInterval(GLOBALS.current.manualInterval);
+    } else {
+      setInterval(nextInterval(ib));
+    }
     setReady(true);
   }
 
-  function setManualPriority(meanPiority: number) {
-    manualPriority.current = meanPiority;
+  function updateManualPriority(meanPiority: number) {
     GLOBALS.current!.manualPriority = meanPiority;
+    setManualPriority(meanPiority);
   }
 
   async function getPriorityUpdates() {
@@ -77,6 +78,12 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     GLOBALS.current.newContents = await getBlockHierarchyContent(GLOBALS.current.ib.uuid, 3);
     const updates = getPriorityUpdate(GLOBALS.current);
     setPriorityUpdates(updates);
+  }
+
+  async function postpone() {
+    setReady(false);
+    // TODO: postpone
+    nextIb();
   }
 
   if (!ready) return <div>Loading...</div>;
@@ -90,22 +97,32 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
   const content = currentIb.block!.content.split('\n')[0];
 
-  // Handle changes related to priority
+  // Handle changes related to priority.
+  // Manual priority overrides algorithm-decided priority.
   let newBeta = currentIb.beta!;
   let updatesHtml = <div></div>;
-  if (priorityUpdates) {
+  if (manualPriority) {
+    newBeta = newBeta.copy();
+    newBeta.mean = manualPriority;
+  } else if (priorityUpdates) {
     newBeta = new Beta(newBeta!.a + priorityUpdates.a, newBeta!.b);
     updatesHtml = <div>
       <span>Time: {priorityUpdates.aTime} ({priorityUpdates.scoreTime})</span>
       <span>Content: {priorityUpdates.aContent} ({priorityUpdates.scoreContent})</span>
     </div>
   }
-  const meanPriority = manualPriority.current ? manualPriority.current : newBeta.mean;
+  const meanPriority = manualPriority ?? newBeta.mean;
+
+  // Handle scheduling
+  let nextDue = todayMidnight();
+  if (interval) {
+    nextDue = addDays(nextDue, interval);
+  }
 
   return (
-    <div className="flex flex-col bg-white py-2 w-full text-sm">
+    <div className="flex flex-col bg-white w-full text-sm">
       <div 
-        className="flex hover:bg-gray-100 text-gray-800 "
+        className="flex py-2 hover:bg-gray-100 text-gray-800 "
         onClick={() => logseq.App.pushState('page', { name: currentIb.uuid })}
       >
         <span className="w-2/12">{(currentIb.sample!*100).toFixed(2)}%</span>
@@ -115,33 +132,67 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
       <hr></hr>
 
       <div className="py-2">
-        <div className="flex">
-          <BetaGraph beta={currentIb.beta!} width={120} height={60}></BetaGraph>
-          <i className="ti ti-arrow-big-right-line"></i>
-          <BetaGraph beta={newBeta!} width={120} height={60}></BetaGraph>
+        <p>Priority</p>
+        <div className="flex items-center">
+          <div className="border grow-0">
+            <BetaGraph beta={currentIb.beta!} width={120} height={60}></BetaGraph>
+          </div>
+          <p className="grow">→</p>
+          <div className="border grow-0">
+            <BetaGraph beta={newBeta!} width={120} height={60}></BetaGraph>
+          </div>
         </div>
-        <PrioritySlider
-          init={meanPriority}
-          onChange={(val) => setManualPriority(val)}
-        ></PrioritySlider>
+        <div className="py-1 px-6">
+          <PrioritySlider
+            init={meanPriority}
+            onChange={updateManualPriority}
+          ></PrioritySlider>
+        </div>
       </div>
 
-      <div className="flex py-2">
-        <DatePicker
-          className="border"
-          selected={currentIb.dueDate}
-          dateFormat="dd/MM/yyyy"
-          disabled
-        />
-        <i className="ti ti-arrow-big-right-line"></i>
-        {/* <DatePicker
-          className="border"
-          selected={currentIb.dueDate}
-          onChange={(date) => updateDueDate(date)}
-          minDate={new Date()}
-          monthsShown={1}
-          dateFormat="dd/MM/yyyy"
-        /> */}
+      <div className="py-2">
+        <p>Schedule</p>
+
+        <div className="flex items-center">
+          {/* <DatePicker
+            className="border"
+            selected={currentIb.dueDate}
+            dateFormat="dd/MM/yyyy"
+            disabled
+          /> */}
+          <p className="border grow">
+            {format(currentIb.dueDate!, 'dd/MM/yyyy')}
+          </p>
+          <p className="grow">→</p>
+          <DatePicker
+            className="border grow"
+            selected={nextDue}
+            onChange={(date) => date && setInterval(dateDiffInDays(todayMidnight(), date))}
+            minDate={new Date()}
+            monthsShown={1}
+            dateFormat="dd/MM/yyyy"
+          />
+        </div>
+
+        <div className="flex items-center py-1">
+          <span>Interval</span>
+          <input
+            className="border grow-0" 
+            type="number" 
+            value={interval}
+            onChange={(e) => setInterval(parseFloat(e.target.value))}
+            min="1" 
+            step="1"
+          >
+          </input>
+          <div className="grow"></div>
+          <button
+            className="border"
+            onClick={postpone}
+          >
+            Postpone
+          </button>
+        </div>
       </div>
 
       <hr></hr>

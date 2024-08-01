@@ -172,7 +172,9 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
             max="5" 
             step="0.1"
           ></input>
-          <p className="text-neutral-400 text-xs">{scheduleList}</p>
+          <div className="text-neutral-400 text-xs flex items-center">
+            {scheduleList}
+          </div>
         </div>
       </div></fieldset></form>
     </div>

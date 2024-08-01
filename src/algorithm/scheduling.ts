@@ -8,5 +8,5 @@ export function initialIntervalFromMean(mean: number) : number {
 }
 
 export function nextInterval(ib: IncrementalBlock) : number {
-  return ib.interval! * ib.multiplier
+  return Math.ceil(ib.interval! * ib.multiplier);
 }
