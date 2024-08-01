@@ -3,12 +3,12 @@ import "@logseq/libs";
 import React from "react";
 import * as ReactDOM from "react-dom/client";
 import App from "./App";
-import Beta from "./algorithm/beta";
 import "./index.css";
 import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
 import { handleMacroRendererSlotted } from "./logseq/macro";
+import { onCreateIbCommand } from "./logseq/command";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -56,6 +56,16 @@ function main() {
     .muted {
       color: grey;
     }
+
+    .ib__container {
+      display: flex;
+    }
+
+    .ib__container > div {
+      display: flex;
+      padding-left: 4px;
+      padding-right: 4px;
+    }
   `);
 
   logseq.App.registerUIItem("toolbar", {
@@ -67,37 +77,8 @@ function main() {
     `
   });
 
-  logseq.Editor.registerSlashCommand('Turn into incremental block',
-    async ({ uuid }: { uuid: string }) => {
-      const block = await logseq.Editor.getBlock(uuid);
-      if (!block) return;
-      console.log(block);
-
-      let props = new Map<string, any>([
-        ['ib-a', block.properties?.ibA ?? 1.0],
-        ['ib-b', block.properties?.ibB ?? 1.0],
-      ]);
-      console.log(props);
-      props.set('ib-sample', 
-        block.properties?.ibSample ?? new Beta(props.get('ib-a'), props.get('ib-b')).sample());
-      for (let [prop, val] of props) {
-        await logseq.Editor.upsertBlockProperty(block.uuid, prop, val);
-      }
-    }
-  );
-
-  logseq.provideStyle(`
-    .ib__container {
-      display: flex;
-    }
-
-    .ib__container > div {
-      display: flex;
-      padding-left: 4px;
-      padding-right: 4px;
-    }
-  `)
-
+  logseq.Editor.registerSlashCommand('Turn into incremental block', onCreateIbCommand);
+  logseq.Editor.registerBlockContextMenuItem('Turn into incremental block', onCreateIbCommand);
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
 }
 

@@ -142,7 +142,7 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
       <form><fieldset disabled={busy}><div className="flex divide-x">
         <div className="p-2 py-0">
           <p className="font-semibold text-gray-90">Priority</p>
-          <div className="border">
+          <div className="border w-fit">
             {beta && <BetaGraph beta={beta} width={120} height={60}></BetaGraph>}
           </div>
           {beta && <PrioritySlider

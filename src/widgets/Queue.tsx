@@ -39,23 +39,49 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
     </div>;
   }
 
-  return (
+  let queueView;
+  if (iblocks.length > 0) {
+    queueView = (
     <div>
-      <button 
-        className="bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-4 border-blue-700 hover:border-blue-500 rounded" 
-        onClick={onLearn}
-      >
-        Learn 
-      </button>
-      <input 
-        type="text" 
-        className="bg-neutral-100 text-gray-900 focus:ring-transparent text-sm rounded-lg block w-full p-2.5">
-      </input>
+      <div className="py-2">
+        <input 
+          type="text" 
+          className="bg-neutral-100 text-gray-900 focus:ring-transparent text-sm rounded-lg block w-full p-2.5">
+        </input>
+      </div>
       <Virtuoso
         style={{ height: '250px' }}
         totalCount={iblocks.length}
         itemContent={createBlockItem}
       ></Virtuoso>
+    </div>
+    );
+  } else {
+    queueView = (
+      <div className="text-neutral-500 flex justify-center">
+        <span>Queue is empty.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between">
+        <button 
+          className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-4 border-blue-700 hover:border-blue-500 rounded ${iblocks.length == 0 && "cursor-not-allowed"}`}
+          disabled={iblocks.length == 0}
+          onClick={onLearn}
+        >
+          Learn 
+        </button>
+        <button 
+          className="hover:bg-gray-100 border py-1 px-1 rounded" 
+          onClick={() => {}}
+        >
+          🔄
+        </button>
+      </div>
+      {queueView}
     </div>
   );
 }
