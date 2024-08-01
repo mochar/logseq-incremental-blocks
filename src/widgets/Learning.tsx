@@ -68,9 +68,17 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     setReady(true);
   }
 
-  function updateManualPriority(meanPiority: number) {
+  function updateManualPriority(meanPiority: number | undefined) {
     GLOBALS.current!.manualPriority = meanPiority;
     setManualPriority(meanPiority);
+  }
+
+  function updateManualInterval(val: number | undefined) {
+    GLOBALS.current!.manualInterval = val;
+    if (!val) {
+      val = nextInterval(currentIb!);
+    }
+    setInterval(val);
   }
 
   async function getPriorityUpdates() {
@@ -99,6 +107,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
   // Handle changes related to priority.
   // Manual priority overrides algorithm-decided priority.
+  const prioritizeManually = Boolean(manualPriority);
   let newBeta = currentIb.beta!;
   let updatesHtml = <div></div>;
   if (manualPriority) {
@@ -114,6 +123,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   const meanPriority = manualPriority ?? newBeta.mean;
 
   // Handle scheduling
+  const scheduleManually = Boolean(GLOBALS.current?.manualInterval);
   let nextDue = todayMidnight();
   if (interval) {
     nextDue = addDays(nextDue, interval);
@@ -132,12 +142,27 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
       <hr></hr>
 
       <div className="py-2">
-        <p>Priority</p>
-        <div className="flex items-center">
+        <div className="flex items-center justify-between">
+          <p>Priority</p>
+          <p>
+            {prioritizeManually && <span className="text-neutral-600">
+              manual
+              <button
+              className="button border"
+              onClick={() => updateManualPriority(undefined)}
+              >
+                <span>⮌</span>
+              </button>
+            </span>
+            }
+          </p>
+        </div>
+
+        <div className="flex items-center justify-between">
           <div className="border grow-0">
             <BetaGraph beta={currentIb.beta!} width={120} height={60}></BetaGraph>
           </div>
-          <p className="grow">→</p>
+          <p className="text-neutral-400 px-2">🠲</p>
           <div className="border grow-0">
             <BetaGraph beta={newBeta!} width={120} height={60}></BetaGraph>
           </div>
@@ -151,19 +176,27 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
       </div>
 
       <div className="py-2">
-        <p>Schedule</p>
+        <div className="flex items-center justify-between">
+          <p>Schedule</p>
+          <p>
+            {scheduleManually && <span className="text-neutral-600">
+              manual
+              <button
+              className="button border"
+              onClick={() => updateManualInterval(undefined)}
+              >
+                <span>⮌</span>
+              </button>
+            </span>
+            }
+          </p>
+        </div>
 
-        <div className="flex items-center">
-          {/* <DatePicker
-            className="border"
-            selected={currentIb.dueDate}
-            dateFormat="dd/MM/yyyy"
-            disabled
-          /> */}
+        <div className="flex items-center justify-between">
           <p className="border grow">
             {format(currentIb.dueDate!, 'dd/MM/yyyy')}
           </p>
-          <p className="grow">→</p>
+          <p className="text-neutral-400 px-2">🠲</p>
           <DatePicker
             className="border grow"
             selected={nextDue}
@@ -177,17 +210,17 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
         <div className="flex items-center py-1">
           <span>Interval</span>
           <input
-            className="border grow-0" 
+            className="border px-2" 
             type="number" 
             value={interval}
-            onChange={(e) => setInterval(parseFloat(e.target.value))}
+            onChange={(e) => updateManualInterval(parseFloat(e.target.value))}
             min="1" 
             step="1"
           >
           </input>
           <div className="grow"></div>
           <button
-            className="border"
+            className="border px-1"
             onClick={postpone}
           >
             Postpone
@@ -197,22 +230,23 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
       <hr></hr>
 
-      <div className="flex py-2">
+      <div className="flex justify-between py-2">
         <button 
-          className="bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-4 border-blue-700 hover:border-blue-500 rounded" 
+          className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-4 border-blue-700 hover:border-blue-500 rounded" 
           onClick={nextIb}
         >
-          Next
+          Next rep
         </button>
+        <div className="flex-grow"></div>
         <button 
           className="hover:bg-gray-100 border py-1 px-1 w-1/6 rounded" 
           onClick={offLearn}
         >
-          Stop
+          Finish
         </button>
       </div>
 
-      {updatesHtml}
+      {/* {updatesHtml} */}
     </div>
   );
 }
