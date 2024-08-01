@@ -36,6 +36,22 @@ export async function queryDueIbs(where: string = '') : Promise<IncrementalBlock
   return await queryIncrementalBlocks(where);
 }
 
+export async function queryOverdueUnupdatedIbs() : Promise<IncrementalBlock[]> {
+  const today = todayMidnight().getTime();
+  const where = `
+  [(< ?due ${today})]
+
+  (or-join [?prop]
+    (not [(get ?prop :ib-updated)])
+    (and
+      [(get ?prop :ib-updated) ?updated]
+      [(< ?updated ${today})]
+    )
+  )
+  `;
+  return await queryIncrementalBlocks(where);
+}
+
 export async function queryDueIbsWithoutSample() : Promise<IncrementalBlock[]> {
   const query = `
   [
