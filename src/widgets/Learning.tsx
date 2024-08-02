@@ -80,6 +80,13 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   async function updateCurrentIb(ib: IncrementalBlock | undefined) {
     setCurrentIb(ib);
     if (ib) {
+      // Open ib's block in page
+      const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
+      if (openIb) {
+        logseq.App.pushState('page', { name: ib.uuid })
+      }
+
+      // Populate ib data
       await getPriorityUpdates();
       setManualPriority(GLOBALS.current?.manualPriority);
       if (GLOBALS.current?.manualInterval) {

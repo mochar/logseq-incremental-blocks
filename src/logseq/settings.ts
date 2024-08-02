@@ -11,6 +11,20 @@ const settings: SettingSchemaDesc[] = [
     type: 'number'
   },
   {
+    key: 'queueTimer',
+    title: 'Queue update frequency',
+    description: 'In minutes. Only updates once the menu icon has been clicked.',
+    default: 1,
+    type: 'number'
+  },
+  {
+    key: 'learnAutoOpen',
+    title: 'Go to block on repetition',
+    description: 'Immediately open the block that is currently being reviewed.',
+    default: true,
+    type: 'boolean'
+  },
+  {
     key: 'priorityRainbow',
     title: 'Rainbow',
     description: 'Rainbow',

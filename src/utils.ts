@@ -70,8 +70,6 @@ export function interpolateColor(palette: string[], percent: number) {
   const rightIndex = Math.ceil(palSize * percent);
   const color1 = palette[rightIndex-1];
   const color2 = palette[rightIndex];
-  console.log(color1);
-  console.log(color2);
 
   // Convert the hex colors to RGB values
   const r1 = parseInt(color1.substring(1, 3), 16);

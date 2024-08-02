@@ -17,7 +17,8 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
       });
     } else {
       const minutesSinceLastRefresh = GLOBALS.queue.minutesSinceLastRefresh();
-      if (minutesSinceLastRefresh != null && minutesSinceLastRefresh > 1) {
+      const minutesThreshold = logseq.settings?.queueTimer as number ?? 1.;
+      if (minutesSinceLastRefresh != null && minutesSinceLastRefresh > minutesThreshold) {
         refresh();
       } else {
         setIblocks(GLOBALS.queue.ibs)
