@@ -37,7 +37,7 @@ function main() {
     zIndex: 11,
   });
 
-  const openIconName = "template-plugin-open";
+  const openIconName = "ib-plugin-open";
 
   logseq.provideStyle(css`
     .${openIconName} {

@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import GLOBALS from "../globals";
 import Queue from "./Queue";
 import Learning from "./Learning";
+import { logseq as PL } from "../../package.json";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -12,6 +13,13 @@ export default function MainWindow() {
     GLOBALS.learning = learning;
     delete GLOBALS.current;
     setLearning(learning);
+
+    const color = learning ? 'hotpink' : 'dimgrey';
+    logseq.provideStyle(`
+      #${PL.id} {
+        color: ${color};
+      }
+    `);
   }
 
   return (
