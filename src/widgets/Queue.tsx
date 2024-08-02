@@ -2,6 +2,7 @@ import { GLOBALS } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
+import IbItem from "./IbItem";
 
 export default function Queue({ onLearn } : { onLearn: () => void }) {
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
@@ -34,23 +35,10 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
     console.log('refreshed!');
   }
 
-  function createBlockItem(i: number) {
-    const ib = iblocks[i];
-    // const content = trimContent(ib.block!);
-    const content = ib.block!.content.split('\n')[0];
-    return <div
-      className="flex bg-white hover:bg-gray-100 text-gray-800 py-2 w-full text-sm"
-      onClick={() => logseq.App.pushState('page', { name: ib.uuid })}
-    >
-      <span className="w-2/12">{(ib.sample!*100).toFixed(2)}%</span>
-      <span className="w-full">{content}</span>
-    </div>;
-  }
-
   let queueView;
   if (iblocks.length > 0) {
     queueView = (
-    <div>
+    <div className="mt-1">
       {/* <div className="py-2">
         <input 
           type="text" 
@@ -60,7 +48,7 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
       <Virtuoso
         style={{ height: '250px' }}
         totalCount={iblocks.length}
-        itemContent={createBlockItem}
+        itemContent={(i) => IbItem({ ib: iblocks[i] })}
       ></Virtuoso>
     </div>
     );

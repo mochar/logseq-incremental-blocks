@@ -9,6 +9,7 @@ import DatePicker from "react-datepicker";
 import PrioritySlider from "./PrioritySlider";
 import { nextInterval } from "../algorithm/scheduling";
 import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils";
+import IbItem from "./IbItem";
 
 export default function Learning({ offLearn }: { offLearn: () => void }) {
   const [ready, setReady] = React.useState<boolean>(false);
@@ -134,8 +135,6 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     </div>
   } 
 
-  const content = currentIb.block!.content.split('\n')[0];
-
   // Handle changes related to priority.
   // Manual priority overrides algorithm-decided priority.
   const prioritizeManually = Boolean(manualPriority);
@@ -162,15 +161,9 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
   return (
     <div className="flex flex-col bg-white w-full text-sm">
-      <div 
-        className="flex py-2 hover:bg-gray-100 text-gray-800 "
-        onClick={() => logseq.App.pushState('page', { name: currentIb.uuid })}
-      >
-        <span className="w-2/12">{(currentIb.sample!*100).toFixed(2)}%</span>
-        <span className="w-full">{content}</span>
+      <div className="border rounded">
+        <IbItem ib={currentIb}></IbItem>
       </div>
-
-      <hr></hr>
 
       <div className="py-2">
         <div className="flex items-center justify-between">
@@ -189,7 +182,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
           </p>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-center">
           <div className="border grow-0">
             <BetaGraph beta={currentIb.beta!} width={120} height={60}></BetaGraph>
           </div>
