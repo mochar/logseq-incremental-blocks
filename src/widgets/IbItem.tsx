@@ -13,7 +13,7 @@ export default function IbItem({ ib }: { ib: IncrementalBlock }) {
     onClick={() => logseq.App.pushState('page', { name: ib.uuid })}
   >
     <span 
-      className="w-12 text-xs font-medium m-1 px-1 py-0.5 rounded"
+      className="w-12 text-xs text-center font-medium m-1 px-1 py-0.5 rounded"
       style={{ backgroundColor: bgColor }}
     >
       {(ib.sample!*100).toFixed(2)}%

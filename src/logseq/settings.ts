@@ -4,6 +4,13 @@ import { SettingSchemaDesc } from '@logseq/libs/dist/LSPlugin';
 
 const settings: SettingSchemaDesc[] = [
   {
+    key: 'defaultPriority',
+    title: 'Default priority (0=low, 1=high)',
+    description: 'Use this priority by default unless inherited from parent or page.',
+    default: 0.5,
+    type: 'number'
+  },
+  {
     key: 'defaultMultiplier',
     title: 'Default scheduler multiplier',
     description: 'Default scheduler multiplier.',
