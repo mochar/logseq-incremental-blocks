@@ -26,6 +26,17 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     } else {
       nextIb();
     }
+
+    // On a timer, get new priority updates. This is because
+    // time spent on an ib increases priority.
+    let timer: NodeJS.Timeout;
+    const getRepeatUpdates = async function() {
+      console.log('getting repeat updates');
+      await getPriorityUpdates();
+      timer = setTimeout(getRepeatUpdates, 2000);
+    }
+    getRepeatUpdates();
+    return () => clearTimeout(timer);
   }, []);
 
   async function nextIb(postpone: boolean = false) {
