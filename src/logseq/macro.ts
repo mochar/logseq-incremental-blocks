@@ -1,3 +1,4 @@
+import { GLOBALS } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
 import { dateDiffInDays, formatDate } from "../utils";
 
@@ -42,20 +43,38 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
     `;
   }
 
+  let repHtml = '';
+  const current = GLOBALS.queue.current;
+  if (current && current.ib.uuid == ib.uuid) {
+    repHtml = `
+      <button 
+        class="rounded bg-blue-500 hover:bg-blue-400 text-white border-b-4 border-blue-700 hover:border-blue-500 flex items-center ml-2"
+        data-on-click="nextRep"
+      >
+        <span class="px-2">Next rep</span>
+      </button>
+    `;
+  }
+
   logseq.provideUI({
     key: `ib__${slot}`,
     slot,
     reset: true,
     template: `
-    <button
-      class="ib__container rounded-lg border text-sm flex" 
-      data-on-click="togglePopover" 
-      data-on-focusout="hidePopover"
-      data-block-uuid="${payload.uuid}"
-      data-slot-id="${slot}"
-    >
-      ${priorityHtml}
-      ${scheduleHtml}
-    </button>`
+    <div class="text-sm flex">
+      <button
+        class="rounded-lg border flex" 
+        data-on-click="togglePopover" 
+        data-on-focusout="hidePopover"
+        data-block-uuid="${payload.uuid}"
+        data-slot-id="${slot}"
+      >
+        ${priorityHtml}
+        ${scheduleHtml}
+      </button>
+
+      ${repHtml}
+    </div>
+    `
   });
 }

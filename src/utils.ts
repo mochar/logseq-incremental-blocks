@@ -67,7 +67,7 @@ export function formatDate(date: Date) : string {
 export function interpolateColor(palette: string[], percent: number) {
   // Get bucket
   const palSize = palette.length;
-  const rightIndex = Math.ceil(palSize * percent);
+  const rightIndex = Math.floor(palSize * percent);
   const color1 = palette[rightIndex-1];
   const color2 = palette[rightIndex];
 

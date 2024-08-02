@@ -1,13 +1,13 @@
-import IbQueue from "./queue";
+import LearnQueue from "./queue";
 
 interface Globals {
   learning: boolean,
-  queue: IbQueue,
+  queue: LearnQueue,
 }
 
 const GLOBALS: Globals = {
   learning: false,
-  queue: new IbQueue(),
+  queue: new LearnQueue(),
 }
 
 const PRIORITY_PALETTE = [

@@ -29,6 +29,14 @@ function main() {
 
   function createModel() {
     return {
+      async nextRep() {
+        if (!GLOBALS.learning) return;
+        await GLOBALS.queue.nextRep({});
+        const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
+        if (GLOBALS.queue.current && openIb) {
+          logseq.App.pushState('page', { name: GLOBALS.queue.current.ib.uuid });
+        }
+      }
     };
   }
 
@@ -56,16 +64,6 @@ function main() {
 
     .muted {
       color: grey;
-    }
-
-    .ib__container {
-      display: flex;
-    }
-
-    .ib__container > div {
-      display: flex;
-      padding-left: 4px;
-      padding-right: 4px;
     }
   `);
 

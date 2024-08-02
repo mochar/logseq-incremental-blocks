@@ -3,8 +3,7 @@ import IncrementalBlock from "../IncrementalBlock";
 import { GLOBALS } from "../globals";
 import Beta from "../algorithm/beta";
 import BetaGraph from "./BetaGraph";
-import { getBlockHierarchyContent } from "../logseq/utils";
-import { getPriorityUpdate, PriorityUpdate } from "../algorithm/priority";
+import { PriorityUpdate } from "../algorithm/priority";
 import DatePicker from "react-datepicker";
 import PrioritySlider from "./PrioritySlider";
 import { nextInterval } from "../algorithm/scheduling";
@@ -33,7 +32,6 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     // time spent on an ib increases priority.
     let timer: NodeJS.Timeout;
     const getRepeatUpdates = async function() {
-      console.log('getting repeat updates');
       await getPriorityUpdates();
       timer = setTimeout(getRepeatUpdates, 2000);
     }
@@ -44,49 +42,30 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   async function nextIb(postpone: boolean = false) {
     setReady(false);
 
-    if (currentIb) {
-      const ib = currentIb;
-      const newDue = addDays(todayMidnight(), interval!);
+    // Get next rep ib in queue
+    if (postpone) {
+      await queue.nextRep({ postponeInterval: interval! });
+    } else {
+      await queue.nextRep({});
+    }
+    updateCurrentIb(queue.current?.ib);
 
-      if (postpone) {
-        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-due', newDue.getTime());
-      } else {
-        // Update priority 
-        const newBeta = ib.beta!.copy();
-        if (manualPriority) {
-          newBeta.mean = manualPriority;
-        } else {
-          const updates = (await getPriorityUpdates())!;
-          newBeta.a = newBeta.a + updates.a;
-        }
-        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-a', newBeta.a);
-        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-b', newBeta.b);
-
-        // Update schedule
-        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-interval', Math.ceil(interval!));
-        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-due', newDue.getTime());
-
-        // Others
-        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-reps', ib.reps + 1);
+    // Move to next ib page.
+    // Not in updateCurrentIb because dont want to move everything
+    // main popup is opened.
+    if (queue.current) {
+      const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
+      if (openIb) {
+        logseq.App.pushState('page', { name: queue.current.ib.uuid })
       }
     }
-
-    // Get next Ib in queue
-    await queue.next();
-    updateCurrentIb(queue.current?.ib);
   }
 
   async function updateCurrentIb(ib: IncrementalBlock | undefined) {
     setCurrentIb(ib);
     if (ib) {
-      // Open ib's block in page
-      const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
-      if (openIb) {
-        logseq.App.pushState('page', { name: ib.uuid })
-      }
-
       // Populate ib data
-      await getPriorityUpdates();
+      await queue.getPriorityUpdate();
       setManualPriority(queue.current?.manualPriority);
       if (queue.current?.manualInterval) {
         setInterval(queue.current.manualInterval);
@@ -110,12 +89,10 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     setInterval(val);
   }
 
-  async function getPriorityUpdates() : Promise<PriorityUpdate | null> {
-    if (!queue.current) return null;
-    queue.current.newContents = await getBlockHierarchyContent(queue.current.ib.uuid, 3);
-    const updates = getPriorityUpdate(queue.current);
-    setPriorityUpdates(updates);
-    return updates;
+  async function getPriorityUpdates() {
+    if (!queue.current) return;
+    await queue.getPriorityUpdate();
+    setPriorityUpdates(queue.current.priorityUpdate);
   }
 
   async function postpone() {

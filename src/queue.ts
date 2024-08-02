@@ -1,22 +1,25 @@
+import { getPriorityUpdate, PriorityUpdate } from "./algorithm/priority";
+import { nextInterval } from "./algorithm/scheduling";
 import IncrementalBlock from "./IncrementalBlock";
 import { queryDueIbs } from "./logseq/query";
 import { getBlockHierarchyContent } from "./logseq/utils";
-import { Completer } from "./utils";
+import { addDays, Completer, todayMidnight } from "./utils";
 
 export interface CurrentIBData {
   ib: IncrementalBlock,
   start: Date,
   contents: Record<string, string>,
   newContents: Record<string, string>,
+  priorityUpdate?: PriorityUpdate,
   manualPriority?: number,
   manualInterval?: number,
 }
 
-class IbQueue {
+class LearnQueue {
   private _ibs: IncrementalBlock[] = [];
   private _refreshDate: Date | undefined;
   private _refreshed = (new Completer()).complete(true);
-  // Public because edited from outside, find better way?
+  // Public because edited from outside, probably should change
   public current?: CurrentIBData;
 
   public async refresh() {
@@ -27,27 +30,6 @@ class IbQueue {
     this._ibs = ibs;
     this._refreshDate = new Date();
     this._refreshed.complete(true);
-  }
-
-  public async next() {
-    // Make sure ib has not been moved to another day
-    let ib = this._ibs.shift();
-    while (ib && !ib.dueToday()) {
-      ib = this._ibs.shift();
-    }
-
-    // Populate the current ib data
-    if (ib) {
-      const contents = await getBlockHierarchyContent(ib.uuid, 3);
-      this.current = {
-        ib: ib,
-        start: new Date(),
-        contents: contents,
-        newContents: contents
-      }
-    } else {
-      this.current = undefined;
-    }
   }
 
   public add(ib: IncrementalBlock) {
@@ -76,6 +58,63 @@ class IbQueue {
     this.current = undefined;
   }
 
+  public async getPriorityUpdate() {
+    if (!this.current) return;
+    this.current.newContents = await getBlockHierarchyContent(this.current.ib.uuid, 3);
+    this.current.priorityUpdate = getPriorityUpdate(this.current);
+  }
+
+  public async nextRep({ postponeInterval }: { postponeInterval?: number }) {
+    // Handle updating of current ib
+    if (this.current){
+      const current = this.current;
+
+      if (postponeInterval) {
+        const newDue = addDays(todayMidnight(), postponeInterval);
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
+      } else {
+        // Update priority 
+        const newBeta = current.ib.beta!.copy();
+        if (current.manualPriority) {
+          newBeta.mean = current.manualPriority;
+        } else {
+          await this.getPriorityUpdate();
+          newBeta.a = newBeta.a + this.current.priorityUpdate!.a;
+        }
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-a', newBeta.a);
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-b', newBeta.b);
+
+        // Update schedule
+        const interval = nextInterval(current.ib);
+        const newDue = addDays(todayMidnight(), interval);
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-interval', interval);
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
+
+        // Others
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.reps + 1);
+      }
+    }
+
+    // Get next ib, dismissing all that are not due (eg postoned while learning)
+    let ib = this._ibs.shift();
+    while (ib && !ib.dueToday()) {
+      ib = this._ibs.shift();
+    }
+
+    // Populate the next ib data
+    if (ib) {
+      const contents = await getBlockHierarchyContent(ib.uuid, 3);
+      this.current = {
+        ib: ib,
+        start: new Date(),
+        contents: contents,
+        newContents: contents
+      }
+    } else {
+      this.current = undefined;
+    }
+  }
+
   public get ibs() {
     return this._ibs;
   }
@@ -99,4 +138,4 @@ class IbQueue {
   }
 }
 
-export default IbQueue;
+export default LearnQueue;
