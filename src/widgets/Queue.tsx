@@ -1,4 +1,4 @@
-import GLOBALS from "../globals";
+import { GLOBALS } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
@@ -27,6 +27,7 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
   async function refresh() {
     setRefreshing(true);
     console.log('refreshing...');
+    // TODO: check new day. update priorities.
     await GLOBALS.queue.refresh();
     setIblocks(GLOBALS.queue.ibs);
     setRefreshing(false);
@@ -50,12 +51,12 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
   if (iblocks.length > 0) {
     queueView = (
     <div>
-      <div className="py-2">
+      {/* <div className="py-2">
         <input 
           type="text" 
           className="bg-neutral-100 text-gray-900 focus:ring-transparent text-sm rounded-lg block w-full p-2.5">
         </input>
-      </div>
+      </div> */}
       <Virtuoso
         style={{ height: '250px' }}
         totalCount={iblocks.length}

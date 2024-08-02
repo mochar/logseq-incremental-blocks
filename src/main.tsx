@@ -9,7 +9,7 @@ import settings from './logseq/settings';
 import { logseq as PL } from "../package.json";
 import { handleMacroRendererSlotted } from "./logseq/macro";
 import { onCreateIbCommand } from "./logseq/command";
-import GLOBALS from "./globals";
+import { GLOBALS } from "./globals";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);

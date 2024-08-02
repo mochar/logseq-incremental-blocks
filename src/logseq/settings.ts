@@ -10,6 +10,13 @@ const settings: SettingSchemaDesc[] = [
     default: 2.,
     type: 'number'
   },
+  {
+    key: 'priorityRainbow',
+    title: 'Rainbow',
+    description: 'Rainbow',
+    default: false,
+    type: 'boolean'
+  }
 ];
 
 export default settings;

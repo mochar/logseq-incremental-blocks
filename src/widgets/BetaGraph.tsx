@@ -1,5 +1,6 @@
 import React from "react";
 import Beta from "../algorithm/beta";
+import { PRIORITY_PALETTE } from "../globals";
 
 interface BetaGraphParams {
   beta: Beta, 
@@ -15,22 +16,39 @@ export default function BetaGraph({ beta, width, height, isNew=false }: BetaGrap
     const ctx = ref.current?.getContext('2d');
     if (!ctx) return;
 
+    // Clear 
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
     const h = height;
     const w = width;
     const hOffset = 3;
-    const lingradPath = ctx.createLinearGradient(w / 2, hOffset, w / 2, h);
-    lingradPath.addColorStop(0, "#4682B4");
-    lingradPath.addColorStop(1, "rgba(256, 256, 256, 0.98)");
-    ctx.strokeStyle = lingradPath;
-    ctx.lineWidth = 3;
-    const lingrad = ctx.createLinearGradient(w / 2, hOffset, w / 2, h);
-    lingrad.addColorStop(0, "#F2F2F2");
-    lingrad.addColorStop(0.3, "#F2F2F2");
-    lingrad.addColorStop(1, "rgba(256, 256, 256, 0.9)");
-    ctx.fillStyle = lingrad;
 
+    // Path styling
+    if (logseq.settings?.priorityRainbow as boolean ?? false) {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#00000044';
+
+      const lingrad = ctx.createLinearGradient(w, h/2+hOffset, 0, h/2+hOffset);
+      for (let i = 0; i < PRIORITY_PALETTE.length; i++) {
+        lingrad.addColorStop(i/(PRIORITY_PALETTE.length-1), PRIORITY_PALETTE[i]);
+      }
+      ctx.fillStyle = lingrad;
+    } else {
+      ctx.lineWidth = 3;
+
+      const lingradPath = ctx.createLinearGradient(w / 2, hOffset, w / 2, h);
+      lingradPath.addColorStop(0, "#4682B4");
+      lingradPath.addColorStop(1, "rgba(256, 256, 256, 0.98)");
+      ctx.strokeStyle = lingradPath;
+
+      const lingrad = ctx.createLinearGradient(w / 2, hOffset, w / 2, h);
+      lingrad.addColorStop(0, "#F2F2F2");
+      lingrad.addColorStop(0.3, "#F2F2F2");
+      lingrad.addColorStop(1, "rgba(256, 256, 256, 0.9)");
+      ctx.fillStyle = lingrad;
+    }
+
+    // PDF path
     ctx.beginPath();
     ctx.moveTo(0, h);
 

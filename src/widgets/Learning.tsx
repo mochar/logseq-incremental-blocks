@@ -1,6 +1,6 @@
 import React from "react";
 import IncrementalBlock from "../IncrementalBlock";
-import GLOBALS from "../globals";
+import { GLOBALS } from "../globals";
 import Beta from "../algorithm/beta";
 import BetaGraph from "./BetaGraph";
 import { getBlockHierarchyContent } from "../logseq/utils";

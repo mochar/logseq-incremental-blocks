@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import GLOBALS from "../globals";
+import { GLOBALS } from "../globals";
 import Queue from "./Queue";
 import Learning from "./Learning";
 import { logseq as PL } from "../../package.json";

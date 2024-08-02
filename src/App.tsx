@@ -3,7 +3,7 @@ import { useAppVisible } from "./utils";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 import Popover from "./widgets/Popover";
 import MainWindow from "./widgets/MainWindow";
-import GLOBALS from "./globals";
+import { GLOBALS } from "./globals";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.

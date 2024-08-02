@@ -10,7 +10,7 @@ import { betaFromMean } from "../algorithm/priority";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import BetaGraph from "./BetaGraph";
 import PrioritySlider from "./PrioritySlider";
-import GLOBALS from "../globals";
+import { GLOBALS } from "../globals";
 
 export default function Popover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
