@@ -1,5 +1,5 @@
+import { CurrentIBData } from "../queue";
 import Beta from "./beta";
-import { CurrentIBData } from "../globals";
 import stringComparison from "string-comparison";
 
 // Update priority manually

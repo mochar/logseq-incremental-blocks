@@ -11,6 +11,8 @@ import { nextInterval } from "../algorithm/scheduling";
 import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils";
 import IbItem from "./IbItem";
 
+const queue = GLOBALS.queue;
+
 export default function Learning({ offLearn }: { offLearn: () => void }) {
   const [ready, setReady] = React.useState<boolean>(false);
   const [currentIb, setCurrentIb] = React.useState<IncrementalBlock | null>();
@@ -19,9 +21,9 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   const [interval, setInterval] = React.useState<number>();
 
   React.useEffect(() => {
-    if (GLOBALS.current) {
-      updateCurrentIb(GLOBALS.current.ib);
-    } else if (GLOBALS.queue.length == 0) {
+    if (queue.current) {
+      updateCurrentIb(queue.current.ib);
+    } else if (queue.length == 0) {
       updateCurrentIb(undefined);
     } else {
       nextIb();
@@ -69,23 +71,9 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
       }
     }
 
-    // Clean up
-    delete GLOBALS.current;
-
     // Get next Ib in queue
-    const ib = GLOBALS.queue.next();
-
-    if (ib) {
-      // Populate the global current ib data
-      const contents = await getBlockHierarchyContent(ib.uuid, 3);
-      GLOBALS.current = {
-        ib: ib,
-        start: new Date(),
-        contents: contents,
-        newContents: contents
-      }
-    }
-    updateCurrentIb(ib);
+    await queue.next();
+    updateCurrentIb(queue.current?.ib);
   }
 
   async function updateCurrentIb(ib: IncrementalBlock | undefined) {
@@ -99,9 +87,9 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
       // Populate ib data
       await getPriorityUpdates();
-      setManualPriority(GLOBALS.current?.manualPriority);
-      if (GLOBALS.current?.manualInterval) {
-        setInterval(GLOBALS.current.manualInterval);
+      setManualPriority(queue.current?.manualPriority);
+      if (queue.current?.manualInterval) {
+        setInterval(queue.current.manualInterval);
       } else {
         setInterval(nextInterval(ib));
       }
@@ -110,12 +98,12 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   }
 
   function updateManualPriority(meanPiority: number | undefined) {
-    GLOBALS.current!.manualPriority = meanPiority;
+    queue.current!.manualPriority = meanPiority;
     setManualPriority(meanPiority);
   }
 
   function updateManualInterval(val: number | undefined) {
-    GLOBALS.current!.manualInterval = val;
+    queue.current!.manualInterval = val;
     if (!val) {
       val = nextInterval(currentIb!);
     }
@@ -123,9 +111,9 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   }
 
   async function getPriorityUpdates() : Promise<PriorityUpdate | null> {
-    if (!GLOBALS.current) return null;
-    GLOBALS.current.newContents = await getBlockHierarchyContent(GLOBALS.current.ib.uuid, 3);
-    const updates = getPriorityUpdate(GLOBALS.current);
+    if (!queue.current) return null;
+    queue.current.newContents = await getBlockHierarchyContent(queue.current.ib.uuid, 3);
+    const updates = getPriorityUpdate(queue.current);
     setPriorityUpdates(updates);
     return updates;
   }
@@ -137,9 +125,8 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   function finish() {
     // Return back to top of the queue, since we're not finished
     // with it yet.
-    if (currentIb) {
-      GLOBALS.queue.ibs.splice(0, 0, currentIb);
-    }
+    queue.currentBackToQueue();
+
     // Parent callback
     offLearn();
   }
@@ -171,7 +158,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   const meanPriority = manualPriority ?? newBeta.mean;
 
   // Handle scheduling
-  const scheduleManually = Boolean(GLOBALS.current?.manualInterval);
+  const scheduleManually = Boolean(queue.current?.manualInterval);
   let nextDue = todayMidnight();
   if (interval) {
     nextDue = addDays(nextDue, interval);

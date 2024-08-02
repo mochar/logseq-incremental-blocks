@@ -4,24 +4,26 @@ import React from "react";
 import { Virtuoso } from "react-virtuoso";
 import IbItem from "./IbItem";
 
+const queue = GLOBALS.queue;
+
 export default function Queue({ onLearn } : { onLearn: () => void }) {
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
   const [iblocks, setIblocks] = React.useState<IncrementalBlock[]>([]);
 
   React.useEffect(() => {
-    if (!GLOBALS.queue.refreshed.completed) {
+    if (!queue.refreshed.completed) {
       setRefreshing(true);
-      GLOBALS.queue.refreshed.promise.then(() => {
-        setIblocks(GLOBALS.queue.ibs);
+      queue.refreshed.promise.then(() => {
+        setIblocks(queue.ibs);
         setRefreshing(false);
       });
     } else {
-      const minutesSinceLastRefresh = GLOBALS.queue.minutesSinceLastRefresh();
+      const minutesSinceLastRefresh = queue.minutesSinceLastRefresh();
       const minutesThreshold = logseq.settings?.queueTimer as number ?? 1.;
       if (minutesSinceLastRefresh != null && minutesSinceLastRefresh > minutesThreshold) {
         refresh();
       } else {
-        setIblocks(GLOBALS.queue.ibs)
+        setIblocks(queue.ibs)
       }
     }
   }, []);
@@ -30,8 +32,8 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
     setRefreshing(true);
     console.log('refreshing...');
     // TODO: check new day. update priorities.
-    await GLOBALS.queue.refresh();
-    setIblocks(GLOBALS.queue.ibs);
+    await queue.refresh();
+    setIblocks(queue.ibs);
     setRefreshing(false);
     console.log('refreshed!');
   }

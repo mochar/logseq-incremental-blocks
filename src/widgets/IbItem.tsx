@@ -9,7 +9,7 @@ export default function IbItem({ ib }: { ib: IncrementalBlock }) {
   const bgColor = interpolateColor(PRIORITY_PALETTE, 1-ib.sample!);
 
   return <div
-    className="flex items-center cursor-pointer bg-white hover:bg-gray-100 text-gray-800 w-full text-sm"
+    className="flex items-start cursor-pointer bg-white hover:bg-gray-100 text-gray-800 w-full text-sm"
     onClick={() => logseq.App.pushState('page', { name: ib.uuid })}
   >
     <span 

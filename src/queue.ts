@@ -1,11 +1,23 @@
 import IncrementalBlock from "./IncrementalBlock";
 import { queryDueIbs } from "./logseq/query";
+import { getBlockHierarchyContent } from "./logseq/utils";
 import { Completer } from "./utils";
+
+export interface CurrentIBData {
+  ib: IncrementalBlock,
+  start: Date,
+  contents: Record<string, string>,
+  newContents: Record<string, string>,
+  manualPriority?: number,
+  manualInterval?: number,
+}
 
 class IbQueue {
   private _ibs: IncrementalBlock[] = [];
   private _refreshDate: Date | undefined;
   private _refreshed = (new Completer()).complete(true);
+  // Public because edited from outside, find better way?
+  public current?: CurrentIBData;
 
   public async refresh() {
     this._refreshed = new Completer();
@@ -17,13 +29,25 @@ class IbQueue {
     this._refreshed.complete(true);
   }
 
-  public next() : IncrementalBlock | undefined {
+  public async next() {
     // Make sure ib has not been moved to another day
     let ib = this._ibs.shift();
     while (ib && !ib.dueToday()) {
       ib = this._ibs.shift();
     }
-    return ib;
+
+    // Populate the current ib data
+    if (ib) {
+      const contents = await getBlockHierarchyContent(ib.uuid, 3);
+      this.current = {
+        ib: ib,
+        start: new Date(),
+        contents: contents,
+        newContents: contents
+      }
+    } else {
+      this.current = undefined;
+    }
   }
 
   public add(ib: IncrementalBlock) {
@@ -44,9 +68,12 @@ class IbQueue {
       }
     }
   }
-
-  public get current() : IncrementalBlock {
-    return this._ibs[0];
+  
+  public currentBackToQueue() {
+    if (this.current) {
+      this._ibs.splice(0, 0, this.current.ib);
+    }
+    this.current = undefined;
   }
 
   public get ibs() {

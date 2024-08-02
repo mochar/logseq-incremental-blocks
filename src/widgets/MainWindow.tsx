@@ -11,7 +11,6 @@ export default function MainWindow() {
   function toggleLearning(learning?: boolean) {
     learning = learning ?? !GLOBALS.learning;
     GLOBALS.learning = learning;
-    delete GLOBALS.current;
     setLearning(learning);
 
     const color = learning ? 'hotpink' : 'dimgrey';
