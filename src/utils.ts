@@ -60,6 +60,10 @@ export function addDays(date: Date, days: number) : Date {
   return newDate;
 }
 
+export function formatDate(date: Date) : string {
+  return date.toLocaleDateString('en-GB');
+}
+
 // https://stackoverflow.com/questions/34673902/typescript-equivalent-to-dart-completer
 export class Completer<T> {
   public readonly promise: Promise<T>;

@@ -1,6 +1,5 @@
 import IncrementalBlock from "../IncrementalBlock";
-import { format } from 'date-fns';
-import { dateDiffInDays } from "../utils";
+import { dateDiffInDays, formatDate } from "../utils";
 
 //@ts-ignore
 export async function handleMacroRendererSlotted({ slot, payload }) {
@@ -29,7 +28,7 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
 
   let scheduleHtml = '';
   if (ib.dueDate) {
-    const dateNice = format(ib.dueDate, 'yyyy-MM-dd');
+    const dateNice = formatDate(ib.dueDate);
     const diff = dateDiffInDays(new Date(), ib.dueDate);
     scheduleHtml = `${dateNice} (${diff}d)`;
     if (ib.interval) {

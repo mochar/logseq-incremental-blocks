@@ -8,8 +8,7 @@ import { getPriorityUpdate, PriorityUpdate } from "../algorithm/priority";
 import DatePicker from "react-datepicker";
 import PrioritySlider from "./PrioritySlider";
 import { nextInterval } from "../algorithm/scheduling";
-import { dateDiffInDays, todayMidnight } from "../utils";
-import { addDays, format } from "date-fns";
+import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils";
 
 export default function Learning({ offLearn }: { offLearn: () => void }) {
   const [ready, setReady] = React.useState<boolean>(false);
@@ -226,7 +225,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
         <div className="flex items-center justify-between">
           <p className="border grow">
-            {format(currentIb.dueDate!, 'dd/MM/yyyy')}
+            {formatDate(currentIb.dueDate!)}
           </p>
           <p className="text-neutral-400 px-2">🠲</p>
           <DatePicker
