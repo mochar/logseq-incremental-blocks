@@ -99,9 +99,6 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
           className="bg-neutral-100 text-gray-900 focus:ring-transparent text-sm rounded-lg block w-full p-2.5">
         </input>
       </div> */}
-      {refButtons.length > 0 && <div className="p-2 space-y-1">
-        {refButtons}
-      </div>}
       <Virtuoso
         style={{ height: '250px' }}
         totalCount={iblocks.length}
@@ -140,6 +137,11 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
         <span>Refreshing queue...</span>
       </div>
     }
+
+    {!refreshing && refButtons.length > 0 && <div className="p-2 space-y-1">
+      {refButtons}
+    </div>}
+
     {!refreshing && queueView}
     </div></fieldset></form>
   );
