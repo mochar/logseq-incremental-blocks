@@ -14,7 +14,7 @@ import { GLOBALS } from "../globals";
 
 export default function Popover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const originalBeta = useRef<Beta>();
+  const baseBeta = useRef<Beta>();
   const [beta, setBeta] = useState<Beta>();
   const [dueDate, setDueDate] = useState<Date>();
   const [multiplier, setMultiplier] = useState<number>(2.);
@@ -35,7 +35,8 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     const ib = IncrementalBlock.fromBlock(block);
     const beta = ib.beta ?? new Beta(1, 1);
     setBeta(beta);
-    originalBeta.current = beta;
+    // TODO this should later be fleshed out more.
+    baseBeta.current = ib.reps == 0 ? new Beta(1, 1) : beta;
     if (ib.dueDate) {
       setDueDate(ib.dueDate);
     } else {
@@ -69,7 +70,7 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
   async function updatePriority(meanPriority: number) {
     setBusy(true);
     const ib = await IncrementalBlock.fromUuid(block.uuid);
-    const beta = betaFromMean(meanPriority, { currentBeta: originalBeta.current });
+    const beta = betaFromMean(meanPriority, { currentBeta: baseBeta.current });
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-a', beta.a);
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-b', beta.b);
     setBeta(beta);
