@@ -19,13 +19,27 @@ class LearnQueue {
   private _ibs: IncrementalBlock[] = [];
   private _refreshDate: Date | undefined;
   private _refreshed = (new Completer()).complete(true);
+  public refs: string[] = [];
   // Public because edited from outside, probably should change
   public current?: CurrentIBData;
 
   public async refresh() {
+    await this._refreshed.promise;
     this._refreshed = new Completer();
     // await new Promise(resolve => setTimeout(resolve, 5000));
-    let ibs = await queryDueIbs();
+
+    let where = '';
+    //@ts-ignore
+    if (this.refs.length > 0) {
+      const refString = this.refs.map((r) => `"${r}"`).join(', ');
+      where = `
+      [?page :block/name ?pagename] 
+      [(contains? #{${refString}} ?pagename)] 
+      [?b :block/refs ?page]
+      `;
+    }
+    let ibs = await queryDueIbs(where);
+
     ibs = ibs.sort((a, b) => b.sample! - a.sample!);
     this._ibs = ibs;
     this._refreshDate = new Date();

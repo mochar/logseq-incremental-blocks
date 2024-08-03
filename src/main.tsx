@@ -10,6 +10,7 @@ import { logseq as PL } from "../package.json";
 import { handleMacroRendererSlotted } from "./logseq/macro";
 import { onCreateIbCommand } from "./logseq/command";
 import { GLOBALS } from "./globals";
+import { LSPluginBaseInfo } from "@logseq/libs/dist/LSPlugin.user";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -81,6 +82,12 @@ function main() {
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
 
   GLOBALS.queue.refresh();
+
+  document.addEventListener('keydown', function (e) {
+    if (e.keyCode === 27) {
+      logseq.hideMainUI()
+    }
+  }, false);
 }
 
 logseq.useSettingsSchema(settings).ready(main).catch(console.error);

@@ -3,11 +3,13 @@ import LearnQueue from "./queue";
 interface Globals {
   learning: boolean,
   queue: LearnQueue,
+  refs: string[],
 }
 
 const GLOBALS: Globals = {
   learning: false,
   queue: new LearnQueue(),
+  refs: []
 }
 
 const PRIORITY_PALETTE = [
