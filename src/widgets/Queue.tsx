@@ -67,7 +67,7 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
 
   const refButtons = refs.map((r) => {
     const selected = selectedRefs.includes(r);
-    const classes = selected ? 'ring-2 bg-gray-200' : '';
+    const classes = selected ? 'bg-gray-200 ring-1 ring-offset-1 ring-gray-500' : '';
     return (
       <span 
         key={r}
@@ -99,7 +99,7 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
           className="bg-neutral-100 text-gray-900 focus:ring-transparent text-sm rounded-lg block w-full p-2.5">
         </input>
       </div> */}
-      {refButtons.length > 0 && <div className="p-2">
+      {refButtons.length > 0 && <div className="p-2 space-y-1">
         {refButtons}
       </div>}
       <Virtuoso
@@ -121,7 +121,7 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
     <form><fieldset disabled={refreshing}><div>
       <div className="flex justify-between">
         <button 
-          className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-4 border-blue-700 hover:border-blue-500 rounded ${iblocks.length == 0 && "cursor-not-allowed"}`}
+          className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded ${iblocks.length == 0 && "cursor-not-allowed"}`}
           disabled={iblocks.length == 0}
           onClick={onLearn}
         >

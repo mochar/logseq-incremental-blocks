@@ -47,7 +47,7 @@ export function getPriorityUpdate(data: CurrentIBData) : PriorityUpdate {
   // Time component
   const now = new Date();
   const durationSeconds = (now.getTime() - data.start.getTime()) / 1000;
-  const timeAlpha = logistic(1, 10, .5, .1)(durationSeconds);
+  const timeAlpha = logistic(.5, 30, .1, .2)(durationSeconds);
 
   // Content component
   const uuids = new Set([...Object.keys(data.contents), ...Object.keys(data.newContents)]);

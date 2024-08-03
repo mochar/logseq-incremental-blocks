@@ -18,6 +18,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   const [priorityUpdates, setPriorityUpdates] = React.useState<PriorityUpdate>();
   const [manualPriority, setManualPriority] = React.useState<number>();
   const [interval, setInterval] = React.useState<number>();
+  const [autoOpen, setAutoOpen] = React.useState<boolean>(logseq.settings?.learnAutoOpen as boolean ?? true);
 
   React.useEffect(() => {
     if (queue.current) {
@@ -108,6 +109,11 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     offLearn();
   }
 
+  function toggleAutoOpen() {
+    logseq.updateSettings({ learnAutoOpen: !autoOpen });
+    setAutoOpen(!autoOpen);
+  }
+
   if (!ready) return <div>Loading...</div>;
 
   if (currentIb == null) {
@@ -142,6 +148,22 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
   return (
     <div className="flex flex-col bg-white w-full text-sm">
+
+      <div className="flex items-center justify-between py-1">
+        <span className="text-xs text-gray-500">🔁 {currentIb.reps+1}</span>
+
+        <label className="inline-flex items-center cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={autoOpen}
+            onChange={toggleAutoOpen}
+            className="sr-only peer">
+          </input>
+          <div className="relative w-9 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-gray-400"></div>
+          <span className="ms-2 text-xs text-gray-400 dark:text-gray-300">Follow</span>
+        </label>
+      </div>
+
       <div className="border rounded">
         <IbItem ib={currentIb}></IbItem>
       </div>
