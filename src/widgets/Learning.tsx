@@ -2,13 +2,13 @@ import React from "react";
 import IncrementalBlock from "../IncrementalBlock";
 import { GLOBALS } from "../globals";
 import Beta from "../algorithm/beta";
-import BetaGraph from "./BetaGraph";
 import { PriorityUpdate } from "../algorithm/priority";
 import DatePicker from "react-datepicker";
-import PrioritySlider from "./PrioritySlider";
+import MeanPrioritySlider from "./PrioritySlider";
 import { nextInterval } from "../algorithm/scheduling";
 import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils";
 import IbItem from "./IbItem";
+import BetaGraph from "./BetaGraph";
 
 const queue = GLOBALS.queue;
 
@@ -132,7 +132,6 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
       <span>Content: {priorityUpdates.aContent} ({priorityUpdates.scoreContent})</span>
     </div>
   }
-  const meanPriority = manualPriority ?? newBeta.mean;
 
   // Handle scheduling
   const scheduleManually = Boolean(queue.current?.manualInterval);
@@ -174,10 +173,10 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
           </div>
         </div>
         <div className="py-1 px-6">
-          <PrioritySlider
-            init={meanPriority}
+          <MeanPrioritySlider
+            val={newBeta!.mean}
             onChange={updateManualPriority}
-          ></PrioritySlider>
+          ></MeanPrioritySlider>
         </div>
       </div>
 

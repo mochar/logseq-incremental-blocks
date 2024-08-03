@@ -9,16 +9,16 @@ import { dateDiffInDays, todayMidnight } from "../utils";
 import { betaFromMean } from "../algorithm/priority";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import BetaGraph from "./BetaGraph";
-import PrioritySlider from "./PrioritySlider";
+import MeanPrioritySlider from "./PrioritySlider";
 import { GLOBALS } from "../globals";
 
 export default function Popover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const originalBeta = useRef<Beta>();
   const [beta, setBeta] = useState<Beta>();
   const [dueDate, setDueDate] = useState<Date>();
   const [multiplier, setMultiplier] = useState<number>(2.);
   const [interval, setInterval] = useState<number>();
-  const [schedule, setSchedule] = useState<number[]>([]);
   const [busy, setBusy] = useState<boolean>(false);
 
   useEffect(() => {
@@ -32,10 +32,10 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     }
 
     // Block properties
-    const props = block.properties!;
-    const ib = new IncrementalBlock(block.uuid, props);
+    const ib = IncrementalBlock.fromBlock(block);
     const beta = ib.beta ?? new Beta(1, 1);
     setBeta(beta);
+    originalBeta.current = beta;
     if (ib.dueDate) {
       setDueDate(ib.dueDate);
     } else {
@@ -43,23 +43,15 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     }
     if (ib.interval) setInterval(ib.interval);
     setMultiplier(ib.multiplier);
-
-    // Schedule
-    updateSchedule();
   }, [block]);
 
-  useEffect(() => {
-    updateSchedule();
-  }, [multiplier, interval, dueDate]);
-
-  function updateSchedule() {
-    if (!dueDate || !interval) return;
+  const schedule = React.useMemo(() : number[] => {
+    if (!dueDate || !interval) return [];
 
     const today = todayMidnight();
     let diff = dateDiffInDays(today, dueDate);
-    setSchedule([diff]);
     if (diff < 0) { // past due date
-      return;
+      return [diff];
     }
 
     const schedule = [diff];
@@ -71,13 +63,13 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
       // schedule.push(diff);
       schedule.push(_interval);
     }
-    setSchedule(schedule);
-  }
+    return schedule;
+  }, [multiplier, interval, dueDate]);
 
   async function updatePriority(meanPriority: number) {
     setBusy(true);
     const ib = await IncrementalBlock.fromUuid(block.uuid);
-    const beta = betaFromMean(meanPriority, ib.beta);
+    const beta = betaFromMean(meanPriority, { currentBeta: originalBeta.current });
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-a', beta.a);
     await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-b', beta.b);
     setBeta(beta);
@@ -86,7 +78,7 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     // For now only the initial interval.
     // See topic_interval.ipynb
     if (ib.reps === 0) {
-      const interval = initialIntervalFromMean(meanPriority);
+      const interval = initialIntervalFromMean(beta.mean);
       const due = new Date();
       due.setDate(due.getDate() + interval);
       await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', due.getTime());
@@ -150,10 +142,10 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
           <div className="border w-fit">
             {beta && <BetaGraph beta={beta} width={120} height={60}></BetaGraph>}
           </div>
-          {beta && <PrioritySlider
-            init={beta.mean}
+          {beta && <MeanPrioritySlider
+            val={beta.mean}
             onChange={updatePriority}
-          ></PrioritySlider>}
+          ></MeanPrioritySlider>}
         </div>
 
         <div className="p-2 py-0">

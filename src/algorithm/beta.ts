@@ -1,6 +1,7 @@
 import { jStat } from "jstat";
 import seedrandom from "seedrandom";
 import { todayMidnight } from "../utils";
+import { BETA_BOUNDS } from "../globals";
 
 function toBetaParams(mean: number, variance: number): {a: number, b: number} {
   let a = ((1 - mean) / variance - 1 / mean) * mean * mean;
@@ -9,6 +10,16 @@ function toBetaParams(mean: number, variance: number): {a: number, b: number} {
   a = Math.max(1e-10, a);
   b = Math.max(1e-10, b);
   return { a, b };
+}
+
+function toBetaMoments(a: number, b: number) : { mean: number, variance: number } {
+  const mean = jStat.beta.mean(a, b);
+  const variance = jStat.beta.variance(a, b);
+  return { mean, variance };
+}
+
+function boundParam(param: number) {
+  return Math.min(Math.max(param, BETA_BOUNDS.paramLower), BETA_BOUNDS.paramUpper);
 }
 
 class Beta {
@@ -36,9 +47,20 @@ class Beta {
     return new this(a, b);
   }
 
+  static fromMeanA(mean: number, a: number) {
+    const b = a * (1 / mean - 1);
+    return new this(a, b);
+  }
+
+  static fromMeanB(mean: number, b: number) {
+    const a = mean * b / (1 - mean);
+    return new this(a, b);
+  } 
+
   private setMoments() {
-    this._mean = jStat.beta.mean(this._a, this._b);
-    this._variance = jStat.beta.variance(this._a, this._b);
+    const {mean, variance} = toBetaMoments(this._a, this._b);
+    this._mean = mean;
+    this._variance = variance;
   }
 
   private setParams() {
@@ -75,8 +97,34 @@ class Beta {
     return Math.sqrt(this._variance);
   }
 
-  public varianceBound(): number {
+  public varianceUpperBound(): number {
     return this._mean * (1 - this._mean);
+  }
+
+  public correctForBounds() {
+    if (this._a < BETA_BOUNDS.paramLower || this._b < BETA_BOUNDS.paramLower) {
+      const min = Math.min(this._a, this._b);
+      const off = BETA_BOUNDS.paramLower - min;
+      if (this._a == min) {
+        this._a += off;
+        this._b = Beta.fromMeanA(this._mean, this._a).b;
+      } else {
+        this._b += off;
+        this._a = Beta.fromMeanB(this._mean, this._b).a;
+      }
+      this.setMoments();
+    } else if (this._a > BETA_BOUNDS.paramUpper || this._b > BETA_BOUNDS.paramUpper) {
+      const max = Math.max(this._a, this._b);
+      const off = max - BETA_BOUNDS.paramUpper;
+      if (this._a == max) {
+        this._a -= off;
+        this._b = Beta.fromMeanA(this._mean, this._a).b;
+      } else {
+        this._b -= off;
+        this._a = Beta.fromMeanB(this._mean, this._b).a;
+      }
+      this.setMoments();
+    } 
   }
 
   public get a() { 
@@ -104,12 +152,12 @@ class Beta {
   public set mean(mean) {
     this._mean = mean;
     // Can change variance bound leading to potentially invalid variance.
-    // TODO: Should throw error instead of silently adjusting?
-    const varBound = this.varianceBound();
-    if (this._variance > varBound) {
-      this.variance = varBound;
+    const varUpperBound = this.varianceUpperBound();
+    if (this._variance >= varUpperBound) {
+      this._variance = varUpperBound - 0.00001;
     }
     this.setParams();
+    this.correctForBounds();
   }
 
   public get variance() {

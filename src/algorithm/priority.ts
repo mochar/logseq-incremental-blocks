@@ -1,16 +1,15 @@
+import { BETA_BOUNDS } from "../globals";
 import { CurrentIBData } from "../queue";
 import Beta from "./beta";
 import stringComparison from "string-comparison";
 
 // Update priority manually
-export function betaFromMean(mean: number, currentBeta: Beta | null) : Beta {
-  const minMean = 0.2;
-  const maxMean = 0.8;
-  mean = minMean + (maxMean-minMean)*mean;
+export function betaFromMean(mean: number, opts: { currentBeta?: Beta | null } = {}) : Beta {
+  mean = Math.min(Math.max(mean, BETA_BOUNDS.meanLower), BETA_BOUNDS.meanUpper);
 
   let beta : Beta;
-  if (currentBeta) {
-    beta = new Beta(currentBeta.a, currentBeta.b);
+  if (opts.currentBeta) {
+    beta = opts.currentBeta.copy();
     beta.mean = mean;
   } else {
     let a: number, b: number;
@@ -18,11 +17,11 @@ export function betaFromMean(mean: number, currentBeta: Beta | null) : Beta {
       a = 1;
       b = 1;
     } else if (mean > 0.5) {
-      a = 1;
-      b = a * (1 / mean - 1);
+      b = BETA_BOUNDS.paramLower;
+      a = (mean * b) / (1 - mean);
     } else {
-      b = 1;
-      a = b * (mean / (1 - mean));
+      a = BETA_BOUNDS.paramLower;
+      b = a * (1 - mean) / mean;
     }
     beta = new Beta(a, b);
   }
