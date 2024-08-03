@@ -9,7 +9,6 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
     :find (pull ?b [*])
     :where
       [?b :block/properties ?prop]
-      [(get ?prop :ib-due) ?due]
       ${where}
   ]
   `;
@@ -30,6 +29,7 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
 
 export async function queryDueIbs(where: string = '') : Promise<IncrementalBlock[]> {
   where = `
+  [(get ?prop :ib-due) ?due]
   [(<= ?due ${todayMidnight().getTime()})]
   ${where}
   `;
@@ -39,6 +39,7 @@ export async function queryDueIbs(where: string = '') : Promise<IncrementalBlock
 export async function queryOverdueUnupdatedIbs() : Promise<IncrementalBlock[]> {
   const today = todayMidnight().getTime();
   const where = `
+  [(get ?prop :ib-due) ?due]
   [(< ?due ${today})]
 
   (or-join [?prop]
@@ -51,6 +52,12 @@ export async function queryOverdueUnupdatedIbs() : Promise<IncrementalBlock[]> {
   `;
   return await queryIncrementalBlocks(where);
 }
+
+// export async function queryNearestIb() : Promise<IncrementalBlock>{
+//   const query = `
+
+//   `;
+// }
 
 export async function queryDueIbsWithoutSample() : Promise<IncrementalBlock[]> {
   const query = `

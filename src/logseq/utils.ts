@@ -23,3 +23,11 @@ export async function getBlockHierarchyContent(uuid: string, maxDepth: number): 
   helper(block, 1);
   return contents;
 }
+
+// export async function findNearestParentIb(block: BlockEntity) : IncrementalBlock {
+//   // First check if parent is ib.
+
+
+//   const page = await logseq.Editor.getPage(block.page.id);
+//   const tree = await logseq.Editor.getPageBlocksTree(page!.uuid);
+// }
