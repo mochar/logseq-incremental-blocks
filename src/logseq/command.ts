@@ -3,13 +3,19 @@ import { initialIntervalFromMean } from "../algorithm/scheduling";
 import IncrementalBlock from "../IncrementalBlock";
 
 export async function onCreateIbCommand({ uuid }: { uuid: string }) {
+  // If editing, get content and exit editing mode.
+  let content = await logseq.Editor.getEditingBlockContent();
+  await logseq.Editor.exitEditingMode();
+
 	const block = await logseq.Editor.getBlock(uuid);
 	if (!block) return;
-  let content = block.content;
+
+  // If not editing, get block content.
+  if (!content) content = block.content;
 
   // Make sure contains macro.
   const rendererMacro = '{{renderer :ib}}';
-  if (!block.content.includes(rendererMacro)) {
+  if (!content.includes(rendererMacro)) {
     content = content + `\n${rendererMacro}`;
 
     // This returns the cursor back to original position, but doesn't
@@ -21,9 +27,6 @@ export async function onCreateIbCommand({ uuid }: { uuid: string }) {
     //     await logseq.Editor.editBlock(uuid, { pos: blockPos.pos });
     //   }, 200);
     // }
-
-    await logseq.Editor.updateBlock(uuid, content);
-    await logseq.Editor.exitEditingMode();
   }
 
   // Add properties.
@@ -46,10 +49,5 @@ export async function onCreateIbCommand({ uuid }: { uuid: string }) {
     props['ib-interval'] = interval;
   }
 
-  // Update. Want to use updateBlock here to fill all props at once,
-  // but doesn't seem to work.
-  for (const [key, val] of Object.entries(props)) {
-    await logseq.Editor.upsertBlockProperty(uuid, key, val);
-  }
-  await logseq.Editor.exitEditingMode();
+  await logseq.Editor.updateBlock(uuid, content, { properties: props });
 }
