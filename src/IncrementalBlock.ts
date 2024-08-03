@@ -61,9 +61,14 @@ class IncrementalBlock {
     }
   }
 
-  static async fromUuid(uuid: string) {
-    const props = await logseq.Editor.getBlockProperties(uuid);
-    return new this(uuid, props);
+  static async fromUuid(uuid: string, opts : { propsOnly?: boolean } = {}) {
+    if (opts.propsOnly ?? true) {
+      const props = await logseq.Editor.getBlockProperties(uuid);
+      return new this(uuid, props);
+    } else {
+      const block = await logseq.Editor.getBlock(uuid);
+      return this.fromBlock(block!);
+    }
   }
 
   static fromBlock(block: BlockEntity) {

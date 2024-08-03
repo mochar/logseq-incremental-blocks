@@ -24,7 +24,6 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
   useEffect(() => {
     // Set position above bar
     const div = top?.document.getElementById(slot);
-    console.log('div', div);
     // if (!div) return;
     if (div) {
       const elemBoundingRect = div.getBoundingClientRect();
@@ -73,7 +72,6 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
       schedule.push(_interval);
     }
     setSchedule(schedule);
-
   }
 
   async function updatePriority(meanPriority: number) {
@@ -114,7 +112,7 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     if (curIsToday && !newIsToday) {
       GLOBALS.queue.remove(block.uuid);
     } else if (!curIsToday && newIsToday) {
-      const ib = await IncrementalBlock.fromUuid(block.uuid);
+      const ib = await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false });
       GLOBALS.queue.add(ib);
     }
 
