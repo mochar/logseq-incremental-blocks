@@ -47,6 +47,10 @@ export function toDashCase(str: string) : string {
   return str.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
 }
 
+export function average(array: number[]) : number {
+  return array.reduce((a, b) => a + b) / array.length;
+}
+
 // https://stackoverflow.com/questions/66123016/interpolate-between-two-colours-based-on-a-percentage-value
 export function interpolateColor(palette: string[], percent: number) {
   // Get bucket

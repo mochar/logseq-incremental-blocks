@@ -99,3 +99,21 @@ export async function queryDueIbsOld() : Promise<IncrementalBlock[]> {
   `;
   return await queryIncrementalBlocks(query);
 }
+
+/* Return page properties of path refs. Path refs are
+ * referenced pages inherited from the parents.
+ */
+export async function queryPathRefPages(uuid: string) : Promise<Record<string, any>[]> {
+  const query = `
+  [
+    :find (pull ?p [*])
+    :where
+      [?b :block/path-refs ?p]
+      [?b :block/uuid #uuid "${uuid}"]
+      [?p :block/properties ?prop]
+      [(get ?prop :ib-a) _]
+  ]
+  `;
+  const ret = await logseq.DB.datascriptQuery(query);
+  return (ret || []).flat();
+}
