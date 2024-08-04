@@ -38,6 +38,8 @@ Under construction
 
 ### Iterating on an idea
 
+### Scheduled practice
+
 ## Implementation details
 
 Explain the priority system.
