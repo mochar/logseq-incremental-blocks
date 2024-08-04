@@ -11,8 +11,6 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
   const [iblocks, setIblocks] = React.useState<IncrementalBlock[]>([]);
 
   //@ts-ignore
-  console.log((logseq.settings?.subsetQueries ?? '').split(', '));
-  //@ts-ignore
   const [refs, setRefs] = React.useState<string[]>((logseq.settings?.subsetQueries ?? '').split(', ').filter((r) => !/^\s*$/.test(r)));
   const [selectedRefs, setSelectedRefs] = React.useState<string[]>(queue.refs);
 

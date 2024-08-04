@@ -28,7 +28,6 @@ export default function MainWindow() {
     // This is hacky. Should probably use macro.ts/onMacroSlotted
     // but this requires slot id and I dont know how to get it rn.
     if (GLOBALS.queue.ibs.length > 0) {
-      console.log('refresh ib nacor');
       const uuid = GLOBALS.queue.ibs[0].uuid;
       await logseq.Editor.editBlock(uuid);
       await logseq.Editor.exitEditingMode();

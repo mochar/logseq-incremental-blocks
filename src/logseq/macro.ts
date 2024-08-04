@@ -6,7 +6,6 @@ import { dateDiffInDays, formatDate } from "../utils";
 export async function handleMacroRendererSlotted({ slot, payload }) {
   const [type] = payload.arguments
   if (!type?.startsWith(':ib')) return;
-  console.log('IB MACRO SLOTTED');
   const ib = await IncrementalBlock.fromUuid(payload.uuid);
 
   let priorityHtml = '';
@@ -61,7 +60,7 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
     slot,
     reset: true,
     template: `
-    <div class="text-sm flex">
+    <div class="text-sm bg-gray-50 text-gray-700 flex">
       <button
         class="rounded-lg border flex" 
         data-on-click="togglePopover" 

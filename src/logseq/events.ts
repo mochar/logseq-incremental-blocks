@@ -27,7 +27,6 @@ export const useAppVisible = () => {
 // TODO doesnt work
 const subscribeToSettingsChanged = (onChange: () => void) =>
   subscribeLogseqEvent('settings:changed', ({ settings }) => {
-    console.log(settings);
     _settings = settings;
     onChange();
   });
