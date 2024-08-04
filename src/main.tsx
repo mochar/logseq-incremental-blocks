@@ -82,6 +82,7 @@ function main() {
   logseq.Editor.registerSlashCommand('Turn into priority block', onCreatePbCommand);
   logseq.Editor.registerBlockContextMenuItem('Turn into priority block', onCreatePbCommand);
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
+  logseq.App.onCurrentGraphChanged((e) => GLOBALS.queue.refresh());
 
   GLOBALS.queue.refresh();
 
