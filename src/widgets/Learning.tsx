@@ -1,7 +1,6 @@
 import React from "react";
 import IncrementalBlock from "../IncrementalBlock";
 import { GLOBALS } from "../globals";
-import Beta from "../algorithm/beta";
 import { PriorityUpdate } from "../algorithm/priority";
 import DatePicker from "react-datepicker";
 import PrioritySlider from "./PrioritySlider";
@@ -9,7 +8,7 @@ import { nextInterval } from "../algorithm/scheduling";
 import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils";
 import IbItem from "./IbItem";
 import BetaGraph from "./BetaGraph";
-import { RepAction } from "../queue";
+import { RepAction } from "../LearnQueue";
 
 const queue = GLOBALS.queue;
 
@@ -141,15 +140,15 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   // Handle changes related to priority.
   // Manual priority overrides algorithm-decided priority.
   const prioritizeManually = Boolean(manualPriority);
-  let newBeta = currentIb.beta!;
+  let newBeta = currentIb.beta!.copy();
   let updatesHtml = <div></div>;
   if (manualPriority) {
     newBeta = newBeta.copy();
     newBeta.mean = manualPriority;
   } else if (priorityUpdates) {
-    newBeta = new Beta(newBeta!.a + priorityUpdates.a, newBeta!.b);
+    newBeta.applyPriorityUpdate(priorityUpdates);
     updatesHtml = <div>
-      <span>Time: {priorityUpdates.aTime} ({priorityUpdates.scoreTime})</span>
+      <span>Time: {priorityUpdates.bTime} ({priorityUpdates.scoreTime})</span>
       <span>Content: {priorityUpdates.aContent} ({priorityUpdates.scoreContent})</span>
     </div>
   }

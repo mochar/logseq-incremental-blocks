@@ -2,6 +2,7 @@ import { jStat } from "jstat";
 import seedrandom from "seedrandom";
 import { todayMidnight } from "../utils";
 import { BETA_BOUNDS } from "../globals";
+import { PriorityUpdate } from "./priority";
 
 function toBetaParams(mean: number, variance: number): {a: number, b: number} {
   let a = ((1 - mean) / variance - 1 / mean) * mean * mean;
@@ -172,6 +173,16 @@ class Beta {
 
   public copy() : Beta {
     return new Beta(this._a, this._b);
+  }
+
+  public applyPriorityUpdate(priorityUpdate: PriorityUpdate) {
+    this._a = this._a + priorityUpdate.a;
+    this._b = this._b + priorityUpdate.b;
+    this.correctForBounds();
+  }
+
+  public static boundParam(param: number) : number {
+    return boundParam(param);
   }
 }
 

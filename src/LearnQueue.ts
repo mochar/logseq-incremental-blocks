@@ -1,3 +1,4 @@
+import Beta from "./algorithm/beta";
 import { getPriorityUpdate, PriorityUpdate } from "./algorithm/priority";
 import { nextInterval } from "./algorithm/scheduling";
 import IncrementalBlock from "./IncrementalBlock";
@@ -86,6 +87,7 @@ class LearnQueue {
   }
 
   public async nextRep() {
+    console.log('NEXT REP');
     // Get next ib, dismissing all that are not due (eg postoned while learning)
     let ib = this._ibs.shift();
     while (ib && !ib.dueToday()) {
@@ -107,6 +109,7 @@ class LearnQueue {
   }
 
   public async finishRep() {
+    console.log('FINISH REP');
     if (this.current){
       const current = this.current;
 
@@ -116,7 +119,7 @@ class LearnQueue {
         newBeta.mean = current.manualPriority;
       } else {
         await this.getPriorityUpdate();
-        newBeta.a = newBeta.a + this.current.priorityUpdate!.a;
+        newBeta.applyPriorityUpdate(this.current.priorityUpdate!);
       }
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-a', newBeta.a);
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-b', newBeta.b);
@@ -135,6 +138,7 @@ class LearnQueue {
   }
 
   public async postponeRep({ postponeInterval }: { postponeInterval: number }) {
+    console.log('POSTPONE REP');
     if (this.current) {
       const newDue = addDays(todayMidnight(), postponeInterval);
       await logseq.Editor.upsertBlockProperty(this.current.ib.uuid, 'ib-due', newDue.getTime());
@@ -143,6 +147,7 @@ class LearnQueue {
   }
 
   public async doneRep() {
+    console.log('DONE REP');
     if (this.current) {
       // Get newest content
       const ib = await IncrementalBlock.fromUuid(this.current.ib.uuid, { propsOnly: false });

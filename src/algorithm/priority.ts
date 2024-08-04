@@ -1,5 +1,5 @@
 import { BETA_BOUNDS } from "../globals";
-import { CurrentIBData } from "../queue";
+import { CurrentIBData } from "../LearnQueue";
 import Beta from "./beta";
 import stringComparison from "string-comparison";
 
@@ -36,18 +36,19 @@ function logistic(max: number, mid: number, rate: number, offset: number): (x: n
 }
 
 export interface PriorityUpdate {
-  scoreTime: number,
-  aTime: number,
   scoreContent: number,
   aContent: number,
-  a: number
+  a: number,
+  scoreTime: number,
+  bTime: number,
+  b: number,
 }
 
 export function getPriorityUpdate(data: CurrentIBData) : PriorityUpdate {
   // Time component
   const now = new Date();
   const durationSeconds = (now.getTime() - data.start.getTime()) / 1000;
-  const timeAlpha = logistic(.5, 30, .1, .2)(durationSeconds);
+  const timeBeta = logistic(1., 30, -.1, .2)(durationSeconds);
 
   // Content component
   const uuids = new Set([...Object.keys(data.contents), ...Object.keys(data.newContents)]);
@@ -61,9 +62,10 @@ export function getPriorityUpdate(data: CurrentIBData) : PriorityUpdate {
 
   return { 
     scoreTime: durationSeconds, 
-    aTime: timeAlpha, 
+    bTime: timeBeta,
+    b: timeBeta,
     scoreContent: totalContentDistance,
     aContent: contentAlpha, 
-    a: timeAlpha + contentAlpha
+    a: contentAlpha
   };
 }

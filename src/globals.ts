@@ -1,4 +1,4 @@
-import LearnQueue from "./queue";
+import LearnQueue from "./LearnQueue";
 
 interface Globals {
   learning: boolean,
