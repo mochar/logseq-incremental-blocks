@@ -39,6 +39,14 @@ export function formatDate(date: Date) : string {
   return date.toLocaleDateString('en-GB');
 }
 
+export function toCamelCase(str: string) : string {
+  return str.replace(/-./g, (m) => m[1].toUpperCase());
+}
+
+export function toDashCase(str: string) : string {
+  return str.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
+}
+
 // https://stackoverflow.com/questions/66123016/interpolate-between-two-colours-based-on-a-percentage-value
 export function interpolateColor(palette: string[], percent: number) {
   // Get bucket

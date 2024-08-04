@@ -136,6 +136,14 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     setBusy(false);
   }
 
+  async function done() {
+    setBusy(true)
+    const ib = await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false });
+    await ib.done()
+    setBusy(false)
+    logseq.hideMainUI();
+  }
+
   const scheduleList = [];
   if (schedule.length > 0) {
     for (let i = 0; i < schedule.length-1; i++) {
@@ -191,6 +199,15 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
             {scheduleList}
           </div>
         </div>}
+
+        <div className="p-2 py-0">
+          <button
+            className="hover:bg-gray-100 border py-1 px-1 rounded" 
+            onClick={done}
+          >
+            <span>Done</span>
+          </button>
+        </div>
 
       </div></fieldset></form>
     </div>

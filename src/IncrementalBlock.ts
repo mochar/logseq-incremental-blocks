@@ -1,6 +1,7 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import Beta from "./algorithm/beta";
-import { dateDiffInDays, todayMidnight } from "./utils";
+import { dateDiffInDays, toDashCase, todayMidnight } from "./utils";
+import { RENDERER_MACRO_NAME as MACRO_NAME } from "./globals";
 
 class IncrementalBlock {
   readonly uuid: string;
@@ -86,6 +87,17 @@ class IncrementalBlock {
     const dueDays = this.dueDays();
     if (dueDays == null) return false;
     return dueDays <= 0;
+  }
+
+  public async done() {
+    if (!this.block) return;
+    const content = this.block.content.replace(MACRO_NAME, '');
+    await logseq.Editor.updateBlock(this.uuid, content);
+    for (let prop of Object.keys(this.properties)) {
+      if (prop.startsWith('ib')) {
+        await logseq.Editor.removeBlockProperty(this.uuid, toDashCase(prop));
+      }
+    }
   }
 }
 

@@ -30,8 +30,9 @@ function main() {
   function createModel() {
     return {
       async nextRep() {
+        console.log('create model next rep called');
         if (!GLOBALS.learning) return;
-        await GLOBALS.queue.nextRep({});
+        await GLOBALS.queue.finishRep();
         const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
         if (GLOBALS.queue.current && openIb) {
           logseq.App.pushState('page', { name: GLOBALS.queue.current.ib.uuid });

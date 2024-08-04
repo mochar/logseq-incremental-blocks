@@ -15,6 +15,13 @@ export interface CurrentIBData {
   manualInterval?: number,
 }
 
+export enum RepAction { 
+  finish, // Rep finished, update priority and schedule
+  postpone, // Move to another day, keep everything as is
+  done, // Block is done, clean up and go to next rep
+  next, // Simply pop the current ib, without action
+}
+
 class LearnQueue {
   private _ibs: IncrementalBlock[] = [];
   private _refreshDate: Date | undefined;
@@ -78,37 +85,7 @@ class LearnQueue {
     this.current.priorityUpdate = getPriorityUpdate(this.current);
   }
 
-  public async nextRep({ postponeInterval }: { postponeInterval?: number }) {
-    // Handle updating of current ib
-    if (this.current){
-      const current = this.current;
-
-      if (postponeInterval) {
-        const newDue = addDays(todayMidnight(), postponeInterval);
-        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
-      } else {
-        // Update priority 
-        const newBeta = current.ib.beta!.copy();
-        if (current.manualPriority) {
-          newBeta.mean = current.manualPriority;
-        } else {
-          await this.getPriorityUpdate();
-          newBeta.a = newBeta.a + this.current.priorityUpdate!.a;
-        }
-        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-a', newBeta.a);
-        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-b', newBeta.b);
-
-        // Update schedule
-        const interval = nextInterval(current.ib);
-        const newDue = addDays(todayMidnight(), interval);
-        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-interval', interval);
-        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
-
-        // Others
-        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.reps! + 1);
-      }
-    }
-
+  public async nextRep() {
     // Get next ib, dismissing all that are not due (eg postoned while learning)
     let ib = this._ibs.shift();
     while (ib && !ib.dueToday()) {
@@ -127,6 +104,51 @@ class LearnQueue {
     } else {
       this.current = undefined;
     }
+  }
+
+  public async finishRep() {
+    if (this.current){
+      const current = this.current;
+
+      // Update priority 
+      const newBeta = current.ib.beta!.copy();
+      if (current.manualPriority) {
+        newBeta.mean = current.manualPriority;
+      } else {
+        await this.getPriorityUpdate();
+        newBeta.a = newBeta.a + this.current.priorityUpdate!.a;
+      }
+      await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-a', newBeta.a);
+      await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-b', newBeta.b);
+
+      // Update schedule
+      const interval = nextInterval(current.ib);
+      const newDue = addDays(todayMidnight(), interval);
+      await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-interval', interval);
+      await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
+
+      // Others
+      await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.reps! + 1);
+    }
+
+    await this.nextRep();
+  }
+
+  public async postponeRep({ postponeInterval }: { postponeInterval: number }) {
+    if (this.current) {
+      const newDue = addDays(todayMidnight(), postponeInterval);
+      await logseq.Editor.upsertBlockProperty(this.current.ib.uuid, 'ib-due', newDue.getTime());
+    }
+    await this.nextRep();
+  }
+
+  public async doneRep() {
+    if (this.current) {
+      // Get newest content
+      const ib = await IncrementalBlock.fromUuid(this.current.ib.uuid, { propsOnly: false });
+      await ib.done()
+    }
+    await this.nextRep();
   }
 
   public get ibs() {

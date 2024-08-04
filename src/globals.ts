@@ -29,4 +29,6 @@ const BETA_BOUNDS = {
   meanUpper: 0.99, // 100/(100+paramLower) = 0.99
 }
 
-export { GLOBALS, PRIORITY_PALETTE, BETA_BOUNDS };
+const RENDERER_MACRO_NAME = '{{renderer :ib}}';
+
+export { GLOBALS, PRIORITY_PALETTE, BETA_BOUNDS, RENDERER_MACRO_NAME };

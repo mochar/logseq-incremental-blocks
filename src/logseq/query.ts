@@ -1,6 +1,6 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
-import { todayMidnight } from "../utils";
+import { toCamelCase, todayMidnight } from "../utils";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
   // Identify by ib-due. Put in ?due var. Used downstream.
@@ -17,7 +17,7 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
     // Query doesn't transform property keys to camelCase...
     let props = b.properties ?? {};
     const keyValues = Object.keys(props).map(key => {
-      const newKey = key.replace(/-./g, (m) => m[1].toUpperCase());
+      const newKey = toCamelCase(key);
       return { [newKey]: props[key] };
     });
     props = Object.assign({}, ...keyValues);

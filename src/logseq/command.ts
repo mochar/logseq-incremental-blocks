@@ -1,22 +1,22 @@
 import Beta from "../algorithm/beta";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
+import { RENDERER_MACRO_NAME } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
 
 async function convertBlockToIb({ uuid, priorityOnly=false }: { uuid: string, priorityOnly?: boolean }) {
-  // If editing, get content and exit editing mode.
+  // If editing, get content
   let content = await logseq.Editor.getEditingBlockContent();
-  await logseq.Editor.exitEditingMode();
 
 	const block = await logseq.Editor.getBlock(uuid);
 	if (!block) return;
+  await logseq.Editor.exitEditingMode();
 
   // If not editing, get block content.
   if (!content) content = block.content;
 
   // Make sure contains macro.
-  const rendererMacro = '{{renderer :ib}}';
-  if (!content.includes(rendererMacro)) {
-    content = content + `\n${rendererMacro}`;
+  if (!content.includes(RENDERER_MACRO_NAME)) {
+    content = content + `\n${RENDERER_MACRO_NAME}`;
 
     // This returns the cursor back to original position, but doesn't
     // work reliably.
@@ -33,7 +33,7 @@ async function convertBlockToIb({ uuid, priorityOnly=false }: { uuid: string, pr
   const ib = IncrementalBlock.fromBlock(block);
   const props: Record<string, any> = {};
   if (!priorityOnly) {
-    props['ib-reps'] = ib.reps;
+    props['ib-reps'] = ib.reps ?? 0;
   }
   let beta = ib.beta;
   if (!beta) {
@@ -49,7 +49,6 @@ async function convertBlockToIb({ uuid, priorityOnly=false }: { uuid: string, pr
     props['ib-due'] = due.getTime();
     props['ib-interval'] = interval;
   }
-
   await logseq.Editor.updateBlock(uuid, content, { properties: props });
 }
 

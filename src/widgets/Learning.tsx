@@ -9,6 +9,7 @@ import { nextInterval } from "../algorithm/scheduling";
 import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils";
 import IbItem from "./IbItem";
 import BetaGraph from "./BetaGraph";
+import { RepAction } from "../queue";
 
 const queue = GLOBALS.queue;
 
@@ -26,7 +27,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     } else if (queue.length == 0) {
       updateCurrentIb(undefined);
     } else {
-      nextIb();
+      nextIb(RepAction.next);
     }
 
     // On a timer, get new priority updates. This is because
@@ -40,15 +41,21 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     return () => clearTimeout(timer);
   }, []);
 
-  async function nextIb(postpone: boolean = false) {
+  async function nextIb(repAction: RepAction) {
     setReady(false);
 
-    // Get next rep ib in queue
-    if (postpone) {
-      await queue.nextRep({ postponeInterval: interval! });
-    } else {
-      await queue.nextRep({});
+    // Apply rep action
+    if (repAction == RepAction.finish) {
+      await queue.finishRep();
+    } else if (repAction == RepAction.postpone) {
+      await queue.postponeRep({ postponeInterval: interval! });
+    } else if (repAction == RepAction.done) {
+      await queue.doneRep();
+    } else if (repAction == RepAction.next) {
+      await queue.nextRep();
     }
+
+    // Get next rep ib in queue
     updateCurrentIb(queue.current?.ib);
 
     // Move to next ib page.
@@ -96,11 +103,19 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     setPriorityUpdates(queue.current.priorityUpdate);
   }
 
-  async function postpone() {
-    nextIb(true);
+  async function finish() {
+    await nextIb(RepAction.finish);
   }
 
-  function finish() {
+  async function postpone() {
+    await nextIb(RepAction.postpone);
+  }
+
+  async function done() {
+    await nextIb(RepAction.done);
+  }
+
+  function quit() {
     // Return back to top of the queue, since we're not finished
     // with it yet.
     queue.currentBackToQueue();
@@ -260,16 +275,22 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
       <div className="flex justify-between py-2">
         <button 
           className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
-          onClick={() => nextIb()}
+          onClick={finish}
         >
           Next rep
+        </button>
+        <button 
+          className="hover:bg-gray-100 border py-1 px-1 ml-2 w-1/6 rounded" 
+          onClick={done}
+        >
+          Done
         </button>
         <div className="flex-grow"></div>
         <button 
           className="hover:bg-gray-100 border py-1 px-1 w-1/6 rounded" 
-          onClick={finish}
+          onClick={quit}
         >
-          Finish
+          Quit
         </button>
       </div>
 
