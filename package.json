@@ -1,5 +1,5 @@
 {
-  "name": "logseq-plugin-incremental-blocks",
+  "name": "logseq-incremental-blocks",
   "version": "0.0.1",
   "main": "dist/index.html",
   "scripts": {
@@ -44,7 +44,7 @@
     "vite-plugin-logseq": "1.1.2"
   },
   "logseq": {
-    "id": "logseq-plugin-incremental-blocks",
+    "id": "logseq-incremental-blocks",
     "icon": "./logo.svg"
   }
 }
