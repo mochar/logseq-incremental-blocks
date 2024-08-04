@@ -114,7 +114,7 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
 
   return (
     <form><fieldset disabled={refreshing}><div>
-      <div className="flex justify-between">
+      <div className="flex justify-between mb-1">
         <button 
           className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded ${iblocks.length == 0 && "cursor-not-allowed"}`}
           disabled={iblocks.length == 0}
@@ -129,6 +129,8 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
           🔄
         </button>
       </div>
+
+      <hr></hr>
 
     {refreshing && 
       <div className="text-neutral-500 flex justify-center">

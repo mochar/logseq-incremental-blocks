@@ -136,6 +136,15 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     setBusy(false);
   }
 
+  async function updateInterval(interval: number) {
+    setBusy(true);
+    if (isFinite(interval)) {
+      await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-interval', interval);
+      setInterval(interval);
+    }
+    setBusy(false);
+  }
+
   async function done() {
     setBusy(true)
     const ib = await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false });
@@ -185,16 +194,31 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
             monthsShown={1}
             dateFormat="dd/MM/yyyy"
           />
-          <p>Multiplier</p>
-          <input 
-            className="border" 
-            type="number" 
-            value={multiplier}
-            onChange={(e) => updateMultiplier(parseFloat(e.target.value))}
-            min="1" 
-            max="5" 
-            step="0.1"
-          ></input>
+          <div className="flex">
+            <div>
+              <p>Multiplier</p>
+              <input 
+                className="border w-16" 
+                type="number" 
+                value={multiplier}
+                onChange={(e) => updateMultiplier(parseFloat(e.target.value))}
+                min="1" 
+                max="5" 
+                step="0.1"
+              ></input>
+            </div>
+            <div className="ml-2">
+              <p>Interval</p>
+              <input 
+                className="border w-16" 
+                type="number" 
+                value={interval}
+                onChange={(e) => updateInterval(parseFloat(e.target.value))}
+                min="1" 
+                step="1"
+              ></input>
+            </div>
+          </div>
           <div className="text-neutral-400 text-xs flex items-center">
             {scheduleList}
           </div>
