@@ -60,7 +60,7 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
     slot,
     reset: true,
     template: `
-    <div class="text-sm bg-gray-50 text-gray-700 flex">
+    <div class="text-sm bg-gray-100/20 text-gray-700 flex">
       <button
         class="rounded-lg border flex" 
         data-on-click="togglePopover" 

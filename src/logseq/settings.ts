@@ -42,7 +42,7 @@ const settings: SettingSchemaDesc[] = [
     key: 'subsetQueries',
     title: 'Subset learning queue by refs',
     description: 'Filter learning queue using block references for focused learning.\nExample: `todo, hmm interesting, cooking`',
-    default: '',
+    default: 'set, [[ref]], filter, in settings',
     type: 'string'
   }
 ];

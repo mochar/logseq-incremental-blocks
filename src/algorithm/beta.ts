@@ -167,6 +167,7 @@ class Beta {
   public set variance(variance) {
     this._variance = variance;
     this.setParams();
+    this.correctForBounds();
   }
 
   public copy() : Beta {

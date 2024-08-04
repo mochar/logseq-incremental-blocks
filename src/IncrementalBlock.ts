@@ -11,7 +11,7 @@ class IncrementalBlock {
   readonly sample: number | null;
   readonly multiplier: number;
   readonly interval: number | null;
-  readonly reps: number;
+  readonly reps: number | null;
 
   constructor(uuid: string, props: Record<string, any>, block?: BlockEntity) {
     this.uuid = uuid;
@@ -50,7 +50,7 @@ class IncrementalBlock {
     if (typeof reps === 'number' && reps >= 0 && Number.isInteger(reps)) {
       this.reps = reps;
     } else {
-      this.reps = 0;
+      this.reps = null;
     }
 
     const interval = parseFloat(props['ibInterval']);
@@ -72,7 +72,7 @@ class IncrementalBlock {
   }
 
   static fromBlock(block: BlockEntity) {
-    return new this(block.uuid, block.properties!, block);
+    return new this(block.uuid, block.properties ?? {}, block);
   }
 
   public dueDays(): number | null {

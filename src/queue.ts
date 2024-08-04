@@ -105,7 +105,7 @@ class LearnQueue {
         await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
 
         // Others
-        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.reps + 1);
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.reps! + 1);
       }
     }
 

@@ -8,9 +8,8 @@ import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
 import { handleMacroRendererSlotted } from "./logseq/macro";
-import { onCreateIbCommand } from "./logseq/command";
+import { onCreateIbCommand, onCreatePbCommand } from "./logseq/command";
 import { GLOBALS } from "./globals";
-import { LSPluginBaseInfo } from "@logseq/libs/dist/LSPlugin.user";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -79,6 +78,8 @@ function main() {
 
   logseq.Editor.registerSlashCommand('Turn into incremental block', onCreateIbCommand);
   logseq.Editor.registerBlockContextMenuItem('Turn into incremental block', onCreateIbCommand);
+  logseq.Editor.registerSlashCommand('Turn into priority block', onCreatePbCommand);
+  logseq.Editor.registerBlockContextMenuItem('Turn into priority block', onCreatePbCommand);
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
 
   GLOBALS.queue.refresh();

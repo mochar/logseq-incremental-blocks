@@ -9,11 +9,12 @@ import { dateDiffInDays, todayMidnight } from "../utils";
 import { betaFromMean } from "../algorithm/priority";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import BetaGraph from "./BetaGraph";
-import MeanPrioritySlider from "./PrioritySlider";
+import PrioritySlider from "./PrioritySlider";
 import { GLOBALS } from "../globals";
 
 export default function Popover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [priorityOnly, setPriorityOnly] = useState<boolean>(true);
   const baseBeta = useRef<Beta>();
   const [beta, setBeta] = useState<Beta>();
   const [dueDate, setDueDate] = useState<Date>();
@@ -33,17 +34,23 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
 
     // Block properties
     const ib = IncrementalBlock.fromBlock(block);
+    const priorityOnly = ib.reps == null;
+    setPriorityOnly(priorityOnly);
+
     const beta = ib.beta ?? new Beta(1, 1);
     setBeta(beta);
     // TODO this should later be fleshed out more.
     baseBeta.current = ib.reps == 0 ? new Beta(1, 1) : beta;
-    if (ib.dueDate) {
-      setDueDate(ib.dueDate);
-    } else {
-      updatePriority(beta.mean);
+
+    if (!priorityOnly) {
+      if (ib.dueDate) {
+        setDueDate(ib.dueDate);
+      } else {
+        updatePriority({ mean: beta.mean });
+      }
+      if (ib.interval) setInterval(ib.interval);
+      setMultiplier(ib.multiplier);
     }
-    if (ib.interval) setInterval(ib.interval);
-    setMultiplier(ib.multiplier);
   }, [block]);
 
   const schedule = React.useMemo(() : number[] => {
@@ -67,19 +74,27 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
     return schedule;
   }, [multiplier, interval, dueDate]);
 
-  async function updatePriority(meanPriority: number) {
+  async function updatePriority({mean, variance} : {mean?: number, variance?: number}) {
+    if (!mean && !variance) return;
+
     setBusy(true);
     const ib = await IncrementalBlock.fromUuid(block.uuid);
-    const beta = betaFromMean(meanPriority, { currentBeta: baseBeta.current });
-    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-a', beta.a);
-    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-b', beta.b);
-    setBeta(beta);
+    let newBeta: Beta;
+    if (variance) {
+      newBeta = beta!.copy();
+      newBeta.variance = variance;
+    } else {
+      newBeta = betaFromMean(mean!, { currentBeta: baseBeta.current });
+    }
+    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-a', newBeta.a);
+    await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-b', newBeta.b);
+    setBeta(newBeta);
 
     // Update interval.
     // For now only the initial interval.
     // See topic_interval.ipynb
     if (ib.reps === 0) {
-      const interval = initialIntervalFromMean(beta.mean);
+      const interval = initialIntervalFromMean(newBeta.mean);
       const due = new Date();
       due.setDate(due.getDate() + interval);
       await logseq.Editor.upsertBlockProperty(block.uuid, 'ib-due', due.getTime());
@@ -143,13 +158,15 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
           <div className="border w-fit">
             {beta && <BetaGraph beta={beta} width={120} height={60}></BetaGraph>}
           </div>
-          {beta && <MeanPrioritySlider
-            val={beta.mean}
-            onChange={updatePriority}
-          ></MeanPrioritySlider>}
+          {beta && <PrioritySlider
+            beta={beta}
+            varianceSlider={priorityOnly}
+            onMeanChange={(mean) => updatePriority({ mean })}
+            onVarianceChange={(variance) => updatePriority({ variance })}
+          ></PrioritySlider>}
         </div>
 
-        <div className="p-2 py-0">
+        {!priorityOnly && <div className="p-2 py-0">
           <p className="font-semibold text-gray-90">Schedule</p>
           <p>Due</p>
           <DatePicker
@@ -173,7 +190,8 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
           <div className="text-neutral-400 text-xs flex items-center">
             {scheduleList}
           </div>
-        </div>
+        </div>}
+
       </div></fieldset></form>
     </div>
   );

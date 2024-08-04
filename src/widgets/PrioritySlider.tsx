@@ -1,32 +1,52 @@
 import React from "react";
 import { BETA_BOUNDS } from "../globals";
+import Beta from "../algorithm/beta";
 
 interface SliderParams {
-  val: number;
-  onChange: (mean: number) => void;
+  beta: Beta;
+  onMeanChange: (mean: number) => void;
+  varianceSlider?: boolean
+  onVarianceChange?: (variance: number) => void;
 }
 
-export default function MeanPrioritySlider({ val, onChange } : SliderParams) {
-  const [value, setValue] = React.useState<number>(val);
+export default function PrioritySlider({ beta, onMeanChange, onVarianceChange=() => {}, varianceSlider=false } : SliderParams) {
+  const [mean, setMean] = React.useState<number>(beta.mean);
+  const [variance, setVariance] = React.useState<number>(beta.variance);
   const precisionFactor = 10000;
 
   React.useEffect(() => {
-    setValue(val);
-  }, [val]);
+    setMean(beta.mean);
+    setVariance(beta.variance);
+  }, [beta]);
 
   return (
-    <div className="flex items-center">
-      <input 
-        className="w-full"
-        type="range" 
-        min={BETA_BOUNDS.meanLower*precisionFactor} 
-        max={BETA_BOUNDS.meanUpper*precisionFactor} 
-        step="1" 
-        value={value*precisionFactor} 
-        onChange={(e) => setValue(parseFloat(e.target.value)/precisionFactor)}
-        onMouseUp={() => onChange(value)}
-      ></input>
-      <p className="w-14">{(value*100).toFixed(2)}%</p>
+    <div>
+      <div className="flex items-center">
+        <input 
+          className="w-full"
+          type="range" 
+          min={BETA_BOUNDS.meanLower*precisionFactor} 
+          max={BETA_BOUNDS.meanUpper*precisionFactor} 
+          step="1" 
+          value={mean*precisionFactor} 
+          onChange={(e) => setMean(parseFloat(e.target.value)/precisionFactor)}
+          onMouseUp={() => onMeanChange(mean)}
+        ></input>
+        <p className="w-14">{(mean*100).toFixed(2)}%</p>
+      </div>
+      {varianceSlider && <div className="flex items-center">
+        <input 
+          className="w-full"
+          type="range" 
+          min={0.0001*precisionFactor}
+          max={beta.varianceUpperBound()*precisionFactor} 
+          step="1" 
+          value={variance*precisionFactor} 
+          onChange={(e) => setVariance(parseFloat(e.target.value)/precisionFactor)}
+          onMouseUp={() => onVarianceChange(variance)}
+        ></input>
+        <p className="w-14">{(variance*100).toFixed(2)}%</p>
+      </div>}
     </div>
   );
 }

@@ -4,7 +4,7 @@ import { GLOBALS } from "../globals";
 import Beta from "../algorithm/beta";
 import { PriorityUpdate } from "../algorithm/priority";
 import DatePicker from "react-datepicker";
-import MeanPrioritySlider from "./PrioritySlider";
+import PrioritySlider from "./PrioritySlider";
 import { nextInterval } from "../algorithm/scheduling";
 import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils";
 import IbItem from "./IbItem";
@@ -150,7 +150,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     <div className="flex flex-col bg-white w-full text-sm">
 
       <div className="flex items-center justify-between py-1">
-        <span className="text-xs text-gray-500">🔁 {currentIb.reps+1}</span>
+        <span className="text-xs text-gray-500">🔁 {currentIb.reps!+1}</span>
 
         <label className="inline-flex items-center cursor-pointer">
           <input 
@@ -195,10 +195,10 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
           </div>
         </div>
         <div className="py-1 px-6">
-          <MeanPrioritySlider
-            val={newBeta!.mean}
-            onChange={updateManualPriority}
-          ></MeanPrioritySlider>
+          <PrioritySlider
+            beta={newBeta!}
+            onMeanChange={updateManualPriority}
+          ></PrioritySlider>
         </div>
       </div>
 
@@ -259,7 +259,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
 
       <div className="flex justify-between py-2">
         <button 
-          className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-4 border-blue-700 hover:border-blue-500 rounded" 
+          className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
           onClick={() => nextIb()}
         >
           Next rep

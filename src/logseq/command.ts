@@ -2,7 +2,7 @@ import Beta from "../algorithm/beta";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import IncrementalBlock from "../IncrementalBlock";
 
-export async function onCreateIbCommand({ uuid }: { uuid: string }) {
+async function convertBlockToIb({ uuid, priorityOnly=false }: { uuid: string, priorityOnly?: boolean }) {
   // If editing, get content and exit editing mode.
   let content = await logseq.Editor.getEditingBlockContent();
   await logseq.Editor.exitEditingMode();
@@ -31,9 +31,10 @@ export async function onCreateIbCommand({ uuid }: { uuid: string }) {
 
   // Add properties.
   const ib = IncrementalBlock.fromBlock(block);
-  const props: Record<string, any> = {
-    'ib-reps': ib.reps
-  };
+  const props: Record<string, any> = {};
+  if (!priorityOnly) {
+    props['ib-reps'] = ib.reps;
+  }
   let beta = ib.beta;
   if (!beta) {
     beta = new Beta(1, 1);
@@ -41,7 +42,7 @@ export async function onCreateIbCommand({ uuid }: { uuid: string }) {
   }
   props['ib-a'] = beta.a;
   props['ib-b'] = beta.b;
-  if (!ib.interval || !ib.dueDate) {
+  if (!priorityOnly && (!ib.interval || !ib.dueDate)) {
     const interval = initialIntervalFromMean(beta.mean);
     const due = new Date();
     due.setDate(due.getDate() + interval);
@@ -50,4 +51,12 @@ export async function onCreateIbCommand({ uuid }: { uuid: string }) {
   }
 
   await logseq.Editor.updateBlock(uuid, content, { properties: props });
+}
+
+export async function onCreateIbCommand({ uuid }: { uuid: string }) {
+  await convertBlockToIb({ uuid });
+}
+
+export async function onCreatePbCommand({ uuid }: { uuid: string }) {
+  await convertBlockToIb({ uuid, priorityOnly: true });
 }
