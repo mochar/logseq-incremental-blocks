@@ -2,7 +2,7 @@ import Beta from "../algorithm/beta";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { RENDERER_MACRO_NAME } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
-import { average } from "../utils";
+import { addContentAndProps, average } from "../utils";
 import { queryPathRefPages } from "./query";
 
 function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
@@ -26,7 +26,7 @@ function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
 async function convertBlockToIb({ uuid, priorityOnly=false }: { uuid: string, priorityOnly?: boolean }) {
   // If editing, get content
   let content = await logseq.Editor.getEditingBlockContent();
-  await logseq.Editor.exitEditingMode();
+  // await logseq.Editor.exitEditingMode();
 
 	const block = await logseq.Editor.getBlock(uuid);
 	if (!block) return;
@@ -35,19 +35,9 @@ async function convertBlockToIb({ uuid, priorityOnly=false }: { uuid: string, pr
   if (!content) content = block.content;
 
   // Make sure contains macro.
-  if (!content.includes(RENDERER_MACRO_NAME)) {
-    content = content + `\n${RENDERER_MACRO_NAME}`;
-
-    // This returns the cursor back to original position, but doesn't
-    // work reliably.
-    // const blockPos = await logseq.Editor.getEditingCursorPosition();
-    // await logseq.Editor.updateBlock(uuid, content);
-    // if (blockPos) {
-    //   setTimeout(async () => { 
-    //     await logseq.Editor.editBlock(uuid, { pos: blockPos.pos });
-    //   }, 200);
-    // }
-  }
+  // if (!content.includes(RENDERER_MACRO_NAME)) {
+  //   content = content + `\n${RENDERER_MACRO_NAME}`;
+  // }
 
   // Add properties.
   const ib = IncrementalBlock.fromBlock(block);
@@ -77,7 +67,14 @@ async function convertBlockToIb({ uuid, priorityOnly=false }: { uuid: string, pr
     props['ib-due'] = due.getTime();
     props['ib-interval'] = interval;
   }
-  await logseq.Editor.updateBlock(uuid, content, { properties: props });
+  // await logseq.Editor.updateBlock(uuid, content, { properties: props });
+
+  // TODO: This doesn't update existing params
+  let addition = '';
+  if (!content.includes(RENDERER_MACRO_NAME)) addition = RENDERER_MACRO_NAME;
+  const newContent = addContentAndProps(content, { addition, props });
+  await logseq.Editor.updateBlock(uuid, newContent);
+  await logseq.Editor.exitEditingMode();
 }
 
 export async function onCreateIbCommand({ uuid }: { uuid: string }) {

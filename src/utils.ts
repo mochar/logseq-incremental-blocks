@@ -98,3 +98,25 @@ export class Completer<T> {
     return this;
   }
 }
+
+export function addContentAndProps(content: string, { addition, props }: { addition?: string, props?: Record<string, any> }) : string {
+  const lines = content.split(/\r?\n/);
+  const propRegex = /[a-zA-Z0-9-_]+:: [^:]+/;
+  let propIndex = 1;
+  for (let i = 1; i <= lines.length; i++) {
+    propIndex = i;
+    if (propRegex.test(lines[i])) break;
+  }
+  if (addition) {
+    lines.splice(propIndex, 0, addition);
+  }
+  if (props) {
+    for (let prop of Object.keys(props)) {
+      const propDash = toDashCase(prop);
+      if (!content.includes(`${propDash}::`)) {
+        lines.push(`${propDash}:: ${props[prop]}`)
+      }
+    }
+  }
+  return lines.join('\n');
+}
