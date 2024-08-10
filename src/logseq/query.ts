@@ -1,6 +1,6 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
-import { toCamelCase, todayMidnight } from "../utils";
+import { toCamelCase, todayMidnight, toEndOfDay, toStartOfDay } from "../utils";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
   // Identify by ib-due. Put in ?due var. Used downstream.
@@ -27,12 +27,33 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
   return ibs;
 }
 
-export async function queryDueIbs(where: string = '') : Promise<IncrementalBlock[]> {
-  where = `
+interface DueIbs {
+  dueAt?: Date,
+  refs?: string[],
+  includeOutdated?: boolean
+}
+
+export async function queryDueIbs({ dueAt, refs, includeOutdated=true }: DueIbs) : Promise<IncrementalBlock[]> {
+  const dueDate = dueAt ?? todayMidnight();
+  let where = `
   [(get ?prop :ib-due) ?due]
-  [(<= ?due ${todayMidnight().getTime()})]
-  ${where}
+  [(<= ?due ${toEndOfDay(dueDate).getTime()})]
   `;
+  if (!includeOutdated) {
+    where = `
+    ${where}
+    [(>= ?due ${toStartOfDay(dueDate).getTime()})]
+    `;
+  }
+  if (refs && refs.length > 0) {
+    const refString = refs.map((r) => `"${r}"`).join(', ');
+    where = `
+    ${where}
+    [?page :block/name ?pagename] 
+    [(contains? #{${refString}} ?pagename)] 
+    [?b :block/refs ?page]
+    `;
+  }
   return await queryIncrementalBlocks(where);
 }
 

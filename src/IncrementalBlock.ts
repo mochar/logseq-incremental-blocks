@@ -2,6 +2,8 @@ import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import Beta from "./algorithm/beta";
 import { dateDiffInDays, toDashCase, todayMidnight } from "./utils";
 import { RENDERER_MACRO_NAME as MACRO_NAME } from "./globals";
+import { jStat } from "jstat";
+import seedrandom from "seedrandom";
 
 class IncrementalBlock {
   readonly uuid: string;
@@ -19,15 +21,6 @@ class IncrementalBlock {
     this.properties = props;
     this.block = block ?? null;
     this.beta = Beta.fromProps(props);
-
-    const sample = parseFloat(props['ibSample']);
-    if (Beta.isValidSample(sample)) {
-      this.sample = sample;
-    } else if (this.beta) {
-      this.sample = this.beta.sample({ seedToday: true });
-    } else {
-      this.sample = null;
-    }
     
     const due = new Date(parseFloat(props['ibDue']));
     if (due instanceof Date && !isNaN(due.getTime())) {
@@ -38,6 +31,15 @@ class IncrementalBlock {
       this.dueDate = due;
     } else {
       this.dueDate = null;
+    }
+
+    const sample = parseFloat(props['ibSample']);
+    if (Beta.isValidSample(sample)) {
+      this.sample = sample;
+    } else if (this.beta) {
+      this.sample = this.sampleAt(this.dueDate ?? todayMidnight());
+    } else {
+      this.sample = null;
     }
 
     const multiplier = parseFloat(props['ibMultiplier']);
@@ -60,6 +62,14 @@ class IncrementalBlock {
     } else {
       this.interval = null;
     }
+  }
+
+  public sampleAt(date: Date) : number | null {
+    if (!this.beta) return null;
+    // Add uuid as well because different ibs can have same beta.
+    const seed = this.uuid + date.getTime().toString;
+    jStat.setRandom(seedrandom(seed));
+    return this.beta.sample({ seedToday: false });
   }
 
   static async fromUuid(uuid: string, opts : { propsOnly?: boolean } = {}) {

@@ -3,18 +3,24 @@ import IncrementalBlock from "../IncrementalBlock";
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
 import IbItem from "./IbItem";
+import DatePicker from "react-datepicker";
+import { addDays, todayMidnight } from "../utils";
+import { queryDueIbs } from "../logseq/query";
 
 const queue = GLOBALS.queue;
 
 export default function Queue({ onLearn } : { onLearn: () => void }) {
   const [refreshing, setRefreshing] = React.useState<boolean>(false);
   const [iblocks, setIblocks] = React.useState<IncrementalBlock[]>([]);
+  const [date, setDate] = React.useState<Date>(todayMidnight());
+  const [showDatePicker, setShowDatePicker] = React.useState<boolean>(false);
 
   //@ts-ignore
   const [refs, setRefs] = React.useState<string[]>((logseq.settings?.subsetQueries ?? '').split(', ').filter((r) => !/^\s*$/.test(r)));
   const [selectedRefs, setSelectedRefs] = React.useState<string[]>(queue.refs);
 
   React.useEffect(() => {
+    console.log('use effect');
     if (!queue.refreshed.completed) {
       setRefreshing(true);
       queue.refreshed.promise.then(() => {
@@ -32,14 +38,35 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
     }
   }, []);
 
-  async function refresh() {
+  async function refresh(queueDate?: Date) {
     setRefreshing(true);
     console.log('refreshing...');
-    // TODO: check new day. update priorities.
-    await queue.refresh();
-    setIblocks(queue.ibs);
+    queueDate = queueDate ?? date;
+    // await new Promise(resolve => setTimeout(resolve, 2000));
+    if (queueDate.getTime() == todayMidnight().getTime()) {
+      await queue.refresh();
+      setIblocks(queue.ibs);
+    } else {
+      const ibs = await queryDueIbs({ dueAt: queueDate, refs: queue.refs, includeOutdated: false });
+      setIblocks(ibs);
+    }
     setRefreshing(false);
     console.log('refreshed!');
+  }
+
+  async function loadQueueDate(date: Date) {
+    setDate(date);
+    refresh(date);
+  }
+
+  function toggleDatePicker() {
+    const show = !showDatePicker;
+    setShowDatePicker(show);
+    if (!show) {
+      const d = todayMidnight();
+      setDate(d);
+      refresh(d);
+    }
   }
 
   function toggleRef(ref: string) {
@@ -91,12 +118,6 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
   if (iblocks.length > 0) {
     queueView = (
     <div className="mt-1">
-      {/* <div className="py-2">
-        <input 
-          type="text" 
-          className="bg-neutral-100 text-gray-900 focus:ring-transparent text-sm rounded-lg block w-full p-2.5">
-        </input>
-      </div> */}
       <Virtuoso
         style={{ height: '250px' }}
         totalCount={iblocks.length}
@@ -113,7 +134,10 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
   }
 
   return (
-    <form><fieldset disabled={refreshing}><div>
+    <form onSubmit={(e) => e.preventDefault()}>
+    <fieldset disabled={refreshing}>
+    <div className={refreshing ? 'animate-pulse': ''}>
+
       <div className="flex justify-between mb-1">
         <button 
           className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded ${iblocks.length == 0 && "cursor-not-allowed"}`}
@@ -122,27 +146,49 @@ export default function Queue({ onLearn } : { onLearn: () => void }) {
         >
           Learn 
         </button>
-        <button 
-          className="hover:bg-gray-100 border py-1 px-1 rounded" 
-          onClick={refresh}
-        >
-          🔄
-        </button>
+
+        <div>
+          <button 
+            className="hover:bg-gray-100 border py-1 px-1 rounded" 
+            onClick={toggleDatePicker}
+          >
+            📅
+          </button>
+          <button 
+            className="hover:bg-gray-100 border py-1 px-1 rounded" 
+            onClick={() => refresh()}
+          >
+            🔄
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-around mb-1">
+        {showDatePicker && <DatePicker
+          className={"border" + (showDatePicker ? 'block' : 'hidden')}
+          selected={date}
+          onChange={(date) => !refreshing && date && loadQueueDate(date)}
+          minDate={refreshing ? date : todayMidnight()}
+          maxDate={refreshing ? date : undefined}
+          monthsShown={1}
+          dateFormat="dd/MM/yyyy"
+          inline
+        />}
       </div>
 
       <hr></hr>
 
-    {refreshing && 
+    {/* {refreshing && 
       <div className="text-neutral-500 flex justify-center">
         <span>Refreshing queue...</span>
       </div>
-    }
+    } */}
 
-    {!refreshing && refButtons.length > 0 && <div className="p-2 space-y-1">
+    {refButtons.length > 0 && <div className="p-2 space-y-1">
       {refButtons}
     </div>}
 
-    {!refreshing && queueView}
+    {queueView}
     </div></fieldset></form>
   );
 }

@@ -5,7 +5,13 @@ import { interpolateColor } from "../utils";
 
 export default function IbItem({ ib }: { ib: IncrementalBlock }) {
 
-  const content = ib.block!.content.split('\n')[0];
+  // If block is page property block, then it has no content field.
+  // At least the one i checked..
+  let content = ib.block!.content;
+  if (content) {
+    content = content.split('\n')[0];
+  }
+
   const bgColor = interpolateColor(PRIORITY_PALETTE, 1-ib.sample!);
 
   return <div

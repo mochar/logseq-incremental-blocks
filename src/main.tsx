@@ -95,7 +95,7 @@ function main() {
   GLOBALS.queue.refresh();
 
   document.addEventListener('keydown', function (e) {
-    if (e.keyCode === 27) {
+    if (e.key == 'Escape') {
       logseq.hideMainUI()
     }
   }, false);

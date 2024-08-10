@@ -78,9 +78,11 @@ class Beta {
     return jStat.beta.pdf(x, this._a, this._b);
   }
 
-  public sample({ seedToday }: { seedToday?: boolean }): number {
+  public sample({ seedToday, seedDate }: { seedToday?: boolean, seedDate?: Date }): number {
     if (seedToday) {
       jStat.setRandom(seedrandom(todayMidnight().getTime().toString()));
+    } else if (seedDate) {
+      jStat.setRandom(seedrandom(seedDate.getTime().toString()));
     }
     return jStat.beta.sample(this._a, this._b);
   }

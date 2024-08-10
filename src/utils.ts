@@ -35,6 +35,18 @@ export function addDays(date: Date, days: number) : Date {
   return newDate;
 }
 
+export function toStartOfDay(date: Date) : Date {
+  const newDate = new Date(date);
+  newDate.setHours(0, 0, 0, 0);
+  return newDate;
+}
+
+export function toEndOfDay(date: Date) : Date {
+  const newDate = new Date(date);
+  newDate.setHours(23, 59, 59, 999);
+  return newDate;
+}
+
 export function formatDate(date: Date) : string {
   return date.toLocaleDateString('en-GB');
 }
