@@ -8,8 +8,9 @@ import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
 import { handleMacroRendererSlotted } from "./logseq/macro";
-import { onCreateIbCommand, onCreatePbCommand } from "./logseq/command";
+import { onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand } from "./logseq/command";
 import { GLOBALS } from "./globals";
+import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -77,10 +78,15 @@ function main() {
     `
   });
 
-  logseq.Editor.registerSlashCommand('Turn into incremental block', onCreateIbCommand);
-  logseq.Editor.registerBlockContextMenuItem('Turn into incremental block', onCreateIbCommand);
-  logseq.Editor.registerSlashCommand('Turn into priority block', onCreatePbCommand);
-  logseq.Editor.registerBlockContextMenuItem('Turn into priority block', onCreatePbCommand);
+  function registerCommand(tag: string, action: BlockCommandCallback) {
+    logseq.Editor.registerSlashCommand(tag, action);
+    logseq.Editor.registerBlockContextMenuItem(tag, action);
+  }
+
+  registerCommand('Turn into incremental block', onCreateIbCommand);
+  registerCommand('Turn into priority block', onCreatePbCommand);
+  registerCommand('Turn siblings into priority blocks', onCreateIbWithSiblingsCommand);
+
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
   logseq.App.onCurrentGraphChanged((e) => GLOBALS.queue.refresh());
 

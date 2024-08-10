@@ -1,3 +1,4 @@
+import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import Beta from "../algorithm/beta";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { RENDERER_MACRO_NAME } from "../globals";
@@ -23,21 +24,24 @@ function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
   return null;
 }
 
-async function convertBlockToIb({ uuid, priorityOnly=false }: { uuid: string, priorityOnly?: boolean }) {
-  // If editing, get content
-  let content = await logseq.Editor.getEditingBlockContent();
-  // await logseq.Editor.exitEditingMode();
+interface BlockToIb {
+  uuid: string,
+  priorityOnly?: boolean,
+  block?: BlockEntity | null
+}
 
-	const block = await logseq.Editor.getBlock(uuid);
+async function convertBlockToIb({ uuid, block, priorityOnly=false  }: BlockToIb) {
+  let content: string = '';
+
+  if (!block) {
+    // If editing, get content
+    content = await logseq.Editor.getEditingBlockContent();
+    block = await logseq.Editor.getBlock(uuid);
+  }
+
 	if (!block) return;
 
-  // If not editing, get block content.
   if (!content) content = block.content;
-
-  // Make sure contains macro.
-  // if (!content.includes(RENDERER_MACRO_NAME)) {
-  //   content = content + `\n${RENDERER_MACRO_NAME}`;
-  // }
 
   // Add properties.
   const ib = IncrementalBlock.fromBlock(block);
@@ -83,4 +87,40 @@ export async function onCreateIbCommand({ uuid }: { uuid: string }) {
 
 export async function onCreatePbCommand({ uuid }: { uuid: string }) {
   await convertBlockToIb({ uuid, priorityOnly: true });
+}
+
+export async function onCreateIbWithSiblingsCommand({ uuid }: { uuid: string }) {
+  // Siblings are children of parent block. 
+  // However block data contains db id of parent rather than uuid.
+  // Using getBlock with db id of page doesn't work.
+  // So if top-level block (parent=page), get page blocks instead.
+  const block = await logseq.Editor.getBlock(uuid);
+  if (!block) return;
+  let siblings: BlockEntity[];
+  if (block.parent.id == block.page.id) {
+    // Even with includeChildren doesn't return children.
+    const page = await logseq.Editor.getPage(block.page.id, { includeChildren: true });
+    if (!page) return;
+    // Neither getPage nor getBlock works.. So just get page tree.
+    siblings = await logseq.Editor.getPageBlocksTree(page.uuid);
+  } else {
+    const parentBlock = await logseq.Editor.getBlock(block.parent.id, { includeChildren: true });
+    if (!parentBlock) return;
+    siblings = parentBlock.children as BlockEntity[];
+  }
+  for (let sibling of siblings) {
+    if (sibling.uuid == uuid) {
+      // If this is the block the command was run on, dont pass the block itself
+      // so that the editing content is retrieved.
+      convertBlockToIb({ uuid: sibling.uuid });
+    } else {
+      convertBlockToIb({ uuid: sibling.uuid, block: sibling });
+    }
+  }
+}
+
+export async function onCreateIbWithChildrenCommand({ uuid }: { uuid: string }) {
+}
+
+export async function onCreateSelectedIbsCommand({ uuid }: { uuid: string }) {
 }
