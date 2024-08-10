@@ -123,4 +123,9 @@ export async function onCreateIbWithChildrenCommand({ uuid }: { uuid: string }) 
 }
 
 export async function onCreateSelectedIbsCommand({ uuid }: { uuid: string }) {
+  const selected = await logseq.Editor.getSelectedBlocks();
+  if (!selected) return;
+  for (const block of selected) {
+    convertBlockToIb({ uuid: block.uuid, block: block });
+  }
 }

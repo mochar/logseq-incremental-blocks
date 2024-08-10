@@ -8,7 +8,7 @@ import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
 import { handleMacroRendererSlotted } from "./logseq/macro";
-import { onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand } from "./logseq/command";
+import { onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand, onCreateSelectedIbsCommand } from "./logseq/command";
 import { GLOBALS } from "./globals";
 import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
 
@@ -86,6 +86,8 @@ function main() {
   registerCommand('Turn into incremental block', onCreateIbCommand);
   registerCommand('Turn into priority block', onCreatePbCommand);
   registerCommand('Turn siblings into priority blocks', onCreateIbWithSiblingsCommand);
+  logseq.App.registerCommandPalette({ key: 'ib-convert-selected', label: 'Convert selected to ibs'}, 
+    onCreateSelectedIbsCommand);
 
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
   logseq.App.onCurrentGraphChanged((e) => GLOBALS.queue.refresh());
