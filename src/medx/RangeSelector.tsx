@@ -19,7 +19,6 @@ export default function RangeSelector({ length, url, initStart, initEnd, onChang
   const middle = range[0] + 0.5*(range[1] - range[0]);
   const minRange = Math.min(length, 2);
   const timedUrl = url && `${url}#t=${range[0]},${range[1]}`;
-  console.log(timedUrl);
 
   const zoomMax = React.useMemo(() : number => {
     const maxRight = 1 - Math.max(minRange/2, range[1]-middle) / (length - middle);

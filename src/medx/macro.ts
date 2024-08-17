@@ -22,7 +22,11 @@ export function parseArgs(args: string[]) : MedxArgs | null {
 
 //@ts-ignore
 export async function renderMedxMacro({ slot, payload }) {
-  const [type, url] = payload.arguments
+  const args = parseArgs(payload.arguments)!;
+  let url = args.url;
+  if (args.start || args.end) {
+    url = `${url}#t=${args.start ?? ''},${args.end ?? ''}`;
+  }
 
   logseq.provideUI({
     key: `medx__${slot}`,

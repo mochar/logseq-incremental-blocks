@@ -8,13 +8,15 @@
     "preinstall": "npx only-allow pnpm",
     "test": "vitest"
   },
-  "license": "MIT",
+  "license": "AGPL-3",
   "dependencies": {
+    "@kitaitimakoto/media-fragment": "^0.0.1",
     "@logseq/libs": "^0.0.17",
     "jstat": "^1.9.6",
     "react": "^18.2.0",
     "react-datepicker": "^7.3.0",
     "react-dom": "^18.2.0",
+    "react-range": "^1.10.0",
     "react-virtuoso": "^4.7.13",
     "remove-markdown": "^0.5.0",
     "seedrandom": "^3.0.5",
