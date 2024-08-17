@@ -1,11 +1,18 @@
 import { GLOBALS } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
+import { renderMedxMacro } from "../medx/macro";
 import { dateDiffInDays, formatDate } from "../utils";
 
 //@ts-ignore
 export async function handleMacroRendererSlotted({ slot, payload }) {
   const [type] = payload.arguments
-  if (!type?.startsWith(':ib')) return;
+  if (!type) return;
+  if (type.startsWith(':ib')) renderIbMacro({ slot, payload });
+  if (type.startsWith(':medx')) renderMedxMacro({ slot, payload });
+}
+
+//@ts-ignore
+async function renderIbMacro({ slot, payload }) {
   const ib = await IncrementalBlock.fromUuid(payload.uuid);
 
   let priorityHtml = '';
@@ -63,8 +70,7 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
     <div class="text-sm bg-gray-100/20 text-gray-700 flex">
       <button
         class="rounded-lg border flex" 
-        data-on-click="togglePopover" 
-        data-on-focusout="hidePopover"
+        data-on-click="toggleIbPopover" 
         data-block-uuid="${payload.uuid}"
         data-slot-id="${slot}"
       >

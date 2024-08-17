@@ -12,7 +12,7 @@ import BetaGraph from "./BetaGraph";
 import PrioritySlider from "./PrioritySlider";
 import { GLOBALS } from "../globals";
 
-export default function Popover({ block, slot }: { block: BlockEntity, slot: string }) {
+export default function IbPopover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [priorityOnly, setPriorityOnly] = useState<boolean>(true);
   const baseBeta = useRef<Beta>();
@@ -25,7 +25,6 @@ export default function Popover({ block, slot }: { block: BlockEntity, slot: str
   useEffect(() => {
     // Set position above bar
     const div = top?.document.getElementById(slot);
-    // if (!div) return;
     if (div) {
       const elemBoundingRect = div.getBoundingClientRect();
       ref.current!.style.top = `${elemBoundingRect.top - (ref.current?.clientHeight ?? 0) - 10}px`;
