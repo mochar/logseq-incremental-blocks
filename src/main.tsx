@@ -11,6 +11,7 @@ import { handleMacroRendererSlotted } from "./logseq/macro";
 import { onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand, onCreateSelectedIbsCommand } from "./logseq/command";
 import { GLOBALS } from "./globals";
 import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
+import { insertIncrementalMedia } from "./medx/command";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -88,6 +89,7 @@ function main() {
   registerCommand('Turn siblings into priority blocks', onCreateIbWithSiblingsCommand);
   logseq.App.registerCommandPalette({ key: 'ib-convert-selected', label: 'Convert selected to ibs'}, 
     onCreateSelectedIbsCommand);
+  logseq.Editor.registerSlashCommand('Insert incremental media', insertIncrementalMedia);
 
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
   logseq.App.onCurrentGraphChanged((e) => GLOBALS.queue.refresh());

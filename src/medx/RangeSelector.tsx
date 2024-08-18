@@ -1,6 +1,7 @@
 import React from "react";
 import { Range } from "react-range";
 import { IRenderThumbParams, IRenderTrackParams } from "react-range/lib/types";
+import { secondsToString } from "../utils";
 
 interface RangeSelectorProps {
   length: number,
@@ -108,7 +109,7 @@ export default function RangeSelector({ length, url, initStart, initEnd, onChang
 }
 
 function TimeText({ seconds }: { seconds: number }) {
-  const str = new Date(1000 * seconds).toISOString().substr(11, 8);
+  const str = secondsToString(seconds);
   return (
   <span className="text-gray-600">
     {str}

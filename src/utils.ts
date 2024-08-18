@@ -132,3 +132,7 @@ export function addContentAndProps(content: string, { addition, props }: { addit
   }
   return lines.join('\n');
 }
+
+export function secondsToString(seconds: number) : string {
+  return new Date(1000 * seconds).toISOString().substring(11, 8);
+}
