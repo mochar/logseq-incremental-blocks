@@ -68,6 +68,19 @@ function main() {
     .muted {
       color: grey;
     }
+    
+    .medx-player audio {
+      height: 2rem;
+    }
+
+    .medx-player audio::-webkit-media-controls-panel, video::-webkit-media-controls-panel {
+      height: 2rem;
+      border-radius: 1px;
+    }
+
+    .medx-player input[type="range" i]::-webkit-media-slider-container {
+      border-radius: 1px;
+    }
   `);
 
   logseq.App.registerUIItem("toolbar", {

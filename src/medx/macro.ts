@@ -49,16 +49,16 @@ export async function renderMedxMacro({ slot, payload }) {
   if (args == null) return;
   const html = `
   <div class="text-sm bg-gray-100/20 text-gray-700 flex">
-    <div class="medx-player"></div>
+    <button class="medx-player"></button>
     
     <button
-      class="rounded-lg border flex"
+      class="rounded-lg border flex items-center h-8 ml-2"
       data-on-click="toggleMedxPopover" 
       data-block-uuid="${payload.uuid}"
       data-slot-id="${slot}"
       data-macro-args="${payload.arguments}"
     >
-      Extract
+      <span class="ti ti-layers-subtract text-base px-1"></span>
     </button>
   </div>
   `;
@@ -71,7 +71,7 @@ export async function renderMedxMacro({ slot, payload }) {
   });
 
   setTimeout(() => {
-    const playerDiv = top?.document.querySelector(`#${slot} div.medx-player`);
+    const playerDiv = top?.document.querySelector(`#${slot} .medx-player`);
     if (!playerDiv) return;
     const media = new Audio(args.urlTimed);
     media.controls = true;
@@ -85,7 +85,10 @@ export async function renderMedxMacro({ slot, payload }) {
         media.currentTime = args.start ?? 0;
         if (args.loop) media.play();
       }
+      if (args.start && media.currentTime <= args.start) {
+        media.currentTime = args.start;
+      }
     };
-    playerDiv?.appendChild(media);
+    playerDiv.appendChild(media);
   }, 100);
 }

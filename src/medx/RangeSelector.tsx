@@ -12,11 +12,8 @@ interface RangeSelectorProps {
 }
 
 export default function RangeSelector({ length, url, initStart, initEnd, onChange }: RangeSelectorProps) {
-  const [zoom, setZoom] = React.useState<number>(0.);
   // Selected extract range
   const [range, setRange] = React.useState([initStart ?? 0, initEnd ?? length]);
-  // Min and max of slider
-  const [times, setTimes] = React.useState([0, length]);
   const middle = range[0] + 0.5*(range[1] - range[0]);
   const minRange = Math.min(length, 2);
   const timedUrl = url && `${url}#t=${range[0]},${range[1]}`;
@@ -26,12 +23,21 @@ export default function RangeSelector({ length, url, initStart, initEnd, onChang
     const maxLeft = 1 - Math.max(minRange/2, middle-range[0]) / middle;
     const zoomMax = Math.max(maxRight, maxLeft);
     return zoomMax;
-  }, [range, times]);
+  }, [range]);
 
-  function zoomUpdated() {
+  const [zoom, setZoom] = React.useState<number>(0.8 * zoomMax);
+  // Min and max of slider
+  const [times, setTimes] = React.useState(timesFromZoom());
+
+  function timesFromZoom() : number[] {
     const r = middle + Math.max((1-zoom)*(length-middle), Math.max(minRange/2, range[1]-middle));
     const l = middle - Math.max((1-zoom)*middle, Math.max(minRange/2, middle-range[0]));
-    setTimes([l, r]);
+    return [l, r];
+  }
+
+  function zoomUpdated() {
+    const times_ = timesFromZoom();
+    setTimes(times_);
   }
 
   function onRangeChange(values: number[]) {

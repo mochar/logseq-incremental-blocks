@@ -134,5 +134,5 @@ export function addContentAndProps(content: string, { addition, props }: { addit
 }
 
 export function secondsToString(seconds: number) : string {
-  return new Date(1000 * seconds).toISOString().substring(11, 8);
+  return new Date(1000 * seconds).toISOString().substr(11, 8);
 }
