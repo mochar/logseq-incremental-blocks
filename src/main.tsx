@@ -12,6 +12,8 @@ import { onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand, on
 import { GLOBALS } from "./globals";
 import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
 import { insertIncrementalMedia } from "./medx/command";
+import { Provider } from "react-redux";
+import { store } from "./state/store";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -25,7 +27,9 @@ function main() {
   const root = ReactDOM.createRoot(document.getElementById("app")!);
   root.render(
     <React.StrictMode>
-      <App />
+      <Provider store={store}>
+        <App />
+      </Provider>
     </React.StrictMode>
   );
 
