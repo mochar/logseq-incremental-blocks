@@ -1,51 +1,8 @@
-import { TemporalDimension } from "@kitaitimakoto/media-fragment";
-import { secondsToString } from "../utils";
-
-// url, timerange, vol, rate, loop, playing
-export interface MedxArgs {
-  url: string,
-  start?: number | undefined,
-  end?: number | undefined,
-  urlTimed?: string | undefined,
-  volume: number,
-  rate: number,
-  loop: boolean,
-}
-
-export function parseArgs(args: any[]) : MedxArgs | null {
-  if (args.length < 2) return null;
-  let [flag, url, range, volume, rate, loop] = args;
-  let start, end, urlTimed = url;
-  if (range) {
-    const td = new TemporalDimension(range.replace('-', ','));
-    start = parseFloat(td.s.toString());
-    end = parseFloat(td.e.toString());
-    if (end == Infinity) end = undefined;
-    urlTimed = `${url}#t=${td.toString().replace('npt:', '')}`;
-  }
-  volume = volume ? parseFloat(volume) : 1.0;
-  rate = rate ? parseFloat(rate) : 1.0;
-  loop = loop ? loop == 'true' : false;
-  return { url, start, end, urlTimed, volume, rate, loop };
-}
-
-export function renderArgs({args, asMacro=true }: { args: MedxArgs, asMacro?: boolean }) : string {
-  let range = '-';
-  if (args.start || args.end) {
-    const start = args.start ? secondsToString(args.start) : '';
-    const end = args.end ? secondsToString(args.end) : '';
-    range = `${start}-${end}`;
-  }
-  const loop = args.loop.toString();
-  const str = `:medx, ${args.url}, ${range}, ${args.volume}, ${args.rate}, ${loop}`;
-  if (asMacro) return `{{renderer ${str}}}`;
-  return str;
-}
+import MedxArgs from "./args";
 
 //@ts-ignore
 export async function renderMedxMacro({ slot, payload }) {
-  const args = parseArgs(payload.arguments);
-  console.log(args);
+  const args = MedxArgs.parse(payload.arguments);
   if (args == null) return;
   const html = `
   <div class="text-sm bg-gray-100/20 text-gray-700 flex">

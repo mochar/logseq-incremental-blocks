@@ -1,12 +1,12 @@
-import { MedxArgs, renderArgs } from "./macro";
+import { AppStore } from "../state/store";
+import { toggleView, ViewType } from "../state/viewSlice";
+
+// https://redux.js.org/faq/code-structure#how-can-i-use-the-redux-store-in-non-component-files
+let store: AppStore;
+export const injectStore = (_store: AppStore) => {
+  store = _store
+}
 
 export async function insertIncrementalMedia({ uuid }: { uuid: string }) {
-  const args: MedxArgs = {
-    url: '/home/mochar/Music/acemkurdi.m4a',
-    volume: 1,
-    rate: 1,
-    loop: false
-  };
-  const macro = renderArgs({ args });
-  await logseq.Editor.insertAtEditingCursor(macro);
+  store.dispatch(toggleView({ viewType: ViewType.insert, blockUuid: uuid }));
 }

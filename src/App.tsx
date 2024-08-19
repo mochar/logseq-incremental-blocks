@@ -4,7 +4,8 @@ import MainWindow from "./widgets/MainWindow";
 import { useAppVisible } from "./logseq/events";
 import MedxPopover from "./medx/MedxPopover";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
-import { MedxViewData, setView, toggleView, ViewType } from "./state/viewSlice";
+import { IbViewData, InsertViewData, MedxViewData, setView, SlotViewData, toggleView, ViewType } from "./state/viewSlice";
+import InsertPopover from "./medx/InsertPopover";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
@@ -39,6 +40,7 @@ export default function App() {
   function tryHide(e: any) {
     if (document.getElementById('ib-main')?.contains(e.target) ||
       document.getElementById('ib-popover')?.contains(e.target) ||
+      document.getElementById('ib-insert')?.contains(e.target) ||
       document.getElementById('ib-medx')?.contains(e.target)) {
       return;
     }
@@ -46,17 +48,33 @@ export default function App() {
     window.logseq.hideMainUI();
   }
 
+  let viewComponent: JSX.Element = <></>;
+  switch (view.type) {
+    case ViewType.main:
+      viewComponent = <MainWindow />;
+      break;
+    case ViewType.ib:
+      const ibData = view.data! as IbViewData;
+      viewComponent = <IbPopover block={ibData.block} slot={ibData.slotId} />;
+      break;
+    case ViewType.medx:
+      const medxData = view.data! as MedxViewData;
+      viewComponent = <MedxPopover 
+        block={medxData.block} 
+        slot={medxData.slotId} 
+        args={medxData.medArgs}
+      />;
+      break;
+    case ViewType.insert:
+      const insertData = view.data! as InsertViewData;
+      viewComponent = <InsertPopover block={insertData.block} />
+      break;
+  }
+
   if (!visible) return null;
   return (
     <main onClick={tryHide} className="bg-transparent fixed inset-0 flex">
-      {view.type == ViewType.main && <MainWindow />}
-      {view.type == ViewType.ib && <IbPopover block={view.data!.block} slot={view.data!.slotId} />}
-      {view.type == ViewType.medx && <MedxPopover 
-        block={view.data!.block} 
-        slot={view.data!.slotId} 
-        args={(view.data! as MedxViewData).medArgs}
-      />
-      }
+      {viewComponent}
     </main>
   );
 }

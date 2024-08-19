@@ -1,10 +1,10 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import React from "react";
-import { MedxArgs, renderArgs } from "./macro";
 import RangeSelector from "./RangeSelector";
 import IncrementalBlock from "../IncrementalBlock";
 import Beta from "../algorithm/beta";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
+import MedxArgs from "./args";
 
 export default function MedxPopover({ block, slot, args }: { block: BlockEntity, slot: string, args: MedxArgs }) {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -35,15 +35,16 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
   
   async function extract() {
     const ib = IncrementalBlock.fromBlock(block);
-    const newArgs: MedxArgs = {
+    const newArgs = new MedxArgs({
       url: args.url,
+      format: args.format,
       volume: args.volume,
       rate: args.rate,
       loop: args.loop,
       start: range.current![0],
       end: range.current![1]
-    };
-    const content = `${renderArgs({ args: newArgs })}\n{{renderer :ib}}`;
+    });
+    const content = `${args.render()}\n{{renderer :ib}}`;
     let beta = ib.beta;
     if (!beta) {
       beta = new Beta(1, 1);

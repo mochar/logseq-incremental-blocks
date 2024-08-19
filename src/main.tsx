@@ -11,7 +11,7 @@ import { handleMacroRendererSlotted } from "./logseq/macro";
 import { onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand, onCreateSelectedIbsCommand } from "./logseq/command";
 import { GLOBALS } from "./globals";
 import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
-import { insertIncrementalMedia } from "./medx/command";
+import { injectStore, insertIncrementalMedia } from "./medx/command";
 import { Provider } from "react-redux";
 import { store } from "./state/store";
 
@@ -19,6 +19,8 @@ import { store } from "./state/store";
 const css = (t, ...args) => String.raw(t, ...args);
 
 const pluginId = PL.id;
+
+injectStore(store);
 
 function main() {
   console.info(`#${pluginId}: MAIN`);

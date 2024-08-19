@@ -1,4 +1,5 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
+import { useEffect, useState } from "react";
 import removeMarkdown from 'remove-markdown';
 
 // https://stackoverflow.com/questions/3224834/get-difference-between-2-dates-in-javascript
@@ -135,4 +136,18 @@ export function addContentAndProps(content: string, { addition, props }: { addit
 
 export function secondsToString(seconds: number) : string {
   return new Date(1000 * seconds).toISOString().substr(11, 8);
+}
+
+export function useDebounce(value: any, delay: number) {
+  const [debounceValue, setDebounceValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebounceValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+  return debounceValue;
 }
