@@ -85,6 +85,7 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
     const properties = { 'ib-reps': 0, 'ib-a': beta.a, 'ib-b': beta.b, 'ib-due': due.getTime(), 'ib-interval': interval };
     const b = await logseq.Editor.insertBlock(block.uuid, content, { properties, focus: false });
     reset();
+    setRange([range[1], Math.min(range[1]+(range[1]-range[0]), length)]);
   }
 
   let content;
@@ -94,8 +95,7 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
     content = <>
       <RangeSelector 
         length={duration}
-        initStart={range[0]}
-        initEnd={range[1]}
+        range={range}
         onChange={updateRange}
       ></RangeSelector>
       <label className="w-full">
