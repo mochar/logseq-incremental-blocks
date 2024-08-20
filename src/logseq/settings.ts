@@ -14,7 +14,7 @@ const settings: SettingSchemaDesc[] = [
     key: 'defaultMultiplier',
     title: 'Default scheduler multiplier',
     description: 'Default scheduler multiplier.',
-    default: 2.,
+    default: 1.3,
     type: 'number'
   },
   {
