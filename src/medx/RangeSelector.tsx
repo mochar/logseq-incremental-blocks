@@ -28,8 +28,10 @@ export default function RangeSelector({ length, initStart, initEnd, onChange }: 
   const [times, setTimes] = React.useState(timesFromZoom());
 
   function timesFromZoom() : number[] {
-    const r = middle + Math.max((1-zoom)*(length-middle), Math.max(minRange/2, range[1]-middle));
-    const l = middle - Math.max((1-zoom)*middle, Math.max(minRange/2, middle-range[0]));
+    // const r = middle + Math.max((1-zoom)*(length-middle), Math.max(minRange/2, range[1]-middle));
+    // const l = middle - Math.max((1-zoom)*middle, Math.max(minRange/2, middle-range[0]));
+    const r = range[1] + (1-zoom)*(length-range[1]);
+    const l = range[0] - (1-zoom)*range[0];
     return [l, r];
   }
 
