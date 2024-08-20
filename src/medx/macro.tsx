@@ -22,6 +22,14 @@ export async function renderMedxMacro({ slot, payload }) {
     >
       <span>[${secondsToString(args.start ?? 0)}-${args.end ? secondsToString(args.end) : 'end'}]</span>
     </button>
+
+    <button
+      class="rounded-lg border flex items-center h-8 ml-2"
+      data-on-click="refToMedia" 
+      data-block-uuid="${payload.uuid}"
+    >
+      <span class="ti ti-code-plus text-base px-1"></span>
+    </button>
     `;
   }
 
@@ -38,7 +46,7 @@ export async function renderMedxMacro({ slot, payload }) {
       data-slot-id="${slot}"
       data-macro-args="${payload.arguments}"
     >
-      <span class="ti ti-layers-subtract text-base px-1"></span>
+      <span class="ti ti-quote text-base px-1"></span>
     </button>
   </div>
   `;

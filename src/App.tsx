@@ -49,6 +49,13 @@ export default function App() {
           return;
         }
         renderMediaEmbed({ playerDiv, args, play: true });
+      },
+      async refToMedia(e: any) {
+        const { blockUuid } = e.dataset;
+        const block = await logseq.Editor.getBlock(blockUuid);
+        if (!block) return;
+        const newContent = block.content.replace('{{renderer :medx_ref', '{{renderer :medx');
+        await logseq.Editor.updateBlock(blockUuid, newContent);
       }
     });
   }, []);
