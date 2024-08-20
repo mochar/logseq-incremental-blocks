@@ -7,24 +7,20 @@ import Beta from "../algorithm/beta";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import MedxArgs from "./args";
 import { OnProgressProps } from "react-player/base";
+import PrioritySlider from "../widgets/PrioritySlider";
+import { betaFromMean } from "../algorithm/priority";
 
 export default function MedxPopover({ block, slot, args }: { block: BlockEntity, slot: string, args: MedxArgs }) {
+  const ib = IncrementalBlock.fromBlock(block);
   const ref = React.useRef<HTMLDivElement>(null);
   const player = React.useRef<ReactPlayer | null>(null);
   const [playing, setPlaying] = React.useState<boolean>(false);
   const [range, setRange] = React.useState<number[]>([0, 1]);
   const [duration, setDuration] = React.useState<number>();
+  const [beta, setBeta] = React.useState<Beta>(ib.beta ?? new Beta(1, 1));
+  const [interval, setInterval] = React.useState<number>(initialIntervalFromMean(beta.mean));
+  const note = React.useRef<string>('');
   const playerUrl = args.format == 'youtube' ? `https://www.youtube.com/watch?v=${args.url}` : args.urlTimed;
-
-  React.useEffect(() => {
-    // Set position above bar
-    const div = top?.document.getElementById(slot);
-    if (div) {
-      const elemBoundingRect = div.getBoundingClientRect();
-      ref.current!.style.top = `${elemBoundingRect.top - (ref.current?.clientHeight ?? 0) - 10}px`;
-      ref.current!.style.left = `${elemBoundingRect.left}px`;
-    }
-  }, [block]);
 
   const playerConfig = useMemo(() => {
     return {
@@ -46,6 +42,7 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
     const end = args.end ?? d;
     setRange([start, end]);
     setDuration(d);
+    setPlaying(true);
   }
 
   function onProgress({ played, playedSeconds, loaded, loadedSeconds }: OnProgressProps) {
@@ -60,10 +57,18 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
   function updateRange(newRange: number[]) {
     setRange(newRange);
   }
+
+  async function updatePriority(mean: number) {
+    const newBeta = betaFromMean(mean, { currentBeta: beta });
+    setBeta(newBeta);
+    const interval = initialIntervalFromMean(newBeta.mean);
+    setInterval(interval);
+  }
+
   
   async function extract() {
-    const ib = IncrementalBlock.fromBlock(block);
     const newArgs = new MedxArgs({
+      flag: ':medx_ref',
       url: args.url,
       format: args.format,
       volume: args.volume,
@@ -72,13 +77,8 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
       start: range[0],
       end: range[1]
     });
-    const content = `${newArgs.render()}\n{{renderer :ib}}`;
-    let beta = ib.beta;
-    if (!beta) {
-      beta = new Beta(1, 1);
-      beta.mean = logseq.settings?.defaultPriority as number ?? 0.5;
-    }
-    const interval = initialIntervalFromMean(beta.mean);
+    const noteText = note.current == '' ? '' : `${note.current} \n`;
+    const content = `${noteText}${newArgs.render()} \n{{renderer :ib}}`;
     const due = new Date();
     due.setDate(due.getDate() + interval);
     const properties = { 'ib-reps': 0, 'ib-a': beta.a, 'ib-b': beta.b, 'ib-due': due.getTime(), 'ib-interval': interval };
@@ -96,12 +96,44 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
         initEnd={range[1]}
         onChange={updateRange}
       ></RangeSelector>
-      <button 
-        className="w-fit mt-2 bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
-        onClick={extract}
-      >
-        Extract
-      </button>
+      <label className="w-full">
+        <textarea
+          className="border w-full rounded p-1" 
+          placeholder="Note"
+          rows={2}
+          onChange={e => note.current = e.target.value} 
+        />
+      </label>
+      <div className="flex items-center">
+        <p>Priority</p>
+
+        <div className="w-full ml-1">
+          <PrioritySlider
+            beta={beta}
+            varianceSlider={false}
+            onMeanChange={updatePriority}
+          ></PrioritySlider>
+        </div>
+
+        <p className="ml-2">Interval</p>
+        <input 
+          className="border w-16 ml-1" 
+          type="number" 
+          value={interval}
+          onChange={(e) => setInterval(parseFloat(e.target.value))}
+          min="1" 
+          step="1"
+        ></input>
+
+        <div className="w-full"></div>
+
+        <button 
+          className="w-fit ml-2 mt-2 bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
+          onClick={extract}
+        >
+          Extract
+        </button>
+      </div>
     </>;
   }
 
@@ -109,15 +141,15 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
   <div 
     ref={ref} 
     id="ib-medx" 
-    style={{position: "fixed"}} 
-    className="flex flex-col rounded-lg border bg-white shadow-md p-2 divide-x text-sm"
+    className="fixed flex flex-col rounded border bg-white shadow-md p-2"
   >
     {content}
 
     <div id="medx-preview" className="mt-1">
       <ReactPlayer 
         ref={(p) => player.current = p}
-        width={args.format == 'audio' ? '300px' : '640px'}
+        // width={args.format == 'audio' ? '300px' : '640px'}
+        width={'640px'}
         height={args.format == 'audio' ? '2rem' : '360px'}
         url={playerUrl}
         playing={playing}

@@ -96,7 +96,10 @@ export default function App() {
 
   if (!visible) return null;
   return (
-    <main onClick={tryHide} className="bg-transparent fixed inset-0 flex">
+    <main 
+      className={"bg-transparent fixed inset-0 flex " + (view.type == ViewType.medx ? 'backdrop-filter backdrop-blur-md items-center justify-center' : '')}
+      onClick={tryHide} 
+    >
       {viewComponent}
     </main>
   );
