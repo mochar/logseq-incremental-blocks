@@ -44,7 +44,13 @@ export default class MedxArgs {
       end = parseFloat(td.e.toString());
       if (end == Infinity) end = undefined;
       if (format == 'youtube') {
-        urlTimed = `https://www.youtube.com/embed/${url}?autoplay=0&start=${start}&end=${end}`;
+        urlTimed = `https://www.youtube.com/embed/${url}?autoplay=0`;
+        if (start) {
+          urlTimed = `${urlTimed}&start=${start}`;
+        }
+        if (end) {
+          urlTimed = `${urlTimed}&end=${end}`;
+        }
       } else {
         urlTimed = `${url}#t=${td.toString().replace('npt:', '')}`;
       }

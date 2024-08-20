@@ -87,6 +87,10 @@ function main() {
     .medx-player input[type="range" i]::-webkit-media-slider-container {
       border-radius: 1px;
     }
+
+    .medx-player iframe {
+      margin: 0;
+    }
   `);
 
   logseq.App.registerUIItem("toolbar", {
