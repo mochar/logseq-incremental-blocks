@@ -6,6 +6,8 @@ import MedxPopover from "./medx/MedxPopover";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
 import { IbViewData, InsertViewData, MedxViewData, setView, SlotViewData, toggleView, ViewType } from "./state/viewSlice";
 import InsertPopover from "./medx/InsertPopover";
+import { renderMediaEmbed } from "./medx/macro";
+import MedxArgs from "./medx/args";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
@@ -33,6 +35,20 @@ export default function App() {
           slotId: e.dataset.slotId,
           medArgs: e.dataset.macroArgs
         }));
+      },
+      playRange(e: any) {
+        const { slotId, mediaUrl, macroArgs } = e.dataset;
+        const playerDiv = top?.document.getElementById(`medx-player-${mediaUrl}`);
+        if (!playerDiv) {
+          logseq.UI.showMsg('Media not found in page');
+          return;
+        }
+        const args = MedxArgs.parse(macroArgs.split(','));
+        if (!args) {
+          logseq.UI.showMsg('Invalid media args');
+          return;
+        }
+        renderMediaEmbed({ playerDiv, args, play: true });
       }
     });
   }, []);

@@ -3,6 +3,7 @@ import { secondsToString } from "../utils";
 import React from "react";
 
 interface IMedxArgs {
+  flag?: ':medx' | ':medx_ref',
   url: string,
   format: 'audio' | 'video' | 'youtube',
   start?: number | undefined,
@@ -14,6 +15,7 @@ interface IMedxArgs {
 }
 
 export default class MedxArgs {
+  public flag: ':medx' | ':medx_ref';
   public url: string;
   public format: 'audio' | 'video' | 'youtube';
   public start?: number | undefined;
@@ -24,6 +26,7 @@ export default class MedxArgs {
   public loop: boolean;
 
   constructor(args: IMedxArgs) {
+    this.flag = args.flag ?? ':medx';
     this.url = args.url;
     this.format = args.format;
     this.start = args.start;
@@ -58,7 +61,7 @@ export default class MedxArgs {
     volume = volume ? parseFloat(volume) : 1.0;
     rate = rate ? parseFloat(rate) : 1.0;
     loop = loop ? loop == 'true' : false;
-    return new this({ url, format, start, end, urlTimed, volume, rate, loop });
+    return new this({ flag, url, format, start, end, urlTimed, volume, rate, loop });
   }
 
   public render(asMacro: boolean = true) : string {
@@ -69,7 +72,7 @@ export default class MedxArgs {
       range = `${start}-${end}`;
     }
     const loop = this.loop.toString();
-    const str = `:medx, ${this.url}, ${this.format}, ${range}, ${this.volume}, ${this.rate}, ${loop}`;
+    const str = `${this.flag}, ${this.url}, ${this.format}, ${range}, ${this.volume}, ${this.rate}, ${loop}`;
     if (asMacro) return `{{renderer ${str}}}`;
     return str;
   }
