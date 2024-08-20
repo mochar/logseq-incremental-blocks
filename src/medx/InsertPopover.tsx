@@ -20,24 +20,13 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
   const [url, setUrl] = React.useState<string>('');
   const debouncedUrl = useDebounce(url, 300);
 
-  React.useEffect(() => {
-    // Set position above bar
-    const div = top?.document.querySelector(`div[blockid="${block.uuid}"]`);
-    if (div) {
-      const elemBoundingRect = div.getBoundingClientRect();
-      ref.current!.style.top = `${elemBoundingRect.top - (ref.current?.clientHeight ?? 0) - 10}px`;
-      ref.current!.style.left = `${elemBoundingRect.left}px`;
-    }
-  }, [block]);
-
-
   const mediaElement = useMemo(() => {
     if (!debouncedUrl) return <></>;
     if (format == 'audio') {
-      return <audio controls src={url}></audio>;
+      return <audio controls style={{ width: 640 }} src={url}></audio>;
     } 
     if (format == 'video') {
-      return <video style={{ maxWidth: 400 }} controls src={url}></video>;
+      return <video style={{ width: 640 }} controls src={url}></video>;
     }
     if (format == 'youtube') {
       const id = parseYoutubeId(url);
@@ -85,8 +74,8 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
   <div
     ref={ref} 
     id="ib-insert" 
-    style={{position: "fixed"}} 
-    className="flex flex-col rounded-lg border bg-white shadow-md p-2"
+    className="fixed flex flex-col rounded-lg border bg-white shadow-md p-2"
+    style={{ minWidth: 640 }}
   >
     <label>
       Path or URL

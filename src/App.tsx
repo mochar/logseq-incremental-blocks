@@ -95,9 +95,17 @@ export default function App() {
   }
 
   if (!visible) return null;
+
+  let classesIfCentered = '';
+  switch (view.type) {
+    case ViewType.medx:
+    case ViewType.insert:
+      classesIfCentered = 'backdrop-filter backdrop-blur-md items-center justify-center';
+      break;
+  }
   return (
     <main 
-      className={"bg-transparent fixed inset-0 flex " + (view.type == ViewType.medx ? 'backdrop-filter backdrop-blur-md items-center justify-center' : '')}
+      className={`bg-transparent fixed inset-0 flex ${classesIfCentered}`}
       onClick={tryHide} 
     >
       {viewComponent}
