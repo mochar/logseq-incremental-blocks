@@ -13,6 +13,7 @@ import { betaFromMean } from "../algorithm/priority";
 export default function MedxPopover({ block, slot, args }: { block: BlockEntity, slot: string, args: MedxArgs }) {
   const ib = IncrementalBlock.fromBlock(block);
   const ref = React.useRef<HTMLDivElement>(null);
+  const noteRef = React.useRef<HTMLTextAreaElement>(null);
   const player = React.useRef<ReactPlayer | null>(null);
   const [playing, setPlaying] = React.useState<boolean>(false);
   const [range, setRange] = React.useState<number[]>([0, 1]);
@@ -22,20 +23,20 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
   const note = React.useRef<string>('');
   const playerUrl = args.format == 'youtube' ? `https://www.youtube.com/watch?v=${args.url}` : args.urlTimed;
 
-  const playerConfig = useMemo(() => {
-    return {
-      // youtube: {
-      //   playerVars: {
-      //     start: range[0],
-      //     end: range[1]
-      //   }
-      // },
-      file: {
-        forceVideo: args.format == 'video',
-        forceAudio: args.format == 'audio',
-      }
-    };
-  }, [range]);
+  const playerConfig = {
+    file: {
+      forceVideo: args.format == 'video',
+      forceAudio: args.format == 'audio',
+    }
+  }
+
+  function reset() {
+    const b = ib.beta ?? new Beta(1, 1);
+    setBeta(b);
+    setInterval(initialIntervalFromMean(b.mean));
+    note.current = '';
+    if (noteRef.current) noteRef.current.value = '';
+  }
 
   function onDuration(d: number) {
     const start = args.start ?? 0;
@@ -83,6 +84,7 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
     due.setDate(due.getDate() + interval);
     const properties = { 'ib-reps': 0, 'ib-a': beta.a, 'ib-b': beta.b, 'ib-due': due.getTime(), 'ib-interval': interval };
     const b = await logseq.Editor.insertBlock(block.uuid, content, { properties, focus: false });
+    reset();
   }
 
   let content;
@@ -98,6 +100,7 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
       ></RangeSelector>
       <label className="w-full">
         <textarea
+          ref={noteRef}
           className="border w-full rounded p-1" 
           placeholder="Note"
           rows={2}
