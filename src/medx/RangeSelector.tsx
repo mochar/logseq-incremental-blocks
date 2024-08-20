@@ -1,22 +1,20 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Range } from "react-range";
 import { IRenderThumbParams, IRenderTrackParams } from "react-range/lib/types";
 import { secondsToString } from "../utils";
 
 interface RangeSelectorProps {
   length: number,
-  url?: string,
   initStart?: number,
   initEnd?: number,
   onChange?: (range: number[]) => void
 }
 
-export default function RangeSelector({ length, url, initStart, initEnd, onChange }: RangeSelectorProps) {
+export default function RangeSelector({ length, initStart, initEnd, onChange }: RangeSelectorProps) {
   // Selected extract range
   const [range, setRange] = React.useState([initStart ?? 0, initEnd ?? length]);
   const middle = range[0] + 0.5*(range[1] - range[0]);
   const minRange = Math.min(length, 2);
-  const timedUrl = url && `${url}#t=${range[0]},${range[1]}`;
 
   const zoomMax = React.useMemo(() : number => {
     const maxRight = 1 - Math.max(minRange/2, range[1]-middle) / (length - middle);
@@ -40,7 +38,7 @@ export default function RangeSelector({ length, url, initStart, initEnd, onChang
     setTimes(times_);
   }
 
-  function onRangeChange(values: number[]) {
+  function onRangeChanged(values: number[]) {
     setRange(values);
     if (onChange) onChange(values);
   }
@@ -90,7 +88,7 @@ export default function RangeSelector({ length, url, initStart, initEnd, onChang
       {/* <p className="w-14">{(zoom*100).toFixed(2)}%</p> */}
     </div>
 
-    <div className="my-3 flex items-center">
+    <div className="my-2 flex items-center">
       <TimeText seconds={range[0]}></TimeText>
       <div className="flex-grow mx-2">
         <Range
@@ -100,17 +98,13 @@ export default function RangeSelector({ length, url, initStart, initEnd, onChang
           max={times[1]}
           values={range}
           draggableTrack={true}
-          onChange={onRangeChange}
+          onChange={setRange}
+          onFinalChange={onRangeChanged}
           renderTrack={renderTrack}
           renderThumb={renderThumb}></Range>
       </div>
       <TimeText seconds={range[1]}></TimeText>
     </div>
-
-    {timedUrl && <div className="">
-      <audio controls src={timedUrl}></audio>
-    </div>}
-
   </div>);
 }
 

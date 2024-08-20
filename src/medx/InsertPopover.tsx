@@ -5,6 +5,14 @@ import MedxArgs from "./args";
 import { useAppDispatch } from "../state/hooks";
 import { toggleView } from "../state/viewSlice";
 
+// https://stackoverflow.com/a/27728417/2374668
+function parseYoutubeId(url: string) : string | null {
+  const rx = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/|shorts\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
+  const match = url.match(rx);
+  if (match && match?.length >= 2) return match[1];
+  return null;
+}
+
 export default function InsertPopover({ block }: { block: BlockEntity }) {
   const ref = React.useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
@@ -32,7 +40,11 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
       return <video style={{ maxWidth: 400 }} controls src={url}></video>;
     }
     if (format == 'youtube') {
-      return <></>;
+      const id = parseYoutubeId(url);
+      if (!id) <p>Unable to recognize youtube URL.</p>;
+      return <iframe width={640} height={360}
+        src={`https://www.youtube.com/embed/${id}?autoplay=0`}
+      ></iframe>;
     }
   }, [debouncedUrl, format]);
 
@@ -55,9 +67,10 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
   }
 
   async function insert() {
-    console.log(url, format);
+    const url_ = format == 'youtube' ? (parseYoutubeId(url) ?? url) : url;
+    console.log(url_, format);
     const args = new MedxArgs({
-      url,
+      url: url_,
       //@ts-ignore
       format, 
       volume: 1,

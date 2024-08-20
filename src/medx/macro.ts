@@ -4,9 +4,27 @@ import MedxArgs from "./args";
 export async function renderMedxMacro({ slot, payload }) {
   const args = MedxArgs.parse(payload.arguments);
   if (args == null) return;
+
+  const isYoutube = args.format == 'youtube';
+  let maybeYtEmbed = '';
+  if (isYoutube) {
+    const loop = args.loop ? '1' : '0';
+    maybeYtEmbed = `
+    <iframe 
+      id="ytplayer-${slot}" 
+      type="text/html" 
+      width="640" 
+      height="360"
+      style="width: 640px; height: 360px; margin: 0"
+      src="${args.urlTimed}&loop=${loop}"
+      frameborder="0">
+    </iframe>
+    `;
+  }
+
   const html = `
-  <div class="text-sm bg-gray-100/20 text-gray-700 flex">
-    <button class="medx-player"></button>
+  <div class="text-sm bg-gray-100/20 text-gray-700 flex items-center">
+    <div class="medx-player flex">${maybeYtEmbed}</div>
     
     <button
       class="rounded-lg border flex items-center h-8 ml-2"
@@ -27,10 +45,20 @@ export async function renderMedxMacro({ slot, payload }) {
     template: html,
   });
 
+  if (isYoutube) return;
+
   setTimeout(() => {
     const playerDiv = top?.document.querySelector(`#${slot} .medx-player`);
     if (!playerDiv) return;
-    const media = new Audio(args.urlTimed);
+    let media: HTMLMediaElement;
+    if (args.format == 'audio') {
+      media = new Audio(args.urlTimed);
+    } else if (args.format == 'video') {
+      media = document.createElement('video');
+      media.src = args.urlTimed || args.url;
+    } else {
+      return;
+    }
     media.controls = true;
     media.onloadedmetadata = function() {
       media.playbackRate = args.rate;

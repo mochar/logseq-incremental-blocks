@@ -1,5 +1,6 @@
 import { TemporalDimension } from "@kitaitimakoto/media-fragment";
 import { secondsToString } from "../utils";
+import React from "react";
 
 interface IMedxArgs {
   url: string,
@@ -7,9 +8,9 @@ interface IMedxArgs {
   start?: number | undefined,
   end?: number | undefined,
   urlTimed?: string | undefined,
-  volume: number,
-  rate: number,
-  loop: boolean
+  volume?: number,
+  rate?: number,
+  loop?: boolean
 }
 
 export default class MedxArgs {
@@ -28,9 +29,9 @@ export default class MedxArgs {
     this.start = args.start;
     this.end = args.end;
     this.urlTimed = args.urlTimed;
-    this.volume = args.volume;
-    this.rate = args.rate;
-    this.loop = args.loop;
+    this.volume = args.volume ?? 1.;
+    this.rate = args.rate ?? 1.;
+    this.loop = args.loop ?? false;
   }
 
   static parse(args: any[]) : MedxArgs | null {
@@ -42,7 +43,11 @@ export default class MedxArgs {
       start = parseFloat(td.s.toString());
       end = parseFloat(td.e.toString());
       if (end == Infinity) end = undefined;
-      urlTimed = `${url}#t=${td.toString().replace('npt:', '')}`;
+      if (format == 'youtube') {
+        urlTimed = `https://www.youtube.com/embed/${url}?autoplay=0&start=${start}&end=${end}`;
+      } else {
+        urlTimed = `${url}#t=${td.toString().replace('npt:', '')}`;
+      }
     }
     volume = volume ? parseFloat(volume) : 1.0;
     rate = rate ? parseFloat(rate) : 1.0;
@@ -61,5 +66,19 @@ export default class MedxArgs {
     const str = `:medx, ${this.url}, ${this.format}, ${range}, ${this.volume}, ${this.rate}, ${loop}`;
     if (asMacro) return `{{renderer ${str}}}`;
     return str;
+  }
+
+  public createElement() : JSX.Element {
+    if (this.format == 'audio') {
+      return <audio controls src={this.urlTimed}></audio>;
+    } 
+    if (this.format == 'video') {
+      return <video style={{ maxWidth: 400 }} controls src={this.urlTimed}></video>;
+    }
+    if (this.format == 'youtube') {
+      const url = (this.start || this.end) ? `https://www.youtube.com/embed/${this.url}?autoplay=0` : this.urlTimed;
+      return <iframe width={640} height={360} src={url}></iframe>;
+    }
+    return <></>;
   }
 }
