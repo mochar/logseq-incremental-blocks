@@ -1,6 +1,7 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
-import { toCamelCase, todayMidnight, toEndOfDay, toStartOfDay } from "../utils";
+import { toCamelCase } from "../utils/utils";
+import { toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
   // Identify by ib-due. Put in ?due var. Used downstream.

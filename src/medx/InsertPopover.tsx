@@ -1,6 +1,6 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import React, { useMemo } from "react";
-import { useDebounce } from "../utils";
+import { useDebounce } from "../utils/utils";
 import MedxArgs from "./args";
 import { useAppDispatch } from "../state/hooks";
 import { toggleView } from "../state/viewSlice";

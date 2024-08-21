@@ -2,7 +2,7 @@ import MedxArgs from "./args";
 import ReactPlayer from 'react-player/lazy';
 import { createRoot } from 'react-dom/client';
 import React from "react";
-import { secondsToString } from "../utils";
+import { secondsToString } from "../utils/datetime";
 
 //@ts-ignore
 export async function renderMedxMacro({ slot, payload }) {

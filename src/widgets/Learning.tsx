@@ -5,7 +5,7 @@ import { PriorityUpdate } from "../algorithm/priority";
 import DatePicker from "react-datepicker";
 import PrioritySlider from "./PrioritySlider";
 import { nextInterval } from "../algorithm/scheduling";
-import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils";
+import { formatDate, addDays, todayMidnight, dateDiffInDays } from "../utils/datetime";
 import IbItem from "./IbItem";
 import BetaGraph from "./BetaGraph";
 import { RepAction } from "../LearnQueue";

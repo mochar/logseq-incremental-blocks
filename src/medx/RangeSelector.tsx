@@ -1,7 +1,7 @@
 import React from "react";
 import { Range, getTrackBackground } from "react-range";
 import { IRenderThumbParams, IRenderTrackParams } from "react-range/lib/types";
-import { secondsToString } from "../utils";
+import { secondsToString } from "../utils/datetime";
 
 interface RangeSelectorProps {
   length: number,

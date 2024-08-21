@@ -1,7 +1,7 @@
 import { GLOBALS } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
 import { renderMedxMacro } from "../medx/macro";
-import { dateDiffInDays, formatDate } from "../utils";
+import { formatDate, dateDiffInDays } from "../utils/datetime";
 
 //@ts-ignore
 export async function handleMacroRendererSlotted({ slot, payload }) {

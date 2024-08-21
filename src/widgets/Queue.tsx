@@ -4,7 +4,8 @@ import React from "react";
 import { Virtuoso } from "react-virtuoso";
 import IbItem from "./IbItem";
 import DatePicker from "react-datepicker";
-import { addDays, todayMidnight } from "../utils";
+import { addDays } from "../utils/datetime";
+import { todayMidnight } from "../utils/datetime";
 import { queryDueIbs } from "../logseq/query";
 
 const queue = GLOBALS.queue;

@@ -1,5 +1,5 @@
 import { TemporalDimension } from "@kitaitimakoto/media-fragment";
-import { secondsToString } from "../utils";
+import { secondsToString } from "../utils/datetime";
 import React from "react";
 
 interface IMedxArgs {

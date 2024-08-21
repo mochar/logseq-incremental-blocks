@@ -5,7 +5,8 @@ import Beta from "../algorithm/beta";
 import IncrementalBlock from "../IncrementalBlock";
 
 import "react-datepicker/dist/react-datepicker.css";
-import { dateDiffInDays, todayMidnight } from "../utils";
+import { todayMidnight } from "../utils/datetime";
+import { dateDiffInDays } from "../utils/datetime";
 import { betaFromMean } from "../algorithm/priority";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import BetaGraph from "./BetaGraph";

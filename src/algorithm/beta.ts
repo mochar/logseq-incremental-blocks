@@ -1,6 +1,6 @@
 import { jStat } from "jstat";
 import seedrandom from "seedrandom";
-import { todayMidnight } from "../utils";
+import { todayMidnight } from "../utils/datetime";
 import { BETA_BOUNDS } from "../globals";
 import { PriorityUpdate } from "./priority";
 

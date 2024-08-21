@@ -1,7 +1,7 @@
 import React from "react";
 import IncrementalBlock from "../IncrementalBlock";
 import { PRIORITY_PALETTE } from "../globals";
-import { interpolateColor } from "../utils";
+import { interpolateColor } from "../utils/utils";
 
 export default function IbItem({ ib }: { ib: IncrementalBlock }) {
 

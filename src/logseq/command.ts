@@ -3,7 +3,8 @@ import Beta from "../algorithm/beta";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { RENDERER_MACRO_NAME } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
-import { addContentAndProps, average } from "../utils";
+import { average } from "../utils/utils";
+import { addContentAndProps } from "../utils/logseq";
 import { queryPathRefPages } from "./query";
 
 function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
