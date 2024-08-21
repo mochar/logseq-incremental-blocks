@@ -1,10 +1,10 @@
-import Beta from "./algorithm/beta";
-import { getPriorityUpdate, PriorityUpdate } from "./algorithm/priority";
-import { nextInterval } from "./algorithm/scheduling";
-import IncrementalBlock from "./IncrementalBlock";
-import { queryDueIbs } from "./logseq/query";
-import { getBlockHierarchyContent } from "./logseq/utils";
-import { addDays, Completer, todayMidnight } from "./utils";
+import { getPriorityUpdate, PriorityUpdate } from "../algorithm/priority";
+import { nextInterval } from "../algorithm/scheduling";
+import IncrementalBlock from "../IncrementalBlock";
+import { queryDueIbs } from "../logseq/query";
+import { addDays, todayMidnight } from "../utils/datetime";
+import { getBlockHierarchyContent } from "../utils/logseq";
+import { Completer } from "../utils/utils";
 
 export interface CurrentIBData {
   ib: IncrementalBlock,

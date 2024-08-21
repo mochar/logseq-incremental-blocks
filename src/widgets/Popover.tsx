@@ -11,7 +11,8 @@ import { betaFromMean } from "../algorithm/priority";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import BetaGraph from "./BetaGraph";
 import PrioritySlider from "./PrioritySlider";
-import { GLOBALS } from "../globals";
+import { useAppDispatch } from "../state/hooks";
+import { dueIbAdded, dueIbRemoved } from "../learn/learnSlice";
 
 export default function IbPopover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -22,6 +23,7 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
   const [multiplier, setMultiplier] = useState<number>(2.);
   const [interval, setInterval] = useState<number>();
   const [busy, setBusy] = useState<boolean>(false);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     // Set position above bar
@@ -118,10 +120,10 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     const curIsToday = dueDate && dateDiffInDays(today, dueDate) == 0;
     const newIsToday = dateDiffInDays(today, date) == 0;
     if (curIsToday && !newIsToday) {
-      GLOBALS.queue.remove(block.uuid);
+      dispatch(dueIbRemoved(block.uuid));
     } else if (!curIsToday && newIsToday) {
       const ib = await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false });
-      GLOBALS.queue.add(ib);
+      dispatch(dueIbAdded(ib));
     }
 
     setDueDate(date);

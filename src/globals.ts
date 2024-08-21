@@ -1,17 +1,3 @@
-import LearnQueue from "./LearnQueue";
-
-interface Globals {
-  learning: boolean,
-  queue: LearnQueue,
-  refs: string[],
-}
-
-const GLOBALS: Globals = {
-  learning: false,
-  queue: new LearnQueue(),
-  refs: []
-}
-
 const PRIORITY_PALETTE = [
   // "#ff595e66", "#ffca3a66", "#88bb6466", "#1982c466", "#6a4c9366",
   '#ffa5a5', '#ffe39f', '#feffb6', '#a7ffcc', '#b0cdff'
@@ -31,4 +17,4 @@ const BETA_BOUNDS = {
 
 const RENDERER_MACRO_NAME = '{{renderer :ib}}';
 
-export { GLOBALS, PRIORITY_PALETTE, BETA_BOUNDS, RENDERER_MACRO_NAME };
+export { PRIORITY_PALETTE, BETA_BOUNDS, RENDERER_MACRO_NAME };

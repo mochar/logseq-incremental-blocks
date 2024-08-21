@@ -1,7 +1,12 @@
-import { GLOBALS } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
 import { renderMedxMacro } from "../medx/macro";
+import { AppStore } from "../state/store";
 import { formatDate, dateDiffInDays } from "../utils/datetime";
+
+let store: AppStore;
+export const injectStore = (_store: AppStore) => {
+  store = _store
+}
 
 //@ts-ignore
 export async function handleMacroRendererSlotted({ slot, payload }) {
@@ -50,7 +55,7 @@ async function renderIbMacro({ slot, payload }) {
   }
 
   let repHtml = '';
-  const current = GLOBALS.queue.current;
+  const current = store.getState().learn.current;
   if (current && current.ib.uuid == ib.uuid) {
     repHtml = `
       <button 

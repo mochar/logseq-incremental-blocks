@@ -4,17 +4,25 @@ import MainWindow from "./widgets/MainWindow";
 import { useAppVisible } from "./logseq/events";
 import MedxPopover from "./medx/MedxPopover";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
-import { IbViewData, InsertViewData, MedxViewData, setView, SlotViewData, toggleView, ViewType } from "./state/viewSlice";
+import { IbViewData, InsertViewData, MedxViewData, setView, toggleView, ViewType } from "./state/viewSlice";
 import InsertPopover from "./medx/InsertPopover";
 import { renderMediaEmbed } from "./medx/macro";
 import MedxArgs from "./medx/args";
+import { finishRep, refreshDueIbs } from "./learn/learnSlice";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
 export default function App() {
   const visible = useAppVisible();
-  const view = useAppSelector(state => state.view);
   const dispatch = useAppDispatch();
+  const view = useAppSelector(state => state.view);
+  const learning = useAppSelector(state => state.learn.learning);
+  const currentIbData = useAppSelector(state => state.learn.current);
+
+
+
+  const state = useAppSelector(state => state);
+  console.log(state);
 
   useEffect(() => {
     logseq.provideModel({
@@ -35,6 +43,14 @@ export default function App() {
           slotId: e.dataset.slotId,
           medArgs: e.dataset.macroArgs
         }));
+      },
+      async nextRep() {
+        if (!learning) return;
+        await dispatch(finishRep());
+        const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
+        if (currentIbData && openIb) {
+          logseq.App.pushState('page', { name: currentIbData.ib.uuid });
+        }
       },
       playRange(e: any) {
         const { slotId, mediaUrl, macroArgs } = e.dataset;
@@ -58,6 +74,9 @@ export default function App() {
         await logseq.Editor.updateBlock(blockUuid, newContent);
       }
     });
+
+    logseq.App.onCurrentGraphChanged((e) => dispatch(refreshDueIbs()));
+    dispatch(refreshDueIbs())
   }, []);
 
   function tryHide(e: any) {

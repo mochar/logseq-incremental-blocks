@@ -1,5 +1,5 @@
 import { BETA_BOUNDS } from "../globals";
-import { CurrentIBData } from "../LearnQueue";
+import { CurrentIBData } from "../learn/learnSlice";
 import Beta from "./beta";
 import stringComparison from "string-comparison";
 

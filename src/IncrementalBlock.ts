@@ -87,6 +87,11 @@ class IncrementalBlock {
     return new this(block.uuid, block.properties ?? {}, block);
   }
 
+  public copy() : IncrementalBlock {
+    if (this.block) return IncrementalBlock.fromBlock(this.block);
+    return new IncrementalBlock(this.uuid, this.properties);
+  }
+
   public dueDays(): number | null {
     if (!this.dueDate) return null;
     const today = todayMidnight();

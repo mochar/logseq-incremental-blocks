@@ -1,6 +1,7 @@
 import React from "react";
 import Beta from "../algorithm/beta";
 import { PRIORITY_PALETTE } from "../globals";
+import { interpolateColor } from "../utils/utils";
 
 interface BetaGraphParams {
   beta: Beta, 
@@ -37,6 +38,9 @@ export default function BetaGraph({ beta, width, height, isNew=false }: BetaGrap
       ctx.lineWidth = 3;
 
       const lingradPath = ctx.createLinearGradient(w / 2, hOffset, w / 2, h);
+      // const pal = ["#ff595e66", "#ffca3a66", "#88bb6466", "#1982c466", "#6a4c9366"];
+      // const strokeColor = interpolateColor(pal, 1-beta.mean);
+      // lingradPath.addColorStop(0, strokeColor);
       lingradPath.addColorStop(0, "#4682B4");
       lingradPath.addColorStop(1, "rgba(256, 256, 256, 0.98)");
       ctx.strokeStyle = lingradPath;

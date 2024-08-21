@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AppDispatch, RootState } from './store';
-import { GLOBALS } from '../globals';
 import { BlockEntity } from '@logseq/libs/dist/LSPlugin.user';
 import MedxArgs from '../medx/args';
 
@@ -61,7 +60,7 @@ export const toggleView = (request: ViewRequest) => {
     } else if (request.viewType == ViewType.ib) {
       if (!request.blockUuid || !request.slotId) return;
       // Don't show when currently learning
-      if (GLOBALS.learning) {
+      if (state.learn.learning) {
         logseq.UI.showMsg('Stop learning to update incremental blocks')
         return;
       }

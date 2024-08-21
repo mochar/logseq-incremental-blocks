@@ -1,9 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 import viewReducer from './viewSlice';
+import learnReducer from '../learn/learnSlice';
 
 export const store = configureStore({
   reducer: {
-    view: viewReducer
+    view: viewReducer,
+    learn: learnReducer
   }
 })
 

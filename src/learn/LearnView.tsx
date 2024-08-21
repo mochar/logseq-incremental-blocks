@@ -1,105 +1,77 @@
 import React from "react";
-import IncrementalBlock from "../IncrementalBlock";
-import { GLOBALS } from "../globals";
-import { PriorityUpdate } from "../algorithm/priority";
 import DatePicker from "react-datepicker";
-import PrioritySlider from "./PrioritySlider";
+import PrioritySlider from "../widgets/PrioritySlider";
 import { nextInterval } from "../algorithm/scheduling";
 import { formatDate, addDays, todayMidnight, dateDiffInDays } from "../utils/datetime";
-import IbItem from "./IbItem";
-import BetaGraph from "./BetaGraph";
-import { RepAction } from "../LearnQueue";
+import IbItem from "../widgets/IbItem";
+import BetaGraph from "../widgets/BetaGraph";
+import { RepAction } from "./queue";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
+import { doneRep, finishRep, getPriorityUpdates, manualIntervention, nextRep, postponeRep } from "./learnSlice";
 
-const queue = GLOBALS.queue;
-
-export default function Learning({ offLearn }: { offLearn: () => void }) {
-  const [ready, setReady] = React.useState<boolean>(false);
-  const [currentIb, setCurrentIb] = React.useState<IncrementalBlock | null>();
-  const [priorityUpdates, setPriorityUpdates] = React.useState<PriorityUpdate>();
-  const [manualPriority, setManualPriority] = React.useState<number>();
-  const [interval, setInterval] = React.useState<number>();
+export default function LearnView({ offLearn }: { offLearn: () => void }) {
+  const [busy, setBusy] = React.useState<boolean>(false);
   const [autoOpen, setAutoOpen] = React.useState<boolean>(logseq.settings?.learnAutoOpen as boolean ?? true);
 
-  React.useEffect(() => {
-    if (queue.current) {
-      updateCurrentIb(queue.current.ib);
-    } else if (queue.length == 0) {
-      updateCurrentIb(undefined);
-    } else {
-      nextIb(RepAction.next);
-    }
+  const dispatch = useAppDispatch();
+  const queueStatus = useAppSelector(state => state.learn.queueStatus);
+  const currentIbData = useAppSelector(state => state.learn.current);
+  const currentIb = useAppSelector(state => state.learn.current?.ib);
 
+  const interval = React.useMemo(() => {
+    if (!currentIbData) return undefined;
+    return currentIbData.manualInterval ?? nextInterval(currentIbData.ib);
+  }, [currentIbData]);
+
+  React.useEffect(() => {
     // On a timer, get new priority updates. This is because
     // time spent on an ib increases priority.
     let timer: NodeJS.Timeout;
     const getRepeatUpdates = async function() {
-      await getPriorityUpdates();
+      await dispatch(getPriorityUpdates());
       timer = setTimeout(getRepeatUpdates, 2000);
     }
     getRepeatUpdates();
     return () => clearTimeout(timer);
   }, []);
 
-  async function nextIb(repAction: RepAction) {
-    setReady(false);
-
-    // Apply rep action
-    if (repAction == RepAction.finish) {
-      await queue.finishRep();
-    } else if (repAction == RepAction.postpone) {
-      await queue.postponeRep({ postponeInterval: interval! });
-    } else if (repAction == RepAction.done) {
-      await queue.doneRep();
-    } else if (repAction == RepAction.next) {
-      await queue.nextRep();
-    }
-
-    // Get next rep ib in queue
-    updateCurrentIb(queue.current?.ib);
-
+  React.useEffect(() => {
     // Move to next ib page.
     // Not in updateCurrentIb because dont want to move everything
     // main popup is opened.
-    if (queue.current) {
+    if (currentIbData) {
       const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
       if (openIb) {
-        logseq.App.pushState('page', { name: queue.current.ib.uuid })
+        logseq.App.pushState('page', { name: currentIbData.ib.uuid })
       }
     }
-  }
+  }, [currentIb]);
 
-  async function updateCurrentIb(ib: IncrementalBlock | undefined) {
-    setCurrentIb(ib);
-    if (ib) {
-      // Populate ib data
-      await queue.getPriorityUpdate();
-      setManualPriority(queue.current?.manualPriority);
-      if (queue.current?.manualInterval) {
-        setInterval(queue.current.manualInterval);
-      } else {
-        setInterval(nextInterval(ib));
-      }
+  async function nextIb(repAction: RepAction) {
+    setBusy(true);
+
+    // Apply rep action
+    if (repAction == RepAction.finish) {
+      await dispatch(finishRep());
+    } else if (repAction == RepAction.postpone) {
+      await dispatch(postponeRep(interval!));
+    } else if (repAction == RepAction.done) {
+      await dispatch(doneRep());
+    } else if (repAction == RepAction.next) {
+      await dispatch(nextRep());
     }
-    setReady(true);
+    // TODO: automatically do this in nextRep
+    await dispatch(getPriorityUpdates());
+
+    setBusy(false);
   }
 
-  function updateManualPriority(meanPiority: number | undefined) {
-    queue.current!.manualPriority = meanPiority;
-    setManualPriority(meanPiority);
+  function updateManualPriority(meanPiority: number | null) {
+    dispatch(manualIntervention({ priority: meanPiority }))
   }
 
-  function updateManualInterval(val: number | undefined) {
-    queue.current!.manualInterval = val;
-    if (!val) {
-      val = nextInterval(currentIb!);
-    }
-    setInterval(val);
-  }
-
-  async function getPriorityUpdates() {
-    if (!queue.current) return;
-    await queue.getPriorityUpdate();
-    setPriorityUpdates(queue.current.priorityUpdate);
+  function updateManualInterval(val: number | null) {
+    dispatch(manualIntervention({ interval: val }))
   }
 
   async function finish() {
@@ -115,11 +87,6 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
   }
 
   function quit() {
-    // Return back to top of the queue, since we're not finished
-    // with it yet.
-    queue.currentBackToQueue();
-
-    // Parent callback
     offLearn();
   }
 
@@ -128,33 +95,34 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
     setAutoOpen(!autoOpen);
   }
 
-  if (!ready) return <div>Loading...</div>;
+  if (busy || queueStatus == 'busy') return <div>Loading...</div>;
 
   if (currentIb == null) {
     return <div>
       Finished for today.
-      <a onClick={offLearn}>Return</a>
+      <button className="border" onClick={offLearn}>Return</button>
     </div>
   } 
 
   // Handle changes related to priority.
   // Manual priority overrides algorithm-decided priority.
-  const prioritizeManually = Boolean(manualPriority);
+  const prioritizeManually = Boolean(currentIbData?.manualPriority);
   let newBeta = currentIb.beta!.copy();
   let updatesHtml = <div></div>;
-  if (manualPriority) {
+  if (prioritizeManually) {
     newBeta = newBeta.copy();
-    newBeta.mean = manualPriority;
-  } else if (priorityUpdates) {
-    newBeta.applyPriorityUpdate(priorityUpdates);
+    newBeta.mean = currentIbData!.manualPriority!;
+  } else if (currentIbData?.priorityUpdate) {
+    const priorityUpdate = currentIbData.priorityUpdate;
+    newBeta.applyPriorityUpdate(priorityUpdate);
     updatesHtml = <div>
-      <span>Time: {priorityUpdates.bTime} ({priorityUpdates.scoreTime})</span>
-      <span>Content: {priorityUpdates.aContent} ({priorityUpdates.scoreContent})</span>
+      <span>Time: {priorityUpdate.bTime} ({priorityUpdate.scoreTime})</span>
+      <span>Content: {priorityUpdate.aContent} ({priorityUpdate.scoreContent})</span>
     </div>
   }
 
   // Handle scheduling
-  const scheduleManually = Boolean(queue.current?.manualInterval);
+  const scheduleManually = Boolean(currentIbData?.manualInterval);
   let nextDue = todayMidnight();
   if (interval) {
     nextDue = addDays(nextDue, interval);
@@ -190,7 +158,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
               manual
               <button
               className="button border"
-              onClick={() => updateManualPriority(undefined)}
+              onClick={() => updateManualPriority(null)}
               >
                 <span>⮌</span>
               </button>
@@ -224,7 +192,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
               manual
               <button
               className="button border"
-              onClick={() => updateManualInterval(undefined)}
+              onClick={() => updateManualInterval(null)}
               >
                 <span>⮌</span>
               </button>
@@ -241,7 +209,7 @@ export default function Learning({ offLearn }: { offLearn: () => void }) {
           <DatePicker
             className="border grow"
             selected={nextDue}
-            onChange={(date) => date && setInterval(dateDiffInDays(todayMidnight(), date))}
+            onChange={(date) => date && updateManualInterval(dateDiffInDays(todayMidnight(), date))}
             minDate={addDays(new Date(), 1)}
             monthsShown={1}
             dateFormat="dd/MM/yyyy"

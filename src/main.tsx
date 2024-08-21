@@ -7,11 +7,10 @@ import "./index.css";
 import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
-import { handleMacroRendererSlotted } from "./logseq/macro";
+import { handleMacroRendererSlotted, injectStore as injectStoreMacro } from "./logseq/macro";
 import { onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand, onCreateSelectedIbsCommand } from "./logseq/command";
-import { GLOBALS } from "./globals";
 import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
-import { injectStore, insertIncrementalMedia } from "./medx/command";
+import { injectStore as injectStoreMedx, insertIncrementalMedia } from "./medx/command";
 import { Provider } from "react-redux";
 import { store } from "./state/store";
 
@@ -20,7 +19,8 @@ const css = (t, ...args) => String.raw(t, ...args);
 
 const pluginId = PL.id;
 
-injectStore(store);
+injectStoreMedx(store);
+injectStoreMacro(store);
 
 function main() {
   console.info(`#${pluginId}: MAIN`);
@@ -37,15 +37,6 @@ function main() {
 
   function createModel() {
     return {
-      async nextRep() {
-        console.log('create model next rep called');
-        if (!GLOBALS.learning) return;
-        await GLOBALS.queue.finishRep();
-        const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
-        if (GLOBALS.queue.current && openIb) {
-          logseq.App.pushState('page', { name: GLOBALS.queue.current.ib.uuid });
-        }
-      }
     };
   }
 
@@ -115,9 +106,6 @@ function main() {
   logseq.Editor.registerSlashCommand('Insert incremental media', insertIncrementalMedia);
 
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
-  logseq.App.onCurrentGraphChanged((e) => GLOBALS.queue.refresh());
-
-  GLOBALS.queue.refresh();
 
   document.addEventListener('keydown', function (e) {
     if (e.key == 'Escape') {
