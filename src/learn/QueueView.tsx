@@ -86,7 +86,7 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
     queueView = (
     <div className="mt-1">
       <Virtuoso
-        style={{ height: '250px' }}
+        style={{ height: '250px', overflowX: 'clip' }}
         totalCount={queue.length}
         itemContent={(i) => IbItem({ ib: queue[i] })}
       ></Virtuoso>
