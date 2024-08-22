@@ -2,6 +2,7 @@ import IncrementalBlock from "../IncrementalBlock";
 import { renderMedxMacro } from "../medx/macro";
 import { AppStore } from "../state/store";
 import { formatDate, dateDiffInDays } from "../utils/datetime";
+import logo from "../../assets/logo.svg";
 
 let store: AppStore;
 export const injectStore = (_store: AppStore) => {
@@ -24,7 +25,7 @@ async function renderIbMacro({ slot, payload }) {
   if (ib.beta) {
     const mean = (ib.beta.mean*100).toFixed(2);
     const std = (ib.beta.std()*100).toFixed(1);
-    priorityHtml = `<span>${mean} (± ${std})`;
+    priorityHtml = `<span>${mean}%`;
     if (ib.sample && (ib.dueDays() ?? 1) <= 0) {
       priorityHtml += `<span class="muted"> [${(ib.sample*100).toFixed(2)}%]</span>`;
     }
@@ -33,26 +34,21 @@ async function renderIbMacro({ slot, payload }) {
     priorityHtml = '<span class="text-red-800">Not set</span>';
   }
   priorityHtml = `
-  <div class="border flex space-x-1">
-    <span class="font-semibold text-indigo-700">P</span>${priorityHtml}
+  <div class="mx-1 flex px-1" style="border-width: 0 2px">
+    ${priorityHtml}
   </div>
   `;
 
   let scheduleHtml = '';
   if (ib.dueDate) {
-    const dateNice = formatDate(ib.dueDate);
     const diff = dateDiffInDays(new Date(), ib.dueDate);
-    scheduleHtml = `${dateNice} (${diff}d)`;
-    if (ib.interval) {
-      scheduleHtml += `<span class="muted"> [${ib.interval}d]</span>`;
-    }
-    scheduleHtml = `
-    <div class="border flex space-x-1">
-      <span class="font-semibold text-yellow-900">S</span>
-      <span>${scheduleHtml}</span>
-    </div>
-    `;
+    scheduleHtml = `<span>${diff}d</span>`;
   }
+  scheduleHtml = `
+  <div class="mx-1 flex">
+    ${scheduleHtml}
+  </div>
+  `;
 
   let repHtml = '';
   const current = store.getState().learn.current;
@@ -74,11 +70,14 @@ async function renderIbMacro({ slot, payload }) {
     template: `
     <div class="text-sm bg-gray-100/20 text-gray-700 flex">
       <button
-        class="rounded-lg border flex" 
+        class="rounded-lg border flex px-1.5 items-center" 
         data-on-click="toggleIbPopover" 
         data-block-uuid="${payload.uuid}"
         data-slot-id="${slot}"
       >
+        <div class="flex">
+          <img src=${logo} width=15 height=15 />
+        </div>
         ${priorityHtml}
         ${scheduleHtml}
       </button>

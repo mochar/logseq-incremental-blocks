@@ -5,7 +5,7 @@ import Beta from "../algorithm/beta";
 import IncrementalBlock from "../IncrementalBlock";
 
 import "react-datepicker/dist/react-datepicker.css";
-import { todayMidnight } from "../utils/datetime";
+import { addDays, formatDate, todayMidnight } from "../utils/datetime";
 import { dateDiffInDays } from "../utils/datetime";
 import { betaFromMean } from "../algorithm/priority";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
@@ -14,9 +14,12 @@ import PrioritySlider from "./PrioritySlider";
 import { useAppDispatch } from "../state/hooks";
 import { dueIbAdded, dueIbRemoved } from "../learn/learnSlice";
 
+enum SideView { none, priority, schedule }
+
 export default function IbPopover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [priorityOnly, setPriorityOnly] = useState<boolean>(true);
+  const [visible, setVisible] = React.useState<boolean>(false);
+  const [sideView, setSideView] = React.useState<SideView>(SideView.none);
   const baseBeta = useRef<Beta>();
   const [beta, setBeta] = useState<Beta>();
   const [dueDate, setDueDate] = useState<Date>();
@@ -25,20 +28,23 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
   const [busy, setBusy] = useState<boolean>(false);
   const dispatch = useAppDispatch();
 
+  const ib = React.useMemo(() => IncrementalBlock.fromBlock(block), [block]);
+  const priorityOnly = ib.dueDate == null || ib.interval == null || ib.multiplier == null;
+  
   useEffect(() => {
     // Set position above bar
     const div = top?.document.getElementById(slot);
-    if (div) {
+    if (div && ref.current) {
+      let height = ref.current.clientHeight;
+      if (height == 0) height =  priorityOnly ? 80 : 160;
       const elemBoundingRect = div.getBoundingClientRect();
-      ref.current!.style.top = `${elemBoundingRect.top - (ref.current?.clientHeight ?? 0) - 10}px`;
-      ref.current!.style.left = `${elemBoundingRect.left}px`;
+      ref.current.style.top = `${elemBoundingRect.top - height/2}px`;
+      ref.current.style.left = `${elemBoundingRect.right + 5}px`;
     }
+    setVisible(true);
+  }, []);
 
-    // Block properties
-    const ib = IncrementalBlock.fromBlock(block);
-    const priorityOnly = ib.reps == null;
-    setPriorityOnly(priorityOnly);
-
+  useEffect(() => {
     const beta = ib.beta ?? new Beta(1, 1);
     setBeta(beta);
     // TODO this should later be fleshed out more.
@@ -54,27 +60,6 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
       setMultiplier(ib.multiplier);
     }
   }, [block]);
-
-  const schedule = React.useMemo(() : number[] => {
-    if (!dueDate || !interval) return [];
-
-    const today = todayMidnight();
-    let diff = dateDiffInDays(today, dueDate);
-    if (diff < 0) { // past due date
-      return [diff];
-    }
-
-    const schedule = [diff];
-    const nPred = 4;
-    let _interval = interval;
-    for (let i=0; i < nPred; i++) {
-      _interval = Math.ceil(_interval * multiplier);
-      diff = diff + _interval;
-      // schedule.push(diff);
-      schedule.push(_interval);
-    }
-    return schedule;
-  }, [multiplier, interval, dueDate]);
 
   async function updatePriority({mean, variance} : {mean?: number, variance?: number}) {
     if (!mean && !variance) return;
@@ -155,28 +140,21 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     logseq.hideMainUI();
   }
 
-  const scheduleList = [];
-  if (schedule.length > 0) {
-    for (let i = 0; i < schedule.length-1; i++) {
-      scheduleList.push(<span>{schedule[i]}d</span>);
-      scheduleList.push(<span> →</span>)
-    }
-    scheduleList.push(<span>{schedule[schedule.length-1]}d</span>);
-  }
-
   return (
     <div 
       ref={ref} 
       id="ib-popover" 
-      style={{position: "fixed"}} 
-      className="flex rounded-lg border bg-white shadow-md p-1 divide-x text-sm"
+      className={`fixed flex items-start rounded text-sm transition ease-out delay-75 ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2  '}`}
+      onMouseLeave={() => setSideView(SideView.none)}
     >
-      <form><fieldset disabled={busy}><div className="flex divide-x">
-        <div className="p-2 py-0">
+      <form className="flex bg-white rounded border shadow-md py-1">
+      <fieldset disabled={busy}>
+      <div className="flex flex-col divide-y px-1.5">
+        <div 
+          className="" 
+          onMouseEnter={() => setSideView(SideView.priority)}
+        >
           <p className="font-semibold text-gray-90">Priority</p>
-          <div className="border w-fit">
-            {beta && <BetaGraph beta={beta} width={120} height={60}></BetaGraph>}
-          </div>
           {beta && <PrioritySlider
             beta={beta}
             varianceSlider={priorityOnly}
@@ -185,7 +163,11 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
           ></PrioritySlider>}
         </div>
 
-        {!priorityOnly && <div className="p-2 py-0">
+        {!priorityOnly && 
+        <div 
+          className="py-1"
+          onMouseEnter={() => setSideView(SideView.schedule)}
+        >
           <p className="font-semibold text-gray-90">Schedule</p>
           <p>Due</p>
           <DatePicker
@@ -221,12 +203,12 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
               ></input>
             </div>
           </div>
-          <div className="text-neutral-400 text-xs flex items-center">
-            {scheduleList}
-          </div>
         </div>}
 
-        <div className="p-2 py-0">
+        <div 
+          className="pt-1"
+          onMouseEnter={() => setSideView(SideView.none)}
+        >
           <button
             className="hover:bg-gray-100 border py-1 px-1 rounded" 
             onClick={done}
@@ -236,6 +218,97 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
         </div>
 
       </div></fieldset></form>
+
+      <div 
+        className={`transition ease-out delay-75 ${sideView != SideView.none ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2  '}`}
+      >
+        {sideView == SideView.priority && baseBeta.current && beta && <SidePriorityView currentBeta={baseBeta.current} newBeta={beta} />}
+        {sideView == SideView.schedule && interval != undefined && dueDate != undefined && <SideScheduleView multiplier={multiplier} interval={interval} dueDate={dueDate} />}
+      </div>
     </div>
+  );
+}
+
+function SidePriorityView({ currentBeta, newBeta } : { currentBeta: Beta, newBeta: Beta }) : React.JSX.Element {
+  const betaUpdated = newBeta.a != currentBeta.a || newBeta.b != currentBeta.b;
+
+  let newBetaElements = <span className="text-gray-600"></span>;
+  if (betaUpdated) {
+    newBetaElements = <>
+      <div className="w-full flex flex-col items-center">
+        <span className="text-2xl text-gray-600">↓</span>
+      </div>
+      <div className="border rounded-lg">
+        <BetaGraph beta={newBeta} width={120} height={60}></BetaGraph>
+      </div>
+    </>;
+  }
+
+  return (
+  <div className="flex flex-col text-xs content-stretch bg-white rounded border shadow-md p-1 ml-2">
+    <p className="font-medium mb-1">Priority</p>
+    <div className="border rounded-lg max-w-fit">
+      <BetaGraph beta={currentBeta} width={120} height={60}></BetaGraph>
+    </div>
+    {newBetaElements}
+  </div>
+  );
+}
+
+interface Scheduled {
+  intervalToday: number,
+  intervalPrevious?: number,
+  date: Date
+}
+
+function SideScheduleView({ multiplier, interval, dueDate }: { multiplier: number, interval: number, dueDate: Date }) {
+
+  const schedule = React.useMemo(() : Scheduled[] => {
+    const schedule : Scheduled[] = [];
+
+    // First the interval from now to due date, which may differ from interval.
+    const today = todayMidnight();
+    let diff = dateDiffInDays(today, dueDate);
+    schedule.push({ intervalToday: diff, date: dueDate });
+    if (diff < 0) { // past due date
+      return schedule;
+    }
+
+    // Then the scheduled review dates after the due date
+    const nPred = 4;
+    let _interval = interval;
+    let _due = new Date(dueDate);
+    for (let i = 0; i < nPred; i++) {
+      diff = diff + _interval;
+      _due = addDays(_due, diff);
+      schedule.push({ intervalToday: diff, intervalPrevious: _interval, date: _due });
+      _interval = Math.ceil(_interval * multiplier);
+    }
+    return schedule;
+  }, [multiplier, interval, dueDate]);
+
+  const scheduleWidgets = schedule.map((scheduled) => ScheduledWidget({ scheduled }));
+
+  return (
+  <div className="flex flex-col text-xs bg-white rounded border shadow-md p-1 ml-2">
+    <p className="font-medium mb-1">Schedule</p>
+    {scheduleWidgets}
+  </div>
+  );
+}
+
+function ScheduledWidget({ scheduled }: { scheduled: Scheduled }) {
+  return (
+  <div className="flex flex-col">
+    { scheduled.intervalPrevious != undefined && 
+    <div className="text-gray-600 flex items-center justify-center py-1">
+      <span style={{ fontSize: '1.25rem' }}>↓</span> 
+      <span>({scheduled.intervalPrevious}d)</span> 
+    </div>}
+    <div className="flex justify-between px-1 border rounded-lg">
+      <span className="mr-1">{formatDate(scheduled.date)}</span>
+      <span className="text-gray-600">({scheduled.intervalToday}d)</span>
+    </div>
+  </div>
   );
 }

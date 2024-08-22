@@ -47,8 +47,8 @@ export default function MainWindow() {
       id="ib-main" 
       className="absolute top-10 right-10 bg-white rounded-lg p-2 w-96 border border-gray-400 rounded shadow flex flex-col text-sm"
     >
-        {!learning && <QueueView onLearn={() => toggleLearning(true)}></QueueView>}
-        {learning && <LearnView offLearn={() => toggleLearning(false)}></LearnView>}
+      {!learning && <QueueView onLearn={() => toggleLearning(true)}></QueueView>}
+      {learning && <LearnView offLearn={() => toggleLearning(false)}></LearnView>}
     </div>
   );
 }
