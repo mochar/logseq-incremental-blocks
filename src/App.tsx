@@ -19,10 +19,8 @@ export default function App() {
   const learning = useAppSelector(state => state.learn.learning);
   const currentIbData = useAppSelector(state => state.learn.current);
 
-
-
-  const state = useAppSelector(state => state);
-  console.log(state);
+  // const state = useAppSelector(state => state);
+  // console.log(state);
 
   useEffect(() => {
     logseq.provideModel({

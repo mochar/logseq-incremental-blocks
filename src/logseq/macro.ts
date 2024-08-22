@@ -68,7 +68,7 @@ async function renderIbMacro({ slot, payload }) {
     slot,
     reset: true,
     template: `
-    <div class="text-sm bg-gray-100/20 text-gray-700 flex">
+    <div class="text-sm bg-gray-100/20 text-gray-600 flex">
       <button
         class="rounded-lg border flex px-1.5 items-center" 
         data-on-click="toggleIbPopover" 

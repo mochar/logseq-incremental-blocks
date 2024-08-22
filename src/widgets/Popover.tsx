@@ -18,6 +18,7 @@ enum SideView { none, priority, schedule }
 
 export default function IbPopover({ block, slot }: { block: BlockEntity, slot: string }) {
   const ref = useRef<HTMLDivElement>(null);
+  const [ib, setIb] = React.useState<IncrementalBlock>(IncrementalBlock.fromBlock(block));
   const [visible, setVisible] = React.useState<boolean>(false);
   const [sideView, setSideView] = React.useState<SideView>(SideView.none);
   const baseBeta = useRef<Beta>();
@@ -27,16 +28,13 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
   const [interval, setInterval] = useState<number>();
   const [busy, setBusy] = useState<boolean>(false);
   const dispatch = useAppDispatch();
-
-  const ib = React.useMemo(() => IncrementalBlock.fromBlock(block), [block]);
-  const priorityOnly = ib.dueDate == null || ib.interval == null || ib.multiplier == null;
   
   useEffect(() => {
     // Set position above bar
     const div = top?.document.getElementById(slot);
     if (div && ref.current) {
       let height = ref.current.clientHeight;
-      if (height == 0) height =  priorityOnly ? 80 : 160;
+      if (height == 0) height =  ib.priorityOnly ? 80 : 160;
       const elemBoundingRect = div.getBoundingClientRect();
       ref.current.style.top = `${elemBoundingRect.top - height/2}px`;
       ref.current.style.left = `${elemBoundingRect.right + 5}px`;
@@ -45,12 +43,17 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
   }, []);
 
   useEffect(() => {
+    resetProps(IncrementalBlock.fromBlock(block));
+  }, [block]);
+
+  function resetProps(ib: IncrementalBlock) {
+    setIb(ib);
     const beta = ib.beta ?? new Beta(1, 1);
     setBeta(beta);
     // TODO this should later be fleshed out more.
     baseBeta.current = ib.reps == 0 ? new Beta(1, 1) : beta;
 
-    if (!priorityOnly) {
+    if (!ib.priorityOnly) {
       if (ib.dueDate) {
         setDueDate(ib.dueDate);
       } else {
@@ -59,7 +62,19 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
       if (ib.interval) setInterval(ib.interval);
       setMultiplier(ib.multiplier);
     }
-  }, [block]);
+  }
+
+  async function addScheduling() {
+    const ib = await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false });
+    const interval = initialIntervalFromMean(ib.beta!.mean);
+    const due = new Date();
+    due.setDate(due.getDate() + interval);
+    await logseq.Editor.updateBlock(block.uuid, ib.block!.content, { properties: {
+      'ib-due': due.getTime(),
+      'ib-interval': interval,
+    }});
+    resetProps(await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false }));
+  }
 
   async function updatePriority({mean, variance} : {mean?: number, variance?: number}) {
     if (!mean && !variance) return;
@@ -147,7 +162,10 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
       className={`fixed flex items-start rounded text-sm transition ease-out delay-75 ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2  '}`}
       onMouseLeave={() => setSideView(SideView.none)}
     >
-      <form className="flex bg-white rounded border shadow-md py-1">
+      <form 
+        className="flex bg-white rounded border shadow-md py-1"
+        onSubmit={(e) => e.preventDefault()}
+      >
       <fieldset disabled={busy}>
       <div className="flex flex-col divide-y px-1.5">
         <div 
@@ -157,13 +175,22 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
           <p className="font-semibold text-gray-90">Priority</p>
           {beta && <PrioritySlider
             beta={beta}
-            varianceSlider={priorityOnly}
+            varianceSlider={ib.priorityOnly}
             onMeanChange={(mean) => updatePriority({ mean })}
             onVarianceChange={(variance) => updatePriority({ variance })}
           ></PrioritySlider>}
         </div>
 
-        {!priorityOnly && 
+        {ib.priorityOnly && 
+        <button
+          className="bg-white text-xs hover:bg-gray-100 text-gray-800 py-1 px-4 mb-1 border border-gray-400 rounded shadow"
+          onMouseEnter={() => setSideView(SideView.none)}
+          onClick={addScheduling}
+        >
+          Schedule ib
+        </button>}
+
+        {!ib.priorityOnly && 
         <div 
           className="py-1"
           onMouseEnter={() => setSideView(SideView.schedule)}

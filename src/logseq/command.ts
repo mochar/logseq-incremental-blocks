@@ -46,7 +46,9 @@ async function convertBlockToIb({ uuid, block, priorityOnly=false  }: BlockToIb)
 
   // Add properties.
   const ib = IncrementalBlock.fromBlock(block);
-  const props: Record<string, any> = {};
+  const props: Record<string, any> = {
+    'ib-multiplier': ib.multiplier
+  };
   if (!priorityOnly) {
     props['ib-reps'] = ib.reps ?? 0;
   }

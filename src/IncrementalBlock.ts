@@ -115,6 +115,10 @@ class IncrementalBlock {
       }
     }
   }
+
+  public get priorityOnly() : boolean {
+    return this.dueDate == null || this.interval == null;
+  }
 }
 
 export default IncrementalBlock;
