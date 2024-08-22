@@ -8,7 +8,7 @@ import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
 import { handleMacroRendererSlotted, injectStore as injectStoreMacro } from "./logseq/macro";
-import { onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand, onCreateSelectedIbsCommand } from "./logseq/command";
+import { extractClozeCommand, extractSelectionCommand, onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand, onCreateSelectedIbsCommand } from "./logseq/command";
 import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
 import { injectStore as injectStoreMedx, insertIncrementalMedia } from "./medx/command";
 import { Provider } from "react-redux";
@@ -106,6 +106,19 @@ function main() {
   logseq.Editor.registerSlashCommand('Insert incremental media', insertIncrementalMedia);
 
   logseq.App.onMacroRendererSlotted(handleMacroRendererSlotted);
+
+  logseq.App.registerCommandShortcut({ 
+    binding: logseq.settings!.keyExtractSelection as string,
+    mode: 'editing'
+   }, extractSelectionCommand);
+  logseq.App.registerCommandShortcut({ 
+    binding: logseq.settings!.keyExtractCloze as string,
+    mode: 'editing'
+   }, extractClozeCommand);
+  logseq.App.registerCommandShortcut({ 
+    binding: logseq.settings!.keyExtractClozeCard as string,
+    mode: 'editing'
+   }, () => extractClozeCommand(false));
 
   document.addEventListener('keydown', function (e) {
     if (e.key == 'Escape') {

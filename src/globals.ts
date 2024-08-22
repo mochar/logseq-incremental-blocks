@@ -1,9 +1,9 @@
-const PRIORITY_PALETTE = [
+export const PRIORITY_PALETTE = [
   // "#ff595e66", "#ffca3a66", "#88bb6466", "#1982c466", "#6a4c9366",
   '#ffa5a5', '#ffe39f', '#feffb6', '#a7ffcc', '#b0cdff'
 ];
 
-const BETA_BOUNDS = {
+export const BETA_BOUNDS = {
   // Limits of a and b params. 
   // - Mode only defined for a,b > 1
   // - when a,b < 1, bimodal. Doesnt make sense to have here.
@@ -15,6 +15,6 @@ const BETA_BOUNDS = {
   meanUpper: 0.99, // 100/(100+paramLower) = 0.99
 }
 
-const RENDERER_MACRO_NAME = '{{renderer :ib}}';
+export const RENDERER_MACRO_NAME = '{{renderer :ib}}';
 
-export { PRIORITY_PALETTE, BETA_BOUNDS, RENDERER_MACRO_NAME };
+export const PROP_REGEX = /[a-zA-Z0-9-_]+:: [^:]+/;

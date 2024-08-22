@@ -1,6 +1,7 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import removeMarkdown from 'remove-markdown';
 import { toDashCase } from "./utils";
+import { PROP_REGEX } from "../globals";
 
 // https://github.com/ahonn/logseq-plugin-todo/
 export function trimContent(block: BlockEntity): string {
@@ -17,11 +18,10 @@ export function trimContent(block: BlockEntity): string {
 
 export function addContentAndProps(content: string, { addition, props }: { addition?: string; props?: Record<string, any>; }): string {
   const lines = content.split(/\r?\n/);
-  const propRegex = /[a-zA-Z0-9-_]+:: [^:]+/;
   let propIndex = 1;
   for (let i = 1; i <= lines.length; i++) {
     propIndex = i;
-    if (propRegex.test(lines[i])) break;
+    if (PROP_REGEX.test(lines[i])) break;
   }
   if (addition) {
     lines.splice(propIndex, 0, addition);
@@ -34,6 +34,12 @@ export function addContentAndProps(content: string, { addition, props }: { addit
       }
     }
   }
+  return lines.join('\n');
+}
+
+export function removePropsFromContent(content: string) : string {
+  let lines = content.split(/\r?\n/);
+  lines = lines.filter((line) => !PROP_REGEX.test(line));
   return lines.join('\n');
 }
 

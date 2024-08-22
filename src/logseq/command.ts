@@ -4,7 +4,7 @@ import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { RENDERER_MACRO_NAME } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
 import { average } from "../utils/utils";
-import { addContentAndProps } from "../utils/logseq";
+import { addContentAndProps, removePropsFromContent } from "../utils/logseq";
 import { queryPathRefPages } from "./query";
 
 function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
@@ -25,30 +25,10 @@ function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
   return null;
 }
 
-interface BlockToIb {
-  uuid: string,
-  priorityOnly?: boolean,
-  block?: BlockEntity | null,
-  backToEditing?: boolean
-}
+async function generateNewIbProps(uuid: string, priorityOnly: boolean = false, block?: BlockEntity | null) : Promise<Record<string, any> | null> {
+  if (!block) block = await logseq.Editor.getBlock(uuid);
+  if (!block) return null;
 
-export async function convertBlockToIb({ uuid, block, priorityOnly=false, backToEditing=false }: BlockToIb) {
-  let content: string = '';
-  let isEditing = false;
-  const cursorPos = await logseq.Editor.getEditingCursorPosition();
-
-  if (!block) {
-    // If editing, get content
-    content = await logseq.Editor.getEditingBlockContent();
-    if (content) isEditing = true;
-    block = await logseq.Editor.getBlock(uuid);
-  }
-
-	if (!block) return;
-
-  if (!content) content = block.content;
-
-  // Add properties.
   const ib = IncrementalBlock.fromBlock(block);
   const props: Record<string, any> = {
     'ib-multiplier': ib.multiplier
@@ -78,6 +58,35 @@ export async function convertBlockToIb({ uuid, block, priorityOnly=false, backTo
     props['ib-due'] = due.getTime();
     props['ib-interval'] = interval;
   }
+  return props;
+}
+
+interface BlockToIb {
+  uuid: string,
+  priorityOnly?: boolean,
+  block?: BlockEntity | null,
+  backToEditing?: boolean
+}
+
+export async function convertBlockToIb({ uuid, block, priorityOnly=false, backToEditing=false }: BlockToIb) {
+  let content: string = '';
+  let isEditing = false;
+  const cursorPos = await logseq.Editor.getEditingCursorPosition();
+
+  if (!block) {
+    // If editing, get content
+    content = await logseq.Editor.getEditingBlockContent();
+    if (content) isEditing = true;
+    block = await logseq.Editor.getBlock(uuid);
+  }
+
+	if (!block) return;
+
+  if (!content) content = block.content;
+
+  const props = await generateNewIbProps(uuid, priorityOnly, block);
+  if (!props) return;
+
   // await logseq.Editor.updateBlock(uuid, content, { properties: props });
 
   // TODO: This doesn't update existing params
@@ -140,4 +149,48 @@ export async function onCreateSelectedIbsCommand({ uuid }: { uuid: string }) {
   for (const block of selected) {
     convertBlockToIb({ uuid: block.uuid, block: block });
   }
+}
+
+export async function extractSelectionCommand() {
+  const isEditing = await logseq.Editor.checkEditing();
+  if (!isEditing) return;
+  const selection = top?.window.getSelection()?.toString();
+  if (!selection) return;
+  const block = await logseq.Editor.getCurrentBlock();
+  if (!block) return;
+  const properties = await generateNewIbProps(block.uuid, false, block);
+  if (!properties) return;
+  const content = `${selection}\n${RENDERER_MACRO_NAME}`;
+  const extractUuid = await logseq.Editor.newBlockUUID()
+  const extractBlock = await logseq.Editor.insertBlock(block.uuid, content, { 
+    focus: false, customUUID: extractUuid, properties });
+  if (!extractBlock) return;
+  const reffedContent = block.content.replace(selection, `((${extractUuid}))`);
+  await logseq.Editor.updateBlock(block.uuid, reffedContent);
+}
+
+export async function extractClozeCommand(asIb: boolean = true) {
+  const isEditing = await logseq.Editor.checkEditing();
+  if (!isEditing) return;
+  const selection = top?.window.getSelection()?.toString();
+  if (!selection) return;
+  const block = await logseq.Editor.getCurrentBlock();
+  if (!block) return;
+  let properties: Record<string, any> = {};
+  let content = removePropsFromContent(block.content);
+  content = content.replace(selection, ` {{cloze ${selection}}} `);
+  if (asIb) {
+    // Child block will be ib
+    properties = await generateNewIbProps(block.uuid, false, block) || {};
+    if (Object.keys(properties).length == 0) return;
+    if (!content.includes(RENDERER_MACRO_NAME)) {
+      content = `${content}\n${RENDERER_MACRO_NAME}`;
+    }
+  } else {
+    // Child block will be cloze card
+    content = content.replace(RENDERER_MACRO_NAME, '');
+    content = `${content} #card`;
+  }
+  const extractBlock = await logseq.Editor.insertBlock(block.uuid, content, { 
+    focus: false, properties });
 }
