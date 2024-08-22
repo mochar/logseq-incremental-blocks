@@ -6,6 +6,7 @@ import { AppDispatch, RootState } from "../state/store";
 import { getBlockHierarchyContent, getFilterRefs } from "../utils/logseq";
 import { nextInterval } from "../algorithm/scheduling";
 import { addDays, todayMidnight } from "../utils/datetime";
+import { convertBlockToIb } from "../logseq/command";
 
 export interface CurrentIBData {
   ib: IncrementalBlock,
@@ -24,14 +25,11 @@ export enum RepAction {
   next, // Simply pop the current ib, without action
 }
 
-/*
-Queue: 
-The ibds due for today are stored in `dueIbs`, while the queue shown to the user
-is stored in `queue`. Differentiate between these two when the learn queue differs
-with the due ibs, eg when an ib is set to be learned immediately.
- */
 interface Learn {
   learning: boolean,
+  // The ibds due for today are stored in `dueIbs`, while the queue shown to the user
+  // is stored in `queue`. Differentiate between these two when the learn queue differs
+  // with the due ibs, eg when an ib is set to be learned immediately.
   dueIbs: IncrementalBlock[],
   queue: IncrementalBlock[],
   queueStatus: 'busy' | 'idle',
@@ -39,6 +37,11 @@ interface Learn {
   refreshState: null | 'loading' | 'fulfilled' | 'failed',
   refs: string[],
   current: CurrentIBData | null,
+  // Whether or not we have started listening for new block events, as the listener
+  // should only be installed once.
+  blockListenerActive: boolean,
+  // Whether or not to auto ib when learning
+  autoIb: boolean
 }
 
 const initialState: Learn = {
@@ -48,7 +51,9 @@ const initialState: Learn = {
   queueStatus: 'idle',
   refs: [],
   current: null,
-  refreshState: null
+  refreshState: null,
+  blockListenerActive: false,
+  autoIb: logseq.settings?.learnAutoIb as boolean ?? false
 }
 
 const learnSlice = createSlice({
@@ -68,6 +73,10 @@ const learnSlice = createSlice({
       if (state.learning) return;
       state.learning = true;
       state.queue = action.payload;
+      // Assume listener activated on first learn
+      if (!state.blockListenerActive) {
+        state.blockListenerActive = true;
+      }
     },
     learningEnded(state) {
       if (!state.learning) return;
@@ -137,6 +146,9 @@ const learnSlice = createSlice({
       .addCase(getPriorityUpdates.fulfilled, (state, action) => {
         state.current = action.payload;
       })
+      .addCase(toggleAutoIb.fulfilled, (state, action) => {
+        state.autoIb = action.payload;
+      })
   }
 });
 
@@ -167,10 +179,32 @@ export const stopLearning = () => {
 export const startLearning = (queue?: IncrementalBlock[]) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     let state = getState();
+    const blockListenerActive = state.learn.blockListenerActive;
     queue = queue ?? state.learn.dueIbs;
     dispatch(learnSlice.actions.learningStarted(queue));
     state = getState();
-    if (state.learn.learning) await dispatch(nextRep());
+    if (state.learn.learning) { 
+      await dispatch(nextRep());
+      if (!blockListenerActive) {
+        logseq.DB.onChanged(({ blocks, txData, txMeta }) => {
+          // console.log('------------------')
+          // console.log(txMeta?.outlinerOp);
+          // console.log(blocks, txData)
+          // console.log('------------------')
+          const state = getState();
+          if (state.learn.learning && state.learn.autoIb && txMeta?.outlinerOp == 'insert-blocks') {
+            // console.log('converting to ib');
+            blocks.forEach(async (block) => {
+              convertBlockToIb({
+                uuid: block.uuid,
+                block,
+                backToEditing: true
+              });
+            });
+          }
+        });
+      }
+    }
   }
 }
 
@@ -212,7 +246,6 @@ export const getPriorityUpdates = createAsyncThunk<CurrentIBData | null, void, {
   {
     condition: (_, { getState }) => {
       const { learn } = getState(); 
-      console.log('condition', !learn.current);
       if (learn.current == null) {
         return false;
       }
@@ -278,6 +311,22 @@ export const doneRep = () => {
     await dispatch(nextRep());
   }
 }
+
+export const toggleAutoIb = createAsyncThunk<boolean, boolean, { state: RootState }>(
+  'learn/toggleAutoIb', 
+  (toOn, { getState, dispatch }) => {
+    logseq.updateSettings({ learnAutoIb: toOn });
+    return toOn;
+  },
+  {
+    condition: (toOn, { getState }) => {
+      const { learn } = getState(); 
+      if (learn.autoIb == toOn) {
+        return false;
+      }
+    }
+  }
+);
 
 export const toggleRef = (ref: string) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {

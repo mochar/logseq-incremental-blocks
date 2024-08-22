@@ -28,15 +28,19 @@ function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
 interface BlockToIb {
   uuid: string,
   priorityOnly?: boolean,
-  block?: BlockEntity | null
+  block?: BlockEntity | null,
+  backToEditing?: boolean
 }
 
-async function convertBlockToIb({ uuid, block, priorityOnly=false  }: BlockToIb) {
+export async function convertBlockToIb({ uuid, block, priorityOnly=false, backToEditing=false }: BlockToIb) {
   let content: string = '';
+  let isEditing = false;
+  const cursorPos = await logseq.Editor.getEditingCursorPosition();
 
   if (!block) {
     // If editing, get content
     content = await logseq.Editor.getEditingBlockContent();
+    if (content) isEditing = true;
     block = await logseq.Editor.getBlock(uuid);
   }
 
@@ -82,6 +86,11 @@ async function convertBlockToIb({ uuid, block, priorityOnly=false  }: BlockToIb)
   const newContent = addContentAndProps(content, { addition, props });
   await logseq.Editor.updateBlock(uuid, newContent);
   await logseq.Editor.exitEditingMode();
+  if (backToEditing) {
+    setTimeout(() => {
+      logseq.Editor.editBlock(uuid, { pos: cursorPos?.pos ?? 0 });
+    }, 100);
+  } 
 }
 
 export async function onCreateIbCommand({ uuid }: { uuid: string }) {

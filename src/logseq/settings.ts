@@ -32,6 +32,13 @@ const settings: SettingSchemaDesc[] = [
     type: 'boolean'
   },
   {
+    key: 'learnAutoIb',
+    title: 'Automatically create ibs when learning',
+    description: 'While learning, new blocks will automatically be converted to ibs.\nExpect jankness.',
+    default: false,
+    type: 'boolean'
+  },
+  {
     key: 'priorityRainbow',
     title: 'Rainbow',
     description: 'Rainbow',

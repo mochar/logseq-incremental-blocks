@@ -7,7 +7,8 @@ import IbItem from "../widgets/IbItem";
 import BetaGraph from "../widgets/BetaGraph";
 import { RepAction } from "./queue";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { doneRep, finishRep, getPriorityUpdates, manualIntervention, nextRep, postponeRep } from "./learnSlice";
+import { doneRep, finishRep, getPriorityUpdates, manualIntervention, nextRep, postponeRep, toggleAutoIb } from "./learnSlice";
+import CuteToggle from "../widgets/CuteToggle";
 
 export default function LearnView({ offLearn }: { offLearn: () => void }) {
   const [busy, setBusy] = React.useState<boolean>(false);
@@ -15,6 +16,7 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
 
   const dispatch = useAppDispatch();
   const queueStatus = useAppSelector(state => state.learn.queueStatus);
+  const autoIb = useAppSelector(state => state.learn.autoIb);
   const currentIbData = useAppSelector(state => state.learn.current);
   const currentIb = useAppSelector(state => state.learn.current?.ib);
 
@@ -131,19 +133,23 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
   return (
     <div className="flex flex-col bg-white w-full text-sm">
 
-      <div className="flex items-center justify-between py-1">
+      <div className="flex items-center py-1">
         <span className="text-xs text-gray-500">🔁 {currentIb.reps!+1}</span>
-
-        <label className="inline-flex items-center cursor-pointer">
-          <input 
-            type="checkbox" 
-            checked={autoOpen}
-            onChange={toggleAutoOpen}
-            className="sr-only peer">
-          </input>
-          <div className="relative w-9 h-4 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-gray-400"></div>
-          <span className="ms-2 text-xs text-gray-400 dark:text-gray-300">Follow</span>
-        </label>
+        <div className="flex-grow"></div>
+        <div className="mr-1">
+          <CuteToggle 
+            title="Auto ib" 
+            tooltip="Automatically convert new blocks to ibs. Recommend to turn off for now due to sporadic behavior."
+            state={autoIb} 
+            onChange={() => dispatch(toggleAutoIb(!autoIb))} 
+          />
+        </div>
+        <CuteToggle 
+          title="Follow" 
+          tooltip="Automatically jump to next block on rep."
+          state={autoOpen} 
+          onChange={toggleAutoOpen} 
+        />
       </div>
 
       <div className="border rounded">
