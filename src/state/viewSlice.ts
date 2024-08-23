@@ -60,7 +60,7 @@ export const toggleView = (request: ViewRequest) => {
     } else if (request.viewType == ViewType.ib) {
       if (!request.blockUuid || !request.slotId) return;
       // Don't show when currently learning
-      if (state.learn.learning) {
+      if (state.learn.learning && request.blockUuid == state.learn.current?.ib.uuid) {
         logseq.UI.showMsg('Stop learning to update incremental blocks')
         return;
       }
