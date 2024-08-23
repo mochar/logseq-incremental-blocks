@@ -106,6 +106,12 @@ export async function onCreateIbCommand({ uuid }: { uuid: string }) {
   await convertBlockToIb({ uuid });
 }
 
+export async function onCreateIbShortcut() {
+  const block = await logseq.Editor.getCurrentBlock();
+  if (!block) return;
+  await convertBlockToIb({ uuid: block.uuid, block })
+}
+
 export async function onCreatePbCommand({ uuid }: { uuid: string }) {
   await convertBlockToIb({ uuid, priorityOnly: true });
 }

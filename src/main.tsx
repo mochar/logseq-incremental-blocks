@@ -8,7 +8,7 @@ import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
 import { handleMacroRendererSlotted, injectStore as injectStoreMacro } from "./logseq/macro";
-import { extractClozeCommand, extractSelectionCommand, onCreateIbCommand, onCreateIbWithSiblingsCommand, onCreatePbCommand, onCreateSelectedIbsCommand } from "./logseq/command";
+import { extractClozeCommand, extractSelectionCommand, onCreateIbCommand, onCreateIbShortcut, onCreateIbWithSiblingsCommand, onCreatePbCommand, onCreateSelectedIbsCommand } from "./logseq/command";
 import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
 import { injectStore as injectStoreMedx, insertIncrementalMedia } from "./medx/command";
 import { Provider } from "react-redux";
@@ -98,9 +98,9 @@ function main() {
     logseq.Editor.registerBlockContextMenuItem(tag, action);
   }
 
-  registerCommand('Turn into incremental block', onCreateIbCommand);
-  registerCommand('Turn into priority block', onCreatePbCommand);
-  registerCommand('Turn siblings into priority blocks', onCreateIbWithSiblingsCommand);
+  registerCommand('Convert to ib', onCreateIbCommand);
+  registerCommand('Convert to ib (no scheduling)', onCreatePbCommand);
+  registerCommand('Convert to ib (include siblings)', onCreateIbWithSiblingsCommand);
   logseq.App.registerCommandPalette({ key: 'ib-convert-selected', label: 'Convert selected to ibs'}, 
     onCreateSelectedIbsCommand);
   logseq.Editor.registerSlashCommand('Insert incremental media', insertIncrementalMedia);
@@ -119,6 +119,10 @@ function main() {
     binding: logseq.settings!.keyExtractClozeCard as string,
     mode: 'editing'
    }, () => extractClozeCommand(false));
+  logseq.App.registerCommandShortcut({ 
+    binding: logseq.settings!.keyConvertToIb as string,
+    mode: 'global'
+   }, onCreateIbShortcut);
 
   document.addEventListener('keydown', function (e) {
     if (e.key == 'Escape') {

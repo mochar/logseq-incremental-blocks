@@ -53,6 +53,13 @@ const settings: SettingSchemaDesc[] = [
     type: 'string'
   },
   {
+    key: 'keyConvertToIb',
+    type: 'string',
+    title: 'Shortcut: Convert current block to ib',
+    description: 'Converts current block to an ib by adding the necessary properties and macro.',
+    default: 'mod+alt+i'
+  },
+  {
     key: 'keyExtractSelection',
     type: 'string',
     title: 'Shortcut: Extract selected text',
