@@ -17,7 +17,8 @@ Information is slowly distilled down into small units of information, which can 
 
 The extraction process is implemented in the plugin:
 
-link to vid
+![extracting](https://github.com/user-attachments/assets/5792c88b-dda9-42a9-805d-15033b5ce14a)
+
 
 ### Why?
 
@@ -52,10 +53,15 @@ Take a look at [example workflows](##example-workflows) below to see this in act
 - Select priority and scheduling.
 - By default, these are informed by the block's page refs, nearest parent ib, page ib, or priority setting, in that order.
 
+![create_ib](https://github.com/user-attachments/assets/9c53af99-47b2-4013-960b-39c91684dbc0)
+
+
 ### 2. View today's queue
 
 - View today's queue by clicking on the top-right icon.
 - Filter on page refs (`[[these]]` or `#these`) by adding them in the settings.
+
+![queue](https://github.com/user-attachments/assets/6217b3f5-862d-4428-8c8c-4aa2add7fea9)
 
 ### 3. Reviewing your queue
 
@@ -63,11 +69,14 @@ Take a look at [example workflows](##example-workflows) below to see this in act
 - Extract selected text with ctrl-alt-x, or turn it into a cloze ib (ctrl-alt-z) or cloze flashcard (ctrl+alt+shift+z).
 - Actions: Next rep, postpone, done, quit
 
+![learn](https://github.com/user-attachments/assets/a9d96dc1-fb4f-4274-8442-5d5df6013883)
+
 ## Example workflows
 
 ### Scheduled instrument practice from youtube video
 
-link to vid
+[youtube_extract.webm](https://github.com/user-attachments/assets/d12bdff9-18de-4393-820d-97e3c18becce)
+
 
 ### Going through a manual
 
@@ -79,7 +88,8 @@ My goal is to understand and memorize the basics from the emacs tutorial, availa
 3. Turn all heading blocks into ibs.
 4. Review, extract, and make flashcards when its time (or do so whenever you like).
 
-link to video
+![emacs](https://github.com/user-attachments/assets/0adde37f-b788-4dbb-b7e2-f7940c3b5bc5)
+
 
 ### Language learning using Ilya Frank's method
 
