@@ -103,3 +103,9 @@ Auto ib functionality will automatically convert new blocks to ibs.
 ## Implementation details
 
 Explain the priority system.
+
+## Links
+
+- [Supermemo articles](https://supermemopedia.com/wiki/SuperMemo_Websites)
+- Great videos of the channel [Pleasurable Learning](https://www.youtube.com/@PleasurableLearning) explaing the incremental philosphy in detail
+- [Incremental writing](https://github.com/bjsi/incremental-writing) plugin for Obsidian, [incremental everything](https://github.com/bjsi/incremental-everything) plugin for Remnote, both by JamesB
