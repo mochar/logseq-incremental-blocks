@@ -42,6 +42,7 @@ Take a look at [example workflows](##example-workflows) below to see this in act
 ## Installation
 1. Install the plugin
     - Not available in marketplace yet
+    - [Download here](https://github.com/mochar/logseq-incremental-blocks/releases). Unzip. Turn on developer mode in logseq. Plugins -> load unpacked plugin.
 3. Hide block properties (Optional but recommended)
     - Settings -> edit config.edn -> `:block-hidden-properties #{:ib-a :ib-b :ib-due :ib-interval :ib-reps :ib-multiplier}`
 
@@ -102,3 +103,9 @@ Auto ib functionality will automatically convert new blocks to ibs.
 ## Implementation details
 
 Explain the priority system.
+
+## Links
+
+- [Supermemo articles](https://supermemopedia.com/wiki/SuperMemo_Websites)
+- Great videos of the channel [Pleasurable Learning](https://www.youtube.com/@PleasurableLearning) explaing the incremental philosphy in detail
+- [Incremental writing](https://github.com/bjsi/incremental-writing) plugin for Obsidian, [incremental everything](https://github.com/bjsi/incremental-everything) plugin for Remnote, both by JamesB
