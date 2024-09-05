@@ -2,6 +2,7 @@ import React from "react";
 import Beta from "../algorithm/beta";
 import { PRIORITY_PALETTE } from "../globals";
 import { interpolateColor } from "../utils/utils";
+import { useAppSelector } from "../state/hooks";
 
 interface BetaGraphParams {
   beta: Beta, 
@@ -12,6 +13,7 @@ interface BetaGraphParams {
 
 export default function BetaGraph({ beta, width, height, isNew=false }: BetaGraphParams) {
   const ref = React.useRef<HTMLCanvasElement>(null);
+  const themeMode = useAppSelector(state => state.app.themeMode);
 
   React.useEffect(() => {
     const ctx = ref.current?.getContext('2d');
@@ -35,8 +37,6 @@ export default function BetaGraph({ beta, width, height, isNew=false }: BetaGrap
       }
       ctx.fillStyle = lingrad;
     } else {
-      ctx.lineWidth = 3;
-
       const lingradPath = ctx.createLinearGradient(w / 2, hOffset, w / 2, h);
       // const pal = ["#ff595e66", "#ffca3a66", "#88bb6466", "#1982c466", "#6a4c9366"];
       // const strokeColor = interpolateColor(pal, 1-beta.mean);
@@ -46,9 +46,16 @@ export default function BetaGraph({ beta, width, height, isNew=false }: BetaGrap
       ctx.strokeStyle = lingradPath;
 
       const lingrad = ctx.createLinearGradient(w / 2, hOffset, w / 2, h);
-      lingrad.addColorStop(0, "#F2F2F2");
-      lingrad.addColorStop(0.3, "#F2F2F2");
-      lingrad.addColorStop(1, "rgba(256, 256, 256, 0.9)");
+      if (themeMode == 'light') {
+        ctx.lineWidth = 3;
+        lingrad.addColorStop(0, "#F2F2F2");
+        lingrad.addColorStop(0.3, "#F2F2F2");
+        lingrad.addColorStop(1, "rgba(256, 256, 256, 0.9)");
+      } else {
+        ctx.lineWidth = 2;
+        lingrad.addColorStop(0, "#4682B4");
+        lingrad.addColorStop(1, "rgba(0, 0, 0, 0.9)");
+      }
       ctx.fillStyle = lingrad;
     }
 
@@ -70,7 +77,7 @@ export default function BetaGraph({ beta, width, height, isNew=false }: BetaGrap
     ctx.closePath();
     ctx.stroke();
     ctx.fill();
-  }, [beta]);
+  }, [beta, themeMode]);
 
   return <canvas ref={ref} width={width} height={height}></canvas>;
 }

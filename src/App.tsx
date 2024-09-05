@@ -9,16 +9,18 @@ import InsertPopover from "./medx/InsertPopover";
 import { renderMediaEmbed } from "./medx/macro";
 import MedxArgs from "./medx/args";
 import { finishRep, refreshDueIbs } from "./learn/learnSlice";
+import { isDark } from "./utils/logseq";
+import { themeModeChanged } from "./state/appSlice";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
 export default function App() {
   const visible = useAppVisible();
   const dispatch = useAppDispatch();
-  const [isDarkMode, setDarkMode] = React.useState<boolean>(false);
   const view = useAppSelector(state => state.view);
   const learning = useAppSelector(state => state.learn.learning);
   const currentIbData = useAppSelector(state => state.learn.current);
+  const themeMode = useAppSelector(state => state.app.themeMode);
 
   // const state = useAppSelector(state => state);
   // console.log(state);
@@ -77,8 +79,8 @@ export default function App() {
     logseq.App.onCurrentGraphChanged((e) => dispatch(refreshDueIbs()));
     dispatch(refreshDueIbs());
 
-    isDark().then((dark) => setDarkMode(dark));
-    logseq.App.onThemeModeChanged(({ mode }) => setDarkMode(mode == 'dark'));
+    isDark().then((dark) => dispatch(themeModeChanged(dark ? 'dark' : 'light')));
+    logseq.App.onThemeModeChanged(({ mode }) => dispatch(themeModeChanged(mode)));
   }, []);
 
   function tryHide(e: any) {
@@ -126,7 +128,7 @@ export default function App() {
   }
   return (
     <main 
-      className={`bg-transparent fixed inset-0 flex ${classesIfCentered} ${isDarkMode && 'dark'}`}
+      className={`bg-transparent fixed inset-0 flex ${classesIfCentered} ${themeMode == 'dark' && 'dark'}`}
       onClick={tryHide} 
     >
       {viewComponent}
