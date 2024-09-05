@@ -3,6 +3,11 @@ import removeMarkdown from 'remove-markdown';
 import { toDashCase } from "./utils";
 import { PROP_REGEX } from "../globals";
 
+export async function isDark(): Promise<boolean> {
+  const config = await logseq.App.getUserConfigs();
+  return config.preferredThemeMode == 'dark';
+}
+
 // https://github.com/ahonn/logseq-plugin-todo/
 export function trimContent(block: BlockEntity): string {
   let content = block.content;

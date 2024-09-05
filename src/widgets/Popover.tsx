@@ -3,6 +3,7 @@ import DatePicker from "react-datepicker";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 import Beta from "../algorithm/beta";
 import IncrementalBlock from "../IncrementalBlock";
+import * as theme from "../utils/theme";
 
 import "react-datepicker/dist/react-datepicker.css";
 import { addDays, formatDate, todayMidnight } from "../utils/datetime";
@@ -159,11 +160,11 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     <div 
       ref={ref} 
       id="ib-popover" 
-      className={`fixed flex items-start rounded text-sm transition ease-out delay-75 ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2  '}`}
+      className={`fixed flex items-start rounded text-sm text-gray-800 dark:text-gray-200 transition ease-out delay-75 ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2  '}`}
       onMouseLeave={() => setSideView(SideView.none)}
     >
       <form 
-        className="flex bg-white rounded border shadow-md py-1"
+        className={`flex rounded ${theme.BG} ${theme.BORDER} shadow-md py-1`}
         onSubmit={(e) => e.preventDefault()}
       >
       <fieldset disabled={busy}>
@@ -192,13 +193,13 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
 
         {!ib.priorityOnly && 
         <div 
-          className="py-1"
+          className="py-1 dark:border-gray-600"
           onMouseEnter={() => setSideView(SideView.schedule)}
         >
           <p className="font-semibold text-gray-90">Schedule</p>
           <p>Due</p>
           <DatePicker
-            className="border"
+            className={`${theme.BG} ${theme.BORDER}`}
             selected={dueDate}
             onChange={(date) => updateDueDate(date)}
             minDate={new Date()}
@@ -209,7 +210,7 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
             <div>
               <p>Multiplier</p>
               <input 
-                className="border w-16" 
+                className={`w-16 ${theme.BG} ${theme.BORDER}`}
                 type="number" 
                 value={multiplier}
                 onChange={(e) => updateMultiplier(parseFloat(e.target.value))}
@@ -221,7 +222,7 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
             <div className="ml-2">
               <p>Interval</p>
               <input 
-                className="border w-16" 
+                className={`w-16 ${theme.BG} ${theme.BORDER}`}
                 type="number" 
                 value={interval}
                 onChange={(e) => updateInterval(parseFloat(e.target.value))}
@@ -233,11 +234,11 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
         </div>}
 
         <div 
-          className="pt-1"
+          className="pt-1 dark:border-gray-600"
           onMouseEnter={() => setSideView(SideView.none)}
         >
           <button
-            className="hover:bg-gray-100 border py-1 px-1 rounded" 
+            className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 rounded`}
             onClick={done}
           >
             <span>Done</span>
@@ -272,7 +273,7 @@ function SidePriorityView({ currentBeta, newBeta } : { currentBeta: Beta, newBet
   }
 
   return (
-  <div className="flex flex-col text-xs content-stretch bg-white rounded border shadow-md p-1 ml-2">
+  <div className={`flex flex-col text-xs content-stretch rounded ${theme.BG} ${theme.BORDER} shadow-md p-1 ml-2`}>
     <p className="font-medium mb-1">Priority</p>
     <div className="border rounded-lg max-w-fit">
       <BetaGraph beta={currentBeta} width={120} height={60}></BetaGraph>
@@ -317,7 +318,7 @@ function SideScheduleView({ multiplier, interval, dueDate }: { multiplier: numbe
   const scheduleWidgets = schedule.map((scheduled) => ScheduledWidget({ scheduled }));
 
   return (
-  <div className="flex flex-col text-xs bg-white rounded border shadow-md p-1 ml-2">
+  <div className={`flex flex-col text-xs rounded ${theme.BG} ${theme.BORDER} shadow-md p-1 ml-2`}>
     <p className="font-medium mb-1">Schedule</p>
     {scheduleWidgets}
   </div>
@@ -328,13 +329,13 @@ function ScheduledWidget({ scheduled }: { scheduled: Scheduled }) {
   return (
   <div className="flex flex-col">
     { scheduled.intervalPrevious != undefined && 
-    <div className="text-gray-600 flex items-center justify-center py-1">
+    <div className={`${theme.TXT_MUTED} flex items-center justify-center py-1`}>
       <span style={{ fontSize: '1.25rem' }}>↓</span> 
       <span>({scheduled.intervalPrevious}d)</span> 
     </div>}
-    <div className="flex justify-between px-1 border rounded-lg">
+    <div className={`flex justify-between px-1 rounded-lg ${theme.BORDER}`}>
       <span className="mr-1">{formatDate(scheduled.date)}</span>
-      <span className="text-gray-600">({scheduled.intervalToday}d)</span>
+      <span className={`${theme.TXT_MUTED}`}>({scheduled.intervalToday}d)</span>
     </div>
   </div>
   );

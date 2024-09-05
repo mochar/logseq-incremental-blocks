@@ -8,6 +8,7 @@ import { queryDueIbs } from "../logseq/query";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import { refreshDueIbs, removeRef, toggleRef } from "./learnSlice";
 import { getFilterRefs } from "../utils/logseq";
+import * as theme from "../utils/theme";
 
 export default function QueueView({ onLearn } : { onLearn: () => void }) {
   const [busy, setBusy] = React.useState<boolean>(false);
@@ -116,13 +117,13 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
 
         <div>
           <button 
-            className="hover:bg-gray-100 border py-1 px-1 rounded" 
+            className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 rounded`}
             onClick={toggleDatePicker}
           >
             📅
           </button>
           <button 
-            className="hover:bg-gray-100 border py-1 px-1 rounded" 
+            className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-1 rounded`}
             onClick={() => refresh()}
           >
             🔄
@@ -143,7 +144,7 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
         />}
       </div>
 
-      <hr></hr>
+      <hr className="dark:border-gray-800"></hr>
 
     {/* {refreshing && 
       <div className="text-neutral-500 flex justify-center">

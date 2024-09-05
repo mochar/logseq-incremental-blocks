@@ -9,6 +9,7 @@ import { RepAction } from "./queue";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import { doneRep, finishRep, getPriorityUpdates, manualIntervention, nextRep, postponeRep, toggleAutoIb } from "./learnSlice";
 import CuteToggle from "../widgets/CuteToggle";
+import * as theme from "../utils/theme";
 
 export default function LearnView({ offLearn }: { offLearn: () => void }) {
   const [busy, setBusy] = React.useState<boolean>(false);
@@ -131,10 +132,10 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
   }
 
   return (
-    <div className="flex flex-col bg-white w-full text-sm">
+    <div className="flex flex-col w-full text-sm">
 
       <div className="flex items-center py-1">
-        <span className="text-xs text-gray-500">🔁 {currentIb.reps!+1}</span>
+        <span className={`text-xs ${theme.TXT_MUTED}`}>🔁 {currentIb.reps!+1}</span>
         <div className="flex-grow"></div>
         <div className="mr-1">
           <CuteToggle 
@@ -152,18 +153,18 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
         />
       </div>
 
-      <div className="border rounded">
+      <div className={`${theme.BORDER} rounded`}>
         <IbItem ib={currentIb}></IbItem>
       </div>
 
-      <div className="py-2">
+      <div className="pt-2">
         <div className="flex items-center justify-between">
           <p>Priority</p>
           <p>
             {prioritizeManually && <span className="text-neutral-600">
               manual
               <button
-              className="button border"
+              className={`button ${theme.BORDER} ${theme.BG.hover}`}
               onClick={() => updateManualPriority(null)}
               >
                 <span>⮌</span>
@@ -174,11 +175,11 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
         </div>
 
         <div className="flex items-center justify-center">
-          <div className="border grow-0">
+          <div className={`${theme.BORDER} grow-0`}>
             <BetaGraph beta={currentIb.beta!} width={120} height={60}></BetaGraph>
           </div>
           <p className="text-neutral-400 px-2">🠲</p>
-          <div className="border grow-0">
+          <div className={`${theme.BORDER} grow-0`}>
             <BetaGraph beta={newBeta!} width={120} height={60}></BetaGraph>
           </div>
         </div>
@@ -190,14 +191,14 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
         </div>
       </div>
 
-      <div className="py-2">
+      <div className="py-2 pt-1">
         <div className="flex items-center justify-between">
           <p>Schedule</p>
           <p>
-            {scheduleManually && <span className="text-neutral-600">
+            {scheduleManually && <span className="text-neutral-600 dark:text-neutral-300">
               manual
               <button
-              className="button border"
+              className={`button ${theme.BORDER} ${theme.BG.hover}`}
               onClick={() => updateManualInterval(null)}
               >
                 <span>⮌</span>
@@ -208,12 +209,12 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
         </div>
 
         <div className="flex items-center justify-between">
-          <p className="border grow">
+          <p className={`${theme.BORDER} grow`}>
             {formatDate(currentIb.dueDate!)}
           </p>
           <p className="text-neutral-400 px-2">🠲</p>
           <DatePicker
-            className="border grow"
+            className={`${theme.BORDER} bg-transparent grow`}
             selected={nextDue}
             onChange={(date) => date && updateManualInterval(dateDiffInDays(todayMidnight(), date))}
             minDate={addDays(new Date(), 1)}
@@ -225,7 +226,7 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
         <div className="flex items-center py-1">
           <span>Interval</span>
           <input
-            className="border px-2" 
+            className={`${theme.BORDER} bg-transparent px-2`} 
             type="number" 
             value={interval}
             onChange={(e) => updateManualInterval(parseFloat(e.target.value))}
@@ -235,7 +236,7 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
           </input>
           <div className="grow"></div>
           <button
-            className="border px-1"
+            className={`${theme.BORDER} ${theme.BG.hover} px-1`}
             onClick={postpone}
           >
             Postpone
@@ -243,9 +244,9 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
         </div>
       </div>
 
-      <hr></hr>
+      <hr className="dark:border-gray-800"></hr>
 
-      <div className="flex justify-between py-2">
+      <div className="flex justify-between pt-2">
         <button 
           className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
           onClick={finish}
@@ -253,14 +254,14 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
           Next rep
         </button>
         <button 
-          className="hover:bg-gray-100 border py-1 px-1 ml-2 w-1/6 rounded" 
+          className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-2 w-1/6 rounded`} 
           onClick={done}
         >
           Done
         </button>
         <div className="flex-grow"></div>
         <button 
-          className="hover:bg-gray-100 border py-1 px-1 w-1/6 rounded" 
+          className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 w-1/6 rounded`}
           onClick={quit}
         >
           Quit

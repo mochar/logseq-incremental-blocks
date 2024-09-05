@@ -23,7 +23,7 @@ export default function PrioritySlider({ beta, onMeanChange, onVarianceChange=()
     <div>
       <div className="flex items-center">
         <input 
-          className="w-full"
+          className="w-full priority-slider"
           type="range" 
           min={BETA_BOUNDS.meanLower*precisionFactor} 
           max={BETA_BOUNDS.meanUpper*precisionFactor} 
@@ -36,7 +36,7 @@ export default function PrioritySlider({ beta, onMeanChange, onVarianceChange=()
       </div>
       {varianceSlider && <div className="flex items-center">
         <input 
-          className="w-full"
+          className="w-full priority-slider"
           type="range" 
           min={0.0001*precisionFactor}
           max={beta.varianceUpperBound()*precisionFactor} 

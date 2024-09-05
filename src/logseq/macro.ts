@@ -3,6 +3,8 @@ import { renderMedxMacro } from "../medx/macro";
 import { AppStore } from "../state/store";
 import { formatDate, dateDiffInDays } from "../utils/datetime";
 import logo from "../../assets/logo.svg";
+import { isDark } from "../utils/logseq";
+import * as theme from "../utils/theme";
 
 let store: AppStore;
 export const injectStore = (_store: AppStore) => {
@@ -63,26 +65,25 @@ async function renderIbMacro({ slot, payload }) {
     `;
   }
 
+  const dark = await isDark();
   logseq.provideUI({
     key: `ib__${slot}`,
     slot,
     reset: true,
     template: `
-    <div class="text-sm bg-gray-100/20 text-gray-600 flex">
+    <div class="text-xs flex">
       <button
-        class="rounded-lg border flex px-1.5 items-center" 
+        class="rounded-lg border flex px-1.5 py-0.5 items-center ${dark ? "bg-gray-700 text-gray-300" : "bg-gray-100/10 text-gray-600"}" 
         data-on-click="toggleIbPopover" 
         data-block-uuid="${payload.uuid}"
         data-slot-id="${slot}"
       >
-        <div class="flex">
-          <img src=${logo} width=15 height=15 />
+        <div class="flex font-semibold">
+          <span>IB</span>
         </div>
         ${priorityHtml}
         ${scheduleHtml}
       </button>
-
-      ${repHtml}
     </div>
     `
   });

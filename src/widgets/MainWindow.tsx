@@ -45,7 +45,7 @@ export default function MainWindow() {
     <div 
       ref={ref} 
       id="ib-main" 
-      className="absolute top-10 right-10 bg-white rounded-lg p-2 w-96 border border-gray-400 rounded shadow flex flex-col text-sm"
+      className="absolute top-10 right-10 bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 rounded-lg p-2 w-96 border dark:border-gray-600 rounded shadow flex flex-col text-sm"
     >
       {!learning && <QueueView onLearn={() => toggleLearning(true)}></QueueView>}
       {learning && <LearnView offLearn={() => toggleLearning(false)}></LearnView>}

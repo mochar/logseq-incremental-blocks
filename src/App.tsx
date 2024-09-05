@@ -15,6 +15,7 @@ import { finishRep, refreshDueIbs } from "./learn/learnSlice";
 export default function App() {
   const visible = useAppVisible();
   const dispatch = useAppDispatch();
+  const [isDarkMode, setDarkMode] = React.useState<boolean>(false);
   const view = useAppSelector(state => state.view);
   const learning = useAppSelector(state => state.learn.learning);
   const currentIbData = useAppSelector(state => state.learn.current);
@@ -74,7 +75,10 @@ export default function App() {
     });
 
     logseq.App.onCurrentGraphChanged((e) => dispatch(refreshDueIbs()));
-    dispatch(refreshDueIbs())
+    dispatch(refreshDueIbs());
+
+    isDark().then((dark) => setDarkMode(dark));
+    logseq.App.onThemeModeChanged(({ mode }) => setDarkMode(mode == 'dark'));
   }, []);
 
   function tryHide(e: any) {
@@ -122,7 +126,7 @@ export default function App() {
   }
   return (
     <main 
-      className={`bg-transparent fixed inset-0 flex ${classesIfCentered}`}
+      className={`bg-transparent fixed inset-0 flex ${classesIfCentered} ${isDarkMode && 'dark'}`}
       onClick={tryHide} 
     >
       {viewComponent}
