@@ -4,7 +4,8 @@ import { PRIORITY_PALETTE } from "../globals";
 import { interpolateColor } from "../utils/utils";
 import * as theme from "../utils/theme";
 
-export default function IbItem({ ib }: { ib: IncrementalBlock }) {
+export default function 
+IbItem({ ib }: { ib: IncrementalBlock }) {
 
   // If block is page property block, then it has no content field.
   // At least the one i checked..
@@ -25,6 +26,6 @@ export default function IbItem({ ib }: { ib: IncrementalBlock }) {
     >
       {(ib.sample!*100).toFixed(2)}%
     </span>
-    <span className="">{content}</span>
+    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis'}}>{content}</span>
   </div>;
 }
