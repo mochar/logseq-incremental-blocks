@@ -52,7 +52,8 @@ export async function queryDueIbs({ dueAt, refs, includeOutdated=true }: DueIbs)
     ${where}
     [?page :block/name ?pagename] 
     [(contains? #{${refString}} ?pagename)] 
-    [?b :block/refs ?page]
+    [?b :block/page ?blockpage]
+    (or [?b :block/refs ?page] [?blockpage :block/tags ?page])
     `;
   }
   return await queryIncrementalBlocks(where);
