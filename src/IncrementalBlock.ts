@@ -67,10 +67,8 @@ class IncrementalBlock {
 
   public sampleAt(date: Date) : number | null {
     if (!this.beta) return null;
-    // Add uuid as well because different ibs can have same beta.
-    const seed = this.uuid + date.getTime().toString;
-    jStat.setRandom(seedrandom(seed));
-    return this.beta.sample({ seedToday: false });
+    // Add uuid prefix as different ibs can have same beta.
+    return this.beta.sample({ prefix: this.uuid, seedDate: date });
   }
 
   static async fromUuid(uuid: string, opts : { propsOnly?: boolean } = {}) {

@@ -14,6 +14,7 @@ import BetaGraph from "./BetaGraph";
 import PrioritySlider from "./PrioritySlider";
 import { useAppDispatch } from "../state/hooks";
 import { dueIbAdded, dueIbRemoved } from "../learn/learnSlice";
+import { queryQueueIb } from "../logseq/query";
 
 enum SideView { none, priority, schedule }
 
@@ -123,8 +124,10 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     if (curIsToday && !newIsToday) {
       dispatch(dueIbRemoved(block.uuid));
     } else if (!curIsToday && newIsToday) {
-      const ib = await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false });
-      dispatch(dueIbAdded(ib));
+      const qib = await queryQueueIb(block.uuid);
+      if (qib) {
+        dispatch(dueIbAdded(qib));
+      }
     }
 
     setDueDate(date);
@@ -152,6 +155,7 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     setBusy(true)
     const ib = await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false });
     await ib.done()
+    dispatch(dueIbRemoved(block.uuid));
     setBusy(false)
     logseq.hideMainUI();
   }

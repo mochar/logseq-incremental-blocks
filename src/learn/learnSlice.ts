@@ -1,14 +1,41 @@
-import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import IncrementalBlock from "../IncrementalBlock";
 import { getPriorityUpdate, PriorityUpdate } from "../algorithm/priority";
-import { queryDueIbs } from "../logseq/query";
 import { AppDispatch, RootState } from "../state/store";
 import { getBlockHierarchyContent, getFilterRefs } from "../utils/logseq";
 import { nextInterval } from "../algorithm/scheduling";
 import { addDays, todayMidnight } from "../utils/datetime";
 import { convertBlockToIb } from "../logseq/command";
+import { queryDueIbs } from "../logseq/query";
 
+export enum RepAction { 
+  finish, // Rep finished, update priority and schedule
+  postpone, // Move to another day, keep everything as is
+  done, // Block is done, clean up and go to next rep
+  next, // Simply pop the current ib, without action
+}
+
+export interface Ref {
+  name: string,
+  uuid: string,
+  id: number
+}
+
+// Simplified ib data just for queue purposes.
+export interface QueueIb {
+  id: number,
+  uuid: string,
+  content: string,
+  priority: number,
+  pathRefs: Ref[],
+  pageTags: Ref[],
+  // pathRefs + pageTags
+  refs: Ref[]
+}
+
+// Detailed data on currently learning ib
 export interface CurrentIBData {
+  qib: QueueIb,
   ib: IncrementalBlock,
   start: Date,
   contents: Record<string, string>,
@@ -18,24 +45,23 @@ export interface CurrentIBData {
   manualInterval?: number,
 }
 
-export enum RepAction { 
-  finish, // Rep finished, update priority and schedule
-  postpone, // Move to another day, keep everything as is
-  done, // Block is done, clean up and go to next rep
-  next, // Simply pop the current ib, without action
-}
+export declare type FilterMode = 'inclusion' | 'exclusion';
 
 interface Learn {
   learning: boolean,
   // The ibds due for today are stored in `dueIbs`, while the queue shown to the user
   // is stored in `queue`. Differentiate between these two when the learn queue differs
-  // with the due ibs, eg when an ib is set to be learned immediately.
-  dueIbs: IncrementalBlock[],
-  queue: IncrementalBlock[],
+  // with the due ibs, eg when filtering, or an isolated ib is set to be learned immediately.
+  dueIbs: QueueIb[],
+  queue: QueueIb[],
+  // Refreshing the queue
   queueStatus: 'busy' | 'idle',
   refreshDate?: Date | undefined,
   refreshState: null | 'loading' | 'fulfilled' | 'failed',
-  refs: string[],
+  // Refs to filter on
+  refs: Ref[],
+  selectedRefs: Ref[],
+  refFilterMode: FilterMode,
   current: CurrentIBData | null,
   // Whether or not we have started listening for new block events, as the listener
   // should only be installed once.
@@ -50,6 +76,8 @@ const initialState: Learn = {
   queue: [],
   queueStatus: 'idle',
   refs: [],
+  selectedRefs: [],
+  refFilterMode: 'inclusion',
   current: null,
   refreshState: null,
   blockListenerActive: false,
@@ -60,16 +88,27 @@ const learnSlice = createSlice({
   name: 'learn',
   initialState,
   reducers: {
-    refToggled(state, action: PayloadAction<{ ref: string, state?: boolean }>) {
-      const index = state.refs.indexOf(action.payload.ref);
-      const add = action.payload.state == undefined ? index == -1 : action.payload.state;
-      if (add && index == -1) {
-        state.refs.push(action.payload.ref);
-      } else if (!add && index > -1) {
-        state.refs.splice(index, 1);
+    userRefsLoaded(state, action: PayloadAction<Ref[]>) {
+      state.refs = action.payload;
+    },
+    refToggled(state, action: PayloadAction<{ refName: string, state?: boolean }>) {
+      // Add or remove ref from selectedRefs
+      const selectedRefNames = state.selectedRefs.map((r) => r.name);
+      const selectedIndex = selectedRefNames.indexOf(action.payload.refName);
+      const add = action.payload.state == undefined ? selectedIndex == -1 : action.payload.state;
+      if (add && selectedIndex == -1) {
+        const ref = state.refs.find((r) => r.name == action.payload.refName);
+        if (ref) {
+          state.selectedRefs.push(ref);
+        }
+      } else if (!add && selectedIndex > -1) {
+        state.selectedRefs.splice(selectedIndex, 1);
       }
     },
-    learningStarted(state, action: PayloadAction<IncrementalBlock[]>) {
+    refFilterModeToggled(state, action: PayloadAction<FilterMode | undefined>) {
+      state.refFilterMode = action.payload ?? (state.refFilterMode == 'inclusion' ? 'exclusion' : 'inclusion');
+    },
+    learningStarted(state, action: PayloadAction<QueueIb[]>) {
       if (state.learning) return;
       state.learning = true;
       state.queue = action.payload;
@@ -98,13 +137,11 @@ const learnSlice = createSlice({
         }
       }
     },
-    dueIbAdded(state, action: PayloadAction<IncrementalBlock>) {
-      const ib = action.payload;
-      if (!ib.dueToday() || !ib.beta) return;
-      const sample = ib.beta.sample({ seedToday: true });
+    dueIbAdded(state, action: PayloadAction<QueueIb>) {
+      const qib = action.payload;
       for (let i = 0; i < state.dueIbs.length; i++) {
-        if (state.dueIbs[i].sample! < sample) {
-          state.dueIbs.splice(i, 0, ib);
+        if (state.dueIbs[i].priority < qib.priority) {
+          state.dueIbs.splice(i, 0, qib);
           break;
         }
       }
@@ -152,15 +189,13 @@ const learnSlice = createSlice({
   }
 });
 
-export const { refToggled, manualIntervention, dueIbAdded, dueIbRemoved } = learnSlice.actions;
+export const { userRefsLoaded, manualIntervention, dueIbAdded, dueIbRemoved } = learnSlice.actions;
 
-export const refreshDueIbs = createAsyncThunk<IncrementalBlock[], void, { state: RootState }>(
+export const refreshDueIbs = createAsyncThunk<QueueIb[], void, { state: RootState }>(
   'learn/refreshDueIbs', 
   async (_, { getState }) => {
-    const state = getState();
-    let ibs = await queryDueIbs({ refs: state.learn.refs });
-    ibs = ibs.sort((a, b) => b.sample! - a.sample!);
-    return ibs;
+    const qibs = await queryDueIbs({});
+    return qibs;
   },
   {
     condition: (_, { getState }) => {
@@ -176,12 +211,11 @@ export const stopLearning = () => {
   }
 }
 
-export const startLearning = (queue?: IncrementalBlock[]) => {
+export const startLearning = () => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     let state = getState();
     const blockListenerActive = state.learn.blockListenerActive;
-    queue = queue ?? state.learn.dueIbs;
-    dispatch(learnSlice.actions.learningStarted(queue));
+    dispatch(learnSlice.actions.learningStarted(selectFilteredDueIbs(state)));
     state = getState();
     if (state.learn.learning) { 
       await dispatch(nextRep());
@@ -215,9 +249,11 @@ export const nextRep = createAsyncThunk<CurrentIBData | null, void, { state: Roo
     let ibData: CurrentIBData | null = null;
     const i = learn.current ? 1 : 0;
     if (learn.queue.length > i) {
-      const ib = learn.queue[i];
-      const contents = await getBlockHierarchyContent(ib.uuid, 3);
+      const qib = learn.queue[i];
+      const contents = await getBlockHierarchyContent(qib.uuid, 3);
+      const ib = await IncrementalBlock.fromUuid(qib.uuid, { propsOnly: false });
       ibData = {
+        qib,
         ib,
         start: new Date(),
         contents: contents,
@@ -328,22 +364,67 @@ export const toggleAutoIb = createAsyncThunk<boolean, boolean, { state: RootStat
   }
 );
 
-export const toggleRef = (ref: string) => {
+export const getUserRefs = () => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
-    dispatch(refToggled({ ref }));
-    dispatch(refreshDueIbs());
+    const refNames = getFilterRefs();
+    if (refNames.length == 0) return;
+    const refString = refNames.map((r) => `"${r}"`).join(', ');
+    const query = `[
+      :find ?p ?n ?u
+      :where
+        [?p :block/name ?n]
+        [(contains? #{${refString}} ?n)]
+        [?p :block/uuid ?u]
+    ]`;
+    const ret = await logseq.DB.datascriptQuery(query);
+    const refs = (ret as []).map<Ref>((r) => { return { id: r[0], name: r[1], uuid: r[2] } });
+    dispatch(userRefsLoaded(refs))
   }
-};
+}
 
-export const removeRef = (ref: string) => {
+export const toggleRef = (refName: string, state?: boolean) => {
+  return (dispatch: AppDispatch) => {
+    dispatch(learnSlice.actions.refToggled({ refName, state }));
+  }
+}
+
+export const removeRef = (refName: string) => {
   return async (dispatch: AppDispatch, getState: () => RootState) : Promise<string[]> => {
-    dispatch(refToggled({ ref, state: false }));
-    dispatch(refreshDueIbs());
-    const refs = getFilterRefs();
-    refs.splice(refs.indexOf(ref), 1);
+    // Remove from selected refs if there
+    dispatch(toggleRef(refName, false));
+    // Remove ref from settings
+    const state = getState();
+    const refs = state.learn.refs.map((r) => r.name);
+    refs.splice(refs.indexOf(refName), 1);
     logseq.updateSettings({ subsetQueries: refs.join(', ') });
+    // Get updated user refs
+    await dispatch(getUserRefs());
     return refs;
   }
 }
 
+export const toggleFilterMode = (filterMode?: FilterMode) => {
+  return (dispatch: AppDispatch) => {
+    dispatch(learnSlice.actions.refFilterModeToggled(filterMode));
+  }
+}
+
 export default learnSlice.reducer;
+
+export const selectFilteredDueIbs = createSelector.withTypes<RootState>()(
+  [
+    state => state.learn.dueIbs, 
+    state => state.learn.selectedRefs, 
+    state => state.learn.refFilterMode, 
+  ],
+  (dueIbs, refs, mode) => {
+    if (refs.length == 0) {
+      return dueIbs;
+    } 
+    const refIds = refs.map((r) => r.id);
+    return dueIbs.filter((qib) => {
+      const containsRef = qib.refs.some((r) => refIds.includes(r.id));
+      return mode == 'inclusion' ? containsRef : !containsRef;
+    });
+  }
+);

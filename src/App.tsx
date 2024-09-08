@@ -8,7 +8,7 @@ import { IbViewData, InsertViewData, MedxViewData, setView, toggleView, ViewType
 import InsertPopover from "./medx/InsertPopover";
 import { renderMediaEmbed } from "./medx/macro";
 import MedxArgs from "./medx/args";
-import { finishRep, refreshDueIbs } from "./learn/learnSlice";
+import { finishRep, getUserRefs, refreshDueIbs } from "./learn/learnSlice";
 import { isDark } from "./utils/logseq";
 import { themeModeChanged } from "./state/appSlice";
 
@@ -22,8 +22,8 @@ export default function App() {
   const currentIbData = useAppSelector(state => state.learn.current);
   const themeMode = useAppSelector(state => state.app.themeMode);
 
-  // const state = useAppSelector(state => state);
-  // console.log(state);
+  const state = useAppSelector(state => state);
+  console.log(state);
 
   useEffect(() => {
     logseq.provideModel({
@@ -81,6 +81,8 @@ export default function App() {
 
     isDark().then((dark) => dispatch(themeModeChanged(dark ? 'dark' : 'light')));
     logseq.App.onThemeModeChanged(({ mode }) => dispatch(themeModeChanged(mode)));
+
+    dispatch(getUserRefs());
   }, []);
 
   function tryHide(e: any) {

@@ -5,9 +5,8 @@ import { nextInterval } from "../algorithm/scheduling";
 import { formatDate, addDays, todayMidnight, dateDiffInDays } from "../utils/datetime";
 import IbItem from "../widgets/IbItem";
 import BetaGraph from "../widgets/BetaGraph";
-import { RepAction } from "./queue";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { doneRep, finishRep, getPriorityUpdates, manualIntervention, nextRep, postponeRep, toggleAutoIb } from "./learnSlice";
+import { doneRep, finishRep, getPriorityUpdates, manualIntervention, nextRep, postponeRep, RepAction, toggleAutoIb } from "./learnSlice";
 import CuteToggle from "../widgets/CuteToggle";
 import * as theme from "../utils/theme";
 
@@ -19,7 +18,6 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
   const queueStatus = useAppSelector(state => state.learn.queueStatus);
   const autoIb = useAppSelector(state => state.learn.autoIb);
   const currentIbData = useAppSelector(state => state.learn.current);
-  const currentIb = useAppSelector(state => state.learn.current?.ib);
 
   const interval = React.useMemo(() => {
     if (!currentIbData) return undefined;
@@ -48,7 +46,7 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
         logseq.App.pushState('page', { name: currentIbData.ib.uuid })
       }
     }
-  }, [currentIb]);
+  }, [currentIbData]);
 
   async function nextIb(repAction: RepAction) {
     setBusy(true);
@@ -100,12 +98,14 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
 
   if (busy || queueStatus == 'busy') return <div>Loading...</div>;
 
-  if (currentIb == null) {
+  if (currentIbData == null) {
     return <div>
       Finished for today.
       <button className="border" onClick={offLearn}>Return</button>
     </div>
   } 
+
+  const currentIb = currentIbData.ib;
 
   // Handle changes related to priority.
   // Manual priority overrides algorithm-decided priority.
@@ -154,7 +154,7 @@ export default function LearnView({ offLearn }: { offLearn: () => void }) {
       </div>
 
       <div className={`${theme.BORDER} rounded`}>
-        <IbItem ib={currentIb}></IbItem>
+        <IbItem qib={currentIbData.qib}></IbItem>
       </div>
 
       <div className="pt-2">

@@ -1,4 +1,3 @@
-import IncrementalBlock from "../IncrementalBlock";
 import React from "react";
 import { Virtuoso } from "react-virtuoso";
 import IbItem from "../widgets/IbItem";
@@ -6,20 +5,19 @@ import DatePicker from "react-datepicker";
 import { todayMidnight } from "../utils/datetime";
 import { queryDueIbs } from "../logseq/query";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { refreshDueIbs, removeRef, toggleRef } from "./learnSlice";
-import { getFilterRefs } from "../utils/logseq";
+import { QueueIb, refreshDueIbs, removeRef, selectFilteredDueIbs, toggleRef } from "./learnSlice";
 import * as theme from "../utils/theme";
 
 export default function QueueView({ onLearn } : { onLearn: () => void }) {
   const [busy, setBusy] = React.useState<boolean>(false);
-  const [queue, setQueue] = React.useState<IncrementalBlock[]>([]);
+  const [queue, setQueue] = React.useState<QueueIb[]>([]);
   const [date, setDate] = React.useState<Date>(todayMidnight());
   const [showDatePicker, setShowDatePicker] = React.useState<boolean>(false);
 
   const dispatch = useAppDispatch();
   const refreshState = useAppSelector(state => state.learn.refreshState);
   const refreshDate = useAppSelector(state => state.learn.refreshDate);
-  const dueIbs = useAppSelector(state => state.learn.dueIbs);
+  const dueIbs = useAppSelector(selectFilteredDueIbs);
   const refs = useAppSelector(state => state.learn.refs);
 
   React.useEffect(() => {
@@ -49,7 +47,7 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
       setBusy(false);
       setQueue(dueIbs);
     }
-  }, [refreshState]);
+  }, [refreshState, dueIbs]);
 
   /*
    * Optional queueDate can be passed to show queue of given date.
@@ -61,7 +59,8 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
       await dispatch(refreshDueIbs());
       setQueue(dueIbs);
     } else {
-      const ibs = await queryDueIbs({ dueAt: queueDate, refs, includeOutdated: false });
+      const refNames = refs.map((r) => r.name);
+      const ibs = await queryDueIbs({ dueAt: queueDate, refs: refNames, includeOutdated: false });
       setQueue(ibs);
     }
     setBusy(false);
@@ -89,7 +88,7 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
       <Virtuoso
         style={{ height: '250px', overflowX: 'clip' }}
         totalCount={queue.length}
-        itemContent={(i) => IbItem({ ib: queue[i] })}
+        itemContent={(i) => IbItem({ qib: queue[i] })}
       ></Virtuoso>
     </div>
     );
@@ -160,15 +159,10 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
 }
 
 function RefFilter() {
-  //@ts-ignore
-  const [refs, setRefs] = React.useState<string[]>(getFilterRefs());
-  const selectedRefs = useAppSelector(state => state.learn.refs);
+  const refs = useAppSelector(state => state.learn.refs);
+  const selectedRefs = useAppSelector(state => state.learn.selectedRefs);
+  const filterMode = useAppSelector(state => state.learn.refFilterMode);
   const dispatch = useAppDispatch();
-
-  async function deleteRef(ref: string) {
-    const newRefs = await dispatch(removeRef(ref))
-    setRefs(newRefs);
-  }
 
   if (refs.length == 0) return <></>;
 
@@ -177,17 +171,17 @@ function RefFilter() {
     const classes = selected ? 'bg-gray-200 ring-1 ring-offset-1 ring-gray-500' : '';
     return (
       <span 
-        key={r}
+        key={r.id}
         className={"inline-flex items-center text-xs px-2 py-1 me-2 font-medium text-gray-900 bg-gray-100 rounded hover:bg-gray-200 hover:text-gray-900" + classes}
       >
         <button 
           type="button" 
-          onClick={() => dispatch(toggleRef(r))} 
+          onClick={() => dispatch(toggleRef(r.name))} 
           className="inline-flex items-center text-xs bg-transparent rounded-sm hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-300"
         >
-          {r}
+          {r.name}
         </button>
-        <button type="button" onClick={() => deleteRef(r)} className="inline-flex items-center p-1 ms-2 text-xs text-gray-400 bg-transparent rounded-sm hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-300">
+        <button type="button" onClick={() => dispatch(removeRef(r.name))} className="inline-flex items-center p-1 ms-2 text-xs text-gray-400 bg-transparent rounded-sm hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-300">
           <svg className="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
           </svg>

@@ -78,11 +78,11 @@ class Beta {
     return jStat.beta.pdf(x, this._a, this._b);
   }
 
-  public sample({ seedToday, seedDate }: { seedToday?: boolean, seedDate?: Date }): number {
-    if (seedToday) {
-      jStat.setRandom(seedrandom(todayMidnight().getTime().toString()));
-    } else if (seedDate) {
-      jStat.setRandom(seedrandom(seedDate.getTime().toString()));
+  public sample({ prefix='', seedToday=false, seedDate }: { prefix?: string, seedToday?: boolean, seedDate?: Date }): number {
+    if (seedDate) {
+      jStat.setRandom(seedrandom(prefix + seedDate.getTime().toString()));
+    } else if (seedToday) {
+      jStat.setRandom(seedrandom(prefix + todayMidnight().getTime().toString()));
     }
     return jStat.beta.sample(this._a, this._b);
   }

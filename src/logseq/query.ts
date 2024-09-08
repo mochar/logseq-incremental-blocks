@@ -2,6 +2,8 @@ import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
 import { toCamelCase } from "../utils/utils";
 import { toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
+import { QueueIb } from "../learn/learnSlice";
+import Beta from "../algorithm/beta";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
   // Identify by ib-due. Put in ?due var. Used downstream.
@@ -34,29 +36,92 @@ interface DueIbs {
   includeOutdated?: boolean
 }
 
-export async function queryDueIbs({ dueAt, refs, includeOutdated=true }: DueIbs) : Promise<IncrementalBlock[]> {
+const QUEUE_IB_PULLS = `
+(pull ?b [
+  :db/id
+  :block/uuid 
+  :block/content 
+  :block/properties
+  {:block/path-refs [:db/id :block/uuid :block/name]}
+]) 
+(pull ?bp [
+  {:block/tags [:db/id :block/uuid :block/name]}
+])
+`;
+
+function parseQueueIbs(result: any) : QueueIb[] {
+  const qibs = (result as Array<Array<any>>).map<QueueIb>((r) => {
+    const [block, tags] = r;
+    const beta = new Beta(block['properties']['ib-a'], block['properties']['ib-b']);
+    const priority = beta.sample({ prefix: block['uuid'], seedToday: true });
+    const pathRefs = block['path-refs'];
+    const pageTags = tags ? tags['tags'] : [];
+    return {
+      id: block['id'],
+      uuid: block['uuid'],
+      content: block['content'],
+      priority,
+      pathRefs,
+      pageTags,
+      refs: [...pathRefs, ...pageTags]
+    };
+  }).sort((a, b) => b.priority - a.priority);
+  return qibs;  
+}
+
+export async function queryDueIbs({ dueAt, refs, includeOutdated=true }: DueIbs) : Promise<QueueIb[]> {
+  // Handle due filter clause
   const dueDate = dueAt ?? todayMidnight();
-  let where = `
+  let dueWhere = `
   [(get ?prop :ib-due) ?due]
   [(<= ?due ${toEndOfDay(dueDate).getTime()})]
   `;
   if (!includeOutdated) {
-    where = `
-    ${where}
+    dueWhere = `
+    ${dueWhere}
     [(>= ?due ${toStartOfDay(dueDate).getTime()})]
     `;
   }
+
+  // Handle refs. Not sure if this works, but also not necessary as ref filtering
+  // in the queue happens after retrieving all due ibs.
+  let refsWhere = '';
   if (refs && refs.length > 0) {
     const refString = refs.map((r) => `"${r}"`).join(', ');
-    where = `
-    ${where}
+    refsWhere = `
     [?page :block/name ?pagename] 
     [(contains? #{${refString}} ?pagename)] 
-    [?b :block/page ?blockpage]
-    (or [?b :block/refs ?page] [?blockpage :block/tags ?page])
+    (or [?b :block/refs ?page] [?bp :block/tags ?page])
     `;
   }
-  return await queryIncrementalBlocks(where);
+
+  // Query
+  const query = `[
+    :find
+      ${QUEUE_IB_PULLS}
+    :where
+      [?b :block/properties ?prop]
+      ${dueWhere}
+      [(get ?prop :ib-a) _]
+      [(get ?prop :ib-b) _]
+      [?b :block/page ?bp]
+      ${refsWhere}
+  ]`;
+  const ret = await logseq.DB.datascriptQuery(query);
+  const qibs = parseQueueIbs(ret);
+  return qibs;
+}
+
+export async function queryQueueIb(uuid: string) : Promise<QueueIb | null> {
+  const query = `[
+    :find ${QUEUE_IB_PULLS}
+    :where
+      [?b :block/uuid #uuid "${uuid}"]
+      [?b :block/page ?bp]
+  ]`;
+  const ret = await logseq.DB.datascriptQuery(query);
+  const qibs = parseQueueIbs(ret);
+  return qibs.length == 0 ? null : qibs[0];
 }
 
 export async function queryOverdueUnupdatedIbs() : Promise<IncrementalBlock[]> {
@@ -93,31 +158,6 @@ export async function queryDueIbsWithoutSample() : Promise<IncrementalBlock[]> {
       [(<= ?due ${todayMidnight().getTime()})]
 
       (not [(get ?prop :ib-sample) _])
-  ]
-  `;
-  return await queryIncrementalBlocks(query);
-}
-
-export async function queryDueIbsOld() : Promise<IncrementalBlock[]> {
-  const query = `
-  [
-    :find (pull ?b [*])
-    :where
-      [?b :block/properties ?prop]
-
-      [(get ?prop :ib-due) ?due]
-      [(<= ?due ${todayMidnight().getTime()})]
-
-      [(get ?prop :ib-sample) _]
-    :result-transform (fn [result]
-      (sort-by 
-        ; (fn [d] (get-in d [:block/properties :ib-sample]))
-        (fn [d] 
-          (* 1 (get-in d [:block/properties :ib-sample]))
-        )
-        result
-      )
-    )
   ]
   `;
   return await queryIncrementalBlocks(query);
