@@ -1,10 +1,8 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import Beta from "./algorithm/beta";
 import { toDashCase } from "./utils/utils";
-import { todayMidnight, dateDiffInDays } from "./utils/datetime";
+import { todayMidnight, dateDiffInDays, toEndOfDay } from "./utils/datetime";
 import { RENDERER_MACRO_NAME as MACRO_NAME } from "./globals";
-import { jStat } from "jstat";
-import seedrandom from "seedrandom";
 
 class IncrementalBlock {
   readonly uuid: string;
@@ -38,7 +36,9 @@ class IncrementalBlock {
     if (Beta.isValidSample(sample)) {
       this.sample = sample;
     } else if (this.beta) {
-      this.sample = this.sampleAt(this.dueDate ?? todayMidnight());
+      // Should be the sample of today
+      // this.sample = this.sampleAt(this.dueDate ?? todayMidnight());
+      this.sample = this.sampleAt(todayMidnight());
     } else {
       this.sample = null;
     }
