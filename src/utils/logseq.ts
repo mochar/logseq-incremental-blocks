@@ -1,4 +1,4 @@
-import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
+import { AppGraphInfo, BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import removeMarkdown from 'remove-markdown';
 import { toDashCase } from "./utils";
 import { PROP_REGEX } from "../globals";

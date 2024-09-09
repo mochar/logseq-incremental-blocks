@@ -14,7 +14,7 @@ import BetaGraph from "./BetaGraph";
 import PrioritySlider from "./PrioritySlider";
 import { useAppDispatch } from "../state/hooks";
 import { dueIbAdded, dueIbRemoved } from "../learn/learnSlice";
-import { queryQueueIb } from "../logseq/query";
+import { queryQueueIbs } from "../logseq/query";
 
 enum SideView { none, priority, schedule }
 
@@ -124,9 +124,9 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     if (curIsToday && !newIsToday) {
       dispatch(dueIbRemoved(block.uuid));
     } else if (!curIsToday && newIsToday) {
-      const qib = await queryQueueIb(block.uuid);
-      if (qib) {
-        dispatch(dueIbAdded(qib));
+      const qibs = await queryQueueIbs({ uuids: [block.uuid] });
+      if (qibs.length > 0) {
+        dispatch(dueIbAdded(qibs[0]));
       }
     }
 

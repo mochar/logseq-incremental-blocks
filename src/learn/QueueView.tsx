@@ -5,10 +5,10 @@ import DatePicker from "react-datepicker";
 import { todayMidnight } from "../utils/datetime";
 import { queryDueIbs } from "../logseq/query";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { QueueIb, refreshDueIbs, removeRef, selectFilteredDueIbs, toggleRef } from "./learnSlice";
+import { QueueIb, refreshDueIbs, removeRef, selectFilteredDueIbs, startLearning, toggleRef } from "./learnSlice";
 import * as theme from "../utils/theme";
 
-export default function QueueView({ onLearn } : { onLearn: () => void }) {
+export default function QueueView() {
   const [busy, setBusy] = React.useState<boolean>(false);
   const [queue, setQueue] = React.useState<QueueIb[]>([]);
   const [date, setDate] = React.useState<Date>(todayMidnight());
@@ -80,6 +80,10 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
       refresh(d);
     }
   }
+  
+  function learn() {
+    dispatch(startLearning());
+  }
 
   let queueView;
   if (queue.length > 0) {
@@ -109,7 +113,7 @@ export default function QueueView({ onLearn } : { onLearn: () => void }) {
         <button 
           className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded ${queue.length == 0 && "cursor-not-allowed"}`}
           disabled={queue.length == 0}
-          onClick={onLearn}
+          onClick={learn}
         >
           Learn 
         </button>

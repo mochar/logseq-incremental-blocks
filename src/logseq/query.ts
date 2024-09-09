@@ -33,7 +33,8 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
 interface DueIbs {
   dueAt?: Date,
   refs?: string[],
-  includeOutdated?: boolean
+  includeOutdated?: boolean,
+  sortByPriority?: boolean,
 }
 
 const QUEUE_IB_PULLS = `
@@ -49,8 +50,8 @@ const QUEUE_IB_PULLS = `
 ])
 `;
 
-function parseQueueIbs(result: any) : QueueIb[] {
-  const qibs = (result as Array<Array<any>>).map<QueueIb>((r) => {
+function parseQueueIbs({ result, sortByPriority=true }: { result: any, sortByPriority?: boolean }) : QueueIb[] {
+  let qibs = (result as Array<Array<any>>).map<QueueIb>((r) => {
     const [block, tags] = r;
     const beta = new Beta(block['properties']['ib-a'], block['properties']['ib-b']);
     const priority = beta.sample({ prefix: block['uuid'], seedToday: true });
@@ -65,11 +66,14 @@ function parseQueueIbs(result: any) : QueueIb[] {
       pageTags,
       refs: [...pathRefs, ...pageTags]
     };
-  }).sort((a, b) => b.priority - a.priority);
+  });
+  if (sortByPriority) {
+    qibs = qibs.sort((a, b) => b.priority - a.priority);
+  }
   return qibs;  
 }
 
-export async function queryDueIbs({ dueAt, refs, includeOutdated=true }: DueIbs) : Promise<QueueIb[]> {
+export async function queryDueIbs({ dueAt, refs, includeOutdated=true, sortByPriority=true }: DueIbs) : Promise<QueueIb[]> {
   // Handle due filter clause
   const dueDate = dueAt ?? todayMidnight();
   let dueWhere = `
@@ -108,20 +112,31 @@ export async function queryDueIbs({ dueAt, refs, includeOutdated=true }: DueIbs)
       ${refsWhere}
   ]`;
   const ret = await logseq.DB.datascriptQuery(query);
-  const qibs = parseQueueIbs(ret);
+  const qibs = parseQueueIbs({ result: ret, sortByPriority });
   return qibs;
 }
 
-export async function queryQueueIb(uuid: string) : Promise<QueueIb | null> {
+export async function queryQueueIbs({ uuids, sortByPriority=true }: { uuids: string[], sortByPriority?: boolean }) : Promise<QueueIb[]> {
+  const uuidsString = [...new Set(uuids)].map((uuid) => `#uuid "${uuid}"`).join(', ');
   const query = `[
     :find ${QUEUE_IB_PULLS}
     :where
-      [?b :block/uuid #uuid "${uuid}"]
+      [?b :block/uuid ?uuid]
+      [(contains? #{${uuidsString}} ?uuid)] 
+      [?b :block/properties ?prop]
+      [(get ?prop :ib-a) _]
+      [(get ?prop :ib-b) _]
       [?b :block/page ?bp]
   ]`;
-  const ret = await logseq.DB.datascriptQuery(query);
-  const qibs = parseQueueIbs(ret);
-  return qibs.length == 0 ? null : qibs[0];
+  let ret: any;
+  try {
+    ret = await logseq.DB.datascriptQuery(query);  
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
+  const qibs = parseQueueIbs({ result: ret, sortByPriority });
+  return qibs ?? [];
 }
 
 export async function queryOverdueUnupdatedIbs() : Promise<IncrementalBlock[]> {

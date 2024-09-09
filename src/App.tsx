@@ -11,6 +11,8 @@ import MedxArgs from "./medx/args";
 import { finishRep, getUserRefs, refreshDueIbs } from "./learn/learnSlice";
 import { isDark } from "./utils/logseq";
 import { themeModeChanged } from "./state/appSlice";
+import { getDueLogseqCards } from "./anki/anki";
+import { loadMedia } from "./anki/ankiSlice";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
@@ -83,6 +85,7 @@ export default function App() {
     logseq.App.onThemeModeChanged(({ mode }) => dispatch(themeModeChanged(mode)));
 
     dispatch(getUserRefs());
+    dispatch(loadMedia());
   }, []);
 
   function tryHide(e: any) {

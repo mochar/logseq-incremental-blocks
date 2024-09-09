@@ -6,7 +6,9 @@ import { getBlockHierarchyContent, getFilterRefs } from "../utils/logseq";
 import { nextInterval } from "../algorithm/scheduling";
 import { addDays, todayMidnight } from "../utils/datetime";
 import { convertBlockToIb } from "../logseq/command";
-import { queryDueIbs } from "../logseq/query";
+import { queryDueIbs, queryQueueIbs } from "../logseq/query";
+import { getDueLogseqCards } from "../anki/anki";
+import { logseq as PL } from "../../package.json";
 
 export enum RepAction { 
   finish, // Rep finished, update priority and schedule
@@ -30,7 +32,9 @@ export interface QueueIb {
   pathRefs: Ref[],
   pageTags: Ref[],
   // pathRefs + pageTags
-  refs: Ref[]
+  refs: Ref[],
+  // Anki card id 
+  cardId?: string
 }
 
 // Detailed data on currently learning ib
@@ -161,10 +165,10 @@ const learnSlice = createSlice({
         state.refreshDate = new Date();
         state.refreshState = 'failed';
       })
-      .addCase(nextRep.pending, (state, action) => {
+      .addCase(nextIb.pending, (state, action) => {
         state.queueStatus = 'busy';
       })
-      .addCase(nextRep.fulfilled, (state, action) => {
+      .addCase(nextIb.fulfilled, (state, action) => {
         state.queueStatus = 'idle';
         if (state.queue.length == 0) {
           state.current = null;
@@ -177,7 +181,7 @@ const learnSlice = createSlice({
           state.current = action.payload;
         }
       })
-      .addCase(nextRep.rejected, (state, action) => {
+      .addCase(nextIb.rejected, (state, action) => {
         state.queueStatus = 'idle';
       })
       .addCase(getPriorityUpdates.fulfilled, (state, action) => {
@@ -194,7 +198,38 @@ export const { userRefsLoaded, manualIntervention, dueIbAdded, dueIbRemoved } = 
 export const refreshDueIbs = createAsyncThunk<QueueIb[], void, { state: RootState }>(
   'learn/refreshDueIbs', 
   async (_, { getState }) => {
-    const qibs = await queryDueIbs({});
+    // Incremental blocks
+    const ibQibs = await queryDueIbs({ sortByPriority: false });
+
+    // Anki cards
+    const cardQibs: QueueIb[] = [];
+    try {
+      const cards = await getDueLogseqCards();
+      const uuids = cards.map((card: any) => card.fields.uuid.value);
+      const uuidToQibs = (await queryQueueIbs({ uuids, sortByPriority: false })).reduce(
+        (map, qib) => {
+          map.set(qib.uuid, qib);
+          return map;
+        },
+        new Map<string, QueueIb>()
+      );
+      
+      for (const card of cards) {
+        //@ts-ignore
+        const qib = uuidToQibs.get(card.fields.uuid.value);
+        if (qib) {
+          //@ts-ignore
+          qib.cardId = card.cardId;
+          cardQibs.push(qib);
+        }
+      }
+    } catch (e) {
+      // TODO: some message that failed to reach anki
+    }
+
+    // All qibs sorted by priority
+    const qibs = [...ibQibs, ...cardQibs].sort((a, b) => b.priority - a.priority); 
+
     return qibs;
   },
   {
@@ -205,9 +240,32 @@ export const refreshDueIbs = createAsyncThunk<QueueIb[], void, { state: RootStat
   }
 );
 
+/*
+Some visual feedback is given to show that learning mode is on.
+*/
+async function reflectLearningChangedInGui(learning: boolean, dueIbUuid?: string) {
+  // Toolbar button color
+  const color = learning ? 'hotpink' : 'dimgrey';
+  logseq.provideStyle(`
+    #${PL.id} {
+      color: ${color};
+    }
+  `);
+
+  // Refresh the macro to add/remove the "next rep" button.
+  // This is hacky. Should probably use macro.ts/onMacroSlotted
+  // but this requires slot id and I dont know how to get it rn.
+  if (dueIbUuid) {
+    await logseq.Editor.editBlock(dueIbUuid);
+    await logseq.Editor.exitEditingMode();
+  }
+}
+
 export const stopLearning = () => {
   return (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
     dispatch(learnSlice.actions.learningEnded());
+    reflectLearningChangedInGui(false, state.learn.dueIbs[0].uuid);
   }
 }
 
@@ -218,6 +276,7 @@ export const startLearning = () => {
     dispatch(learnSlice.actions.learningStarted(selectFilteredDueIbs(state)));
     state = getState();
     if (state.learn.learning) { 
+      reflectLearningChangedInGui(true, state.learn.dueIbs[0].uuid);
       await dispatch(nextRep());
       if (!blockListenerActive) {
         logseq.DB.onChanged(({ blocks, txData, txMeta }) => {
@@ -242,7 +301,7 @@ export const startLearning = () => {
   }
 }
 
-export const nextRep = createAsyncThunk<CurrentIBData | null, void, { state: RootState }>(
+export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: RootState }>(
   'learn/nextRep', 
   async (_, { getState, dispatch }) => {
     const { learn } = getState();
@@ -288,6 +347,13 @@ export const getPriorityUpdates = createAsyncThunk<CurrentIBData | null, void, {
     }
   }
 );
+
+export const nextRep = () => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    await dispatch(nextIb());
+    await dispatch(getPriorityUpdates());
+  }
+}
 
 /*
  * TODO: replace upserts with updateBlock
