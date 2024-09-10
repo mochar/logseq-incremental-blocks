@@ -1,13 +1,14 @@
 import React from "react";
 import { nextInterval } from "../algorithm/scheduling";
-import { useAppDispatch } from "../state/hooks";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
-import { CurrentIBData, getPriorityUpdates, manualIntervention, postponeRep } from "./learnSlice";
+import { getPriorityUpdates, manualIntervention, postponeRep } from "./learnSlice";
 import { addDays, dateDiffInDays, formatDate, todayMidnight } from "../utils/datetime";
 import DatePicker from "react-datepicker";
 
-export default function ScheduleComponent({ currentIbData, setBusy }: { currentIbData: CurrentIBData, setBusy: (busy: boolean) => void }) {
+export default function ScheduleComponent({ setBusy }: { setBusy: (busy: boolean) => void }) {
   const dispatch = useAppDispatch();
+  const currentIbData = useAppSelector(state => state.learn.current!);
 
   const interval = React.useMemo(() => {
     if (!currentIbData) return undefined;

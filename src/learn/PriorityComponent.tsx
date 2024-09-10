@@ -1,12 +1,25 @@
 import React from "react";
-import { useAppDispatch } from "../state/hooks";
-import { CurrentIBData, manualIntervention } from "./learnSlice";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
+import { getPriorityUpdates, manualIntervention } from "./learnSlice";
 import * as theme from "../utils/theme";
 import BetaGraph from "../widgets/BetaGraph";
 import PrioritySlider from "../widgets/PrioritySlider";
 
-export default function PriorityComponent({ currentIbData }: { currentIbData: CurrentIBData }) {
+export default function PriorityComponent() {
   const dispatch = useAppDispatch();
+  const currentIbData = useAppSelector(state => state.learn.current!);
+
+  React.useEffect(() => {
+    // On a timer, get new priority updates. This is because
+    // time spent on an ib increases priority.
+    let timer: NodeJS.Timeout;
+    const getRepeatUpdates = async function() {
+      await dispatch(getPriorityUpdates());
+      timer = setTimeout(getRepeatUpdates, 2000);
+    }
+    getRepeatUpdates();
+    return () => clearTimeout(timer);
+  }, []);
 
   function updateManualPriority(meanPiority: number | null) {
     dispatch(manualIntervention({ priority: meanPiority }))

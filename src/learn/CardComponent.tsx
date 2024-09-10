@@ -1,30 +1,33 @@
 import React from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { CurrentIBData, stopLearning } from "./learnSlice";
 import { invoke } from "../anki/anki";
 import * as theme from "../utils/theme";
 
-export default function CardComponent({ currentIbData }: { currentIbData: CurrentIBData }) {
+export default function CardComponent() {
   const dispatch = useAppDispatch();
-  const cardId = currentIbData.qib.cardId!;
+  const qib = useAppSelector(state => state.learn.current!.qib);
+  const cardId = qib.cardId!;
   const cardMedia = useAppSelector(state => state.anki.media);
   const [card, setCard] = React.useState();
   const [error, setError] = React.useState<string>();
-  const [showAnswer, setShowAnser] = React.useState<boolean>(false);
   const busy = error == undefined && card == undefined;
 
   React.useEffect(() => {
-    setShowAnser(false);
     setCard(undefined);
     setError(undefined);
-    getCardData();
-  }, [currentIbData]);
+    setupCard();
+  }, [qib]);
 
-  async function getCardData() {
+  async function setupCard() {
     try {
       const cardsData = await invoke('cardsInfo', { cards: [cardId] });
       if (cardsData.length == 1) {
+        console.log(cardsData[0]);
         setCard(cardsData[0]);
+        const deckName = 'Incremental blocks';
+        await invoke('changeDeck', { cards: [cardId], deck: deckName });
+        await invoke('guiDeckReview', { name: deckName });
+        await invoke('guiShowQuestion');
       } else {
         setError('Failed to fetch card.')
       }
@@ -33,58 +36,25 @@ export default function CardComponent({ currentIbData }: { currentIbData: Curren
     }
   }
 
-  async function later() {
-
-  }
-
-  function quit() {
-    dispatch(stopLearning());
-  }
-
   let cardContent = <></>;
   if (error) {
-    cardContent = <p>Error: {error}</p>;
+    cardContent = <div>
+      <p>Error: {error}</p>
+      <button onClick={setupCard}>Try again</button>
+    </div>;
   } else if (card == undefined) {
     cardContent = <p>Loading...</p>;
-  } else if (showAnswer) {
-    cardContent = <iframe srcDoc={cardMedia.back + card['answer']}></iframe>
   } else {
-    cardContent = <iframe srcDoc={cardMedia.front + card['question']}></iframe>
+    cardContent = <p>Card opened in Anki. Review and come back.</p>
   }
 
   return (
   <div className="pt-2">
     
-    <div className="flex items-center justify-between">
-      <p>Card</p>
-    </div>
-
-    <div className={`flex flex-col ${theme.BORDER} border-b-4`}>
+    <div className={`flex flex-col ${theme.BORDER}`}>
       {cardContent}
     </div>
 
-    <div className="flex justify-between pt-2">
-        <button 
-          className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
-          disabled={busy}
-          onClick={() => setShowAnser(true)}
-        >
-          Show answer
-        </button>
-        <button 
-          className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-2 w-1/6 rounded`} 
-          onClick={later}
-        >
-          Later
-        </button>
-        <div className="flex-grow"></div>
-        <button 
-          className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 w-1/6 rounded`}
-          onClick={quit}
-        >
-          Quit
-        </button>
-      </div>
   </div>
   );
 }

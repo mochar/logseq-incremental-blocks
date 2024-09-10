@@ -333,7 +333,8 @@ export const getPriorityUpdates = createAsyncThunk<CurrentIBData | null, void, {
   'learn/getPriorityUpdate', 
   async (_, { getState, dispatch }) => {
     const { learn } = getState();
-    const current = {...learn.current!};
+    if (!learn.current) return null;
+    const current = {...learn.current};
     current.newContents = await getBlockHierarchyContent(current.ib.uuid, 3);
     current.priorityUpdate = getPriorityUpdate(current);
     return current;
@@ -376,14 +377,16 @@ export const finishRep = () => {
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-a', newBeta.a);
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-b', newBeta.b);
 
-      // Update schedule
-      const interval = nextInterval(current.ib);
-      const newDue = addDays(todayMidnight(), interval);
-      await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-interval', interval);
-      await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
+      if (!current.qib.cardId) {
+        // Update schedule
+        const interval = nextInterval(current.ib);
+        const newDue = addDays(todayMidnight(), interval);
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-interval', interval);
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
 
-      // Others
-      await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.reps! + 1);
+        // Others
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.reps! + 1);
+      }
     }
     await dispatch(nextRep());
   }
@@ -396,6 +399,29 @@ export const postponeRep = (postponeInterval: number) => {
     if (current) {
       const newDue = addDays(todayMidnight(), postponeInterval);
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
+    }
+    await dispatch(nextRep());
+  }
+}
+
+export const laterRep = () => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
+    if (state.learn.queue.length > 1) {
+      const current = state.learn.current!;
+      let priority = current.ib.beta!.sample({});
+      if (priority > state.learn.queue[1].priority) {
+        priority = Math.max(0., state.learn.queue[1].priority - 0.01);
+      }
+      dispatch(dueIbAdded({
+        id: current.qib.id,
+        uuid: current.qib.uuid,
+        content: current.qib.content,
+        priority,
+        pathRefs: current.qib.pathRefs,
+        pageTags: current.qib.pageTags,
+        refs: current.qib.refs
+      }));
     }
     await dispatch(nextRep());
   }
