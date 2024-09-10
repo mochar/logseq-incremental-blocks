@@ -28,25 +28,7 @@ export default function LearnView() {
     dispatch(stopLearning());
   }
 
-  async function finish() {
-    setBusy(true);
-    await dispatch(finishRep());
-    setBusy(false);
-  }
-
-  async function done() {
-    setBusy(true);
-    await dispatch(doneRep());
-    setBusy(false);
-  }
-
-  async function later() {
-    setBusy(true);
-    await dispatch(laterRep());
-    setBusy(false);
-  }
-
-  if (busy || queueStatus == 'busy') return <div>Loading...</div>;
+  if (queueStatus == 'busy') return <div>Loading...</div>;
 
   if (currentQib == null) {
     return <div>
@@ -58,6 +40,8 @@ export default function LearnView() {
   const isCard = currentQib.cardId != undefined;
 
   return (
+  <form onSubmit={(e) => e.preventDefault()}  className={busy ? 'animate-pulse': ''}>
+  <fieldset disabled={busy}>
     <div className="flex flex-col w-full text-sm">
 
       <HeaderComponent></HeaderComponent>
@@ -68,40 +52,11 @@ export default function LearnView() {
 
       <PriorityComponent></PriorityComponent>
 
-      {isCard && <CardComponent></CardComponent>}
-      {!isCard && <ScheduleComponent setBusy={setBusy}></ScheduleComponent>}
-
-      <hr className="dark:border-gray-800"></hr>
-
-      <div className="flex justify-between pt-2">
-        <button 
-          className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
-          onClick={finish}
-        >
-          Next rep
-        </button>
-        <button 
-          className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-2 w-1/6 rounded`} 
-          onClick={later}
-        >
-          Later
-        </button>
-        <button 
-          className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-2 w-1/6 rounded`} 
-          onClick={done}
-        >
-          Done
-        </button>
-        <div className="flex-grow"></div>
-        <button 
-          className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 w-1/6 rounded`}
-          onClick={quit}
-        >
-          Quit
-        </button>
-      </div>
+      {isCard && <CardComponent setBusy={setBusy}></CardComponent>}
+      {!isCard && <IbComponent setBusy={setBusy}></IbComponent>}
 
     </div>
+  </fieldset></form>
   );
 }
 
@@ -135,5 +90,67 @@ function HeaderComponent() {
       onChange={toggleAutoOpen} 
     />
   </div>
+  );
+}
+
+function IbComponent({ setBusy }: { setBusy: (busy: boolean) => void }) {
+  const dispatch = useAppDispatch();
+
+  async function finish() {
+    setBusy(true);
+    await dispatch(finishRep());
+    setBusy(false);
+  }
+
+  async function done() {
+    setBusy(true);
+    await dispatch(doneRep());
+    setBusy(false);
+  }
+
+  async function later() {
+    setBusy(true);
+    await dispatch(laterRep());
+    setBusy(false);
+  }
+
+  function quit() {
+    dispatch(stopLearning());
+  }
+
+  return (
+  <>
+    <ScheduleComponent setBusy={setBusy}></ScheduleComponent>
+
+    <hr className="dark:border-gray-800"></hr>
+
+    <div className="flex justify-between pt-2">
+      <button 
+        className="w-fit bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
+        onClick={finish}
+      >
+        Next rep
+      </button>
+      <button 
+        className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-2 w-1/6 rounded`} 
+        onClick={later}
+      >
+        Later
+      </button>
+      <button 
+        className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-2 w-1/6 rounded`} 
+        onClick={done}
+      >
+        Done
+      </button>
+      <div className="flex-grow"></div>
+      <button 
+        className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 w-1/6 rounded`}
+        onClick={quit}
+      >
+        Quit
+      </button>
+    </div>
+  </>
   );
 }
