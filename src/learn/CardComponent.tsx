@@ -4,8 +4,6 @@ import { invoke } from "../anki/anki";
 import * as theme from "../utils/theme";
 import { doneRep, finishRep, laterRep, stopLearning } from "./learnSlice";
 
-const DECK_NAME = 'Incremental blocks';
-
 interface Review {
   grade: number,
   interval: number
@@ -13,13 +11,14 @@ interface Review {
 
 export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) => void }) {
   const dispatch = useAppDispatch();
+  const deckName = useAppSelector(state => state.anki.deckName);
   const qib = useAppSelector(state => state.learn.current!.qib);
   const cardId = qib.cardId!;
   const cardMedia = useAppSelector(state => state.anki.media);
   const card = React.useRef<any>();
   const [error, setError] = React.useState<string>();
   const [review, setReview] = React.useState<Review>();
-  const lastReviewTime = React.useRef<number>();
+  const cardReviewCount = React.useRef<number>(0);
   const busy = error == undefined && card == undefined;
   let pollTimer: NodeJS.Timeout;
 
@@ -39,33 +38,20 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
       const cardsData = await invoke('cardsInfo', { cards: [cardId] });
       if (cardsData.length == 0) throw new Error('Failed to fetch card.');
       const cardData = cardsData[0];
-      if (cardData.deck == DECK_NAME) {
-        throw new Error(`Deck "${DECK_NAME}" is not empty. Resync anki to fix.`)
+      if (cardData.deck == deckName) {
+        throw new Error(`Deck "${deckName}" is not empty. Resync anki to fix.`)
       }
       card.current = cardData;
-
-      // First make sure our deck is empty, as the system works by having
-      // only one card in the deck at any moment of time. If deck doesn't
-      // exist it is ok, it will be created with changeDeck call later.
-      const deckStats = await invoke('getDeckStats', { decks: [DECK_NAME] }) as Map<string, any>;
-      console.log('deck stats', deckStats);
-      if (Object.values(deckStats).length == 1) {
-        console.log('total in deck', Object.values(deckStats)[0].total_in_deck)
-        const nCards = Object.values(deckStats)[0].total_in_deck;
-        if (nCards > 0) {
-          throw Error(`Deck "${DECK_NAME}" is not empty. Resync anki to fix.`);
-        }
-      }
 
       // 
       console.log(card.current);
       const reviewsCards = await invoke('getReviewsOfCards', { cards: [cardId] });
       const reviews = reviewsCards[cardId];
       console.log('init reviews', reviews);
-      lastReviewTime.current = reviews.length > 0 ? reviews[reviews.length-1].id : 0;
-      console.log(lastReviewTime.current);
-      await invoke('changeDeck', { cards: [cardId], deck: DECK_NAME });
-      await invoke('guiDeckReview', { name: DECK_NAME });
+      cardReviewCount.current = reviews.length;
+      console.log(cardReviewCount.current);
+      await invoke('changeDeck', { cards: [cardId], deck: deckName });
+      await invoke('guiDeckReview', { name: deckName });
       await invoke('guiShowQuestion');
       pollTimer = setInterval(pollReviewTime, 100);
     } catch (error: any) {
@@ -77,12 +63,13 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
 
   async function pollReviewTime() {
     try {
-      const reviews = await invoke('cardReviews', 
-        { deck: DECK_NAME, startID: lastReviewTime.current });
-      if (reviews.length > 0) {
+      const reviewsCards = await invoke('getReviewsOfCards', { cards: [cardId] });
+      const reviews = reviewsCards[cardId];
+      if (reviews.length > cardReviewCount.current) {
         // TODO: Handle multiple reviews done
-        const review = reviews[0];
+        const review = reviews[reviews.length-1];
         setReview({ grade: review[3], interval: review[4] });
+        clearInterval(pollTimer);
         wrapUpReview();
         return;
       }
@@ -94,9 +81,6 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
     try {
       await invoke('guiDeckBrowser');
       console.log('wrap up', card.current);
-      if (card.current) {
-        await invoke('changeDeck', { cards: [cardId], deck: card.current.deckName });
-      }
     } catch (error) {
     }
   }

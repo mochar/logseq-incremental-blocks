@@ -8,11 +8,13 @@ interface CardMedia {
 }
 
 interface AnkiState {
-  media: CardMedia
+  media: CardMedia,
+  deckName: string
 }
 
 const initialState: AnkiState = {
-  media: { front: '', back: '' }
+  media: { front: '', back: '' },
+  deckName: 'ib'
 }
 
 const ankiSlice = createSlice({

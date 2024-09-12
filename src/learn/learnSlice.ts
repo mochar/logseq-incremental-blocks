@@ -6,8 +6,8 @@ import { getBlockHierarchyContent, getFilterRefs } from "../utils/logseq";
 import { nextInterval } from "../algorithm/scheduling";
 import { addDays, todayMidnight } from "../utils/datetime";
 import { convertBlockToIb } from "../logseq/command";
-import { queryDueIbs, queryQueueIbs } from "../logseq/query";
-import { getDueLogseqCards } from "../anki/anki";
+import { queryDueIbs, queryQueueIbs, sortQibsByPriority } from "../logseq/query";
+import { getDueLogseqCards, invoke } from "../anki/anki";
 import { logseq as PL } from "../../package.json";
 
 export enum RepAction { 
@@ -198,15 +198,22 @@ export const { userRefsLoaded, manualIntervention, dueIbAdded, dueIbRemoved } = 
 export const refreshDueIbs = createAsyncThunk<QueueIb[], void, { state: RootState }>(
   'learn/refreshDueIbs', 
   async (_, { getState }) => {
+    const state = getState();
+
     // Incremental blocks
     const ibQibs = await queryDueIbs({ sortByPriority: false });
 
     // Anki cards
-    const cardQibs: QueueIb[] = [];
+    let cardQibs: QueueIb[] = [];
     try {
-      const cards = await getDueLogseqCards();
-      const uuids = cards.map((card: any) => card.fields.uuid.value);
-      const uuidToQibs = (await queryQueueIbs({ uuids, sortByPriority: false })).reduce(
+      const cards = await getDueLogseqCards({ deck: state.anki.deckName });
+      const qibs = await queryQueueIbs({ 
+        uuids: cards.map((card: any) => card.fields.uuid.value),
+        sortByPriority: true, // To set order of anki cards in deck
+      });
+
+      // One block can lead to multiple cards
+      const uuidToQibs = qibs.reduce(
         (map, qib) => {
           map.set(qib.uuid, qib);
           return map;
@@ -219,17 +226,29 @@ export const refreshDueIbs = createAsyncThunk<QueueIb[], void, { state: RootStat
         const qib = uuidToQibs.get(card.fields.uuid.value);
         if (qib) {
           //@ts-ignore
-          qib.cardId = card.cardId;
-          cardQibs.push(qib);
+          cardQibs.push({...qib, cardId: card.cardId});
         }
       }
+
+      console.log('card qibs', cardQibs);
+
+      // Match anki cards in filtered deck to priority order of ibs.
+      let order = 100_000;
+      const results = (await Promise.all(cardQibs.map((cardQib) => {
+        return invoke('setSpecificValueOfCard', 
+          { card: cardQib.cardId, keys: ['due'], newValues: [order--]});
+      }))).map((r) => r[0]);
+      console.log('due results', results);
     } catch (e) {
-      // TODO: some message that failed to reach anki
+      logseq.UI.showMsg('Failed to load anki cards', 'warning');
+
+      // Something can go wrong with setting up the filtered deck, so even
+      // if card qibs are succesfully retrieved, we can't use them.
+      cardQibs = [];
     }
 
     // All qibs sorted by priority
-    const qibs = [...ibQibs, ...cardQibs].sort((a, b) => b.priority - a.priority); 
-
+    const qibs = sortQibsByPriority([...ibQibs, ...cardQibs]);
     return qibs;
   },
   {
