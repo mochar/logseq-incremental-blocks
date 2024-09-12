@@ -73,3 +73,10 @@ export function useDebounce(value: any, delay: number) {
   }, [value, delay]);
   return debounceValue;
 }
+
+export function counter<T>(array: T[]) : Map<T, number> {
+  return array.reduce((map, value) => {
+    map.set(value, (map.get(value) || 0)+1); 
+    return map
+  }, new Map<T, number>);
+}

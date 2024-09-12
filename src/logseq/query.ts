@@ -1,6 +1,6 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
-import { toCamelCase } from "../utils/utils";
+import { counter, toCamelCase } from "../utils/utils";
 import { toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
 import { QueueIb } from "../learn/learnSlice";
 import Beta from "../algorithm/beta";
@@ -30,27 +30,22 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
   return ibs;
 }
 
-interface DueIbs {
-  dueAt?: Date,
-  refs?: string[],
-  includeOutdated?: boolean,
-  sortByPriority?: boolean,
+/*
+ *
+ */
+export function sortQibsByPriority(qibs: QueueIb[]): QueueIb[] {
+  return qibs.sort((a, b) => b.priority - a.priority);
 }
 
-const QUEUE_IB_PULLS = `
-(pull ?b [
-  :db/id
-  :block/uuid 
-  :block/content 
-  :block/properties
-  {:block/path-refs [:db/id :block/uuid :block/name]}
-]) 
-(pull ?bp [
-  {:block/tags [:db/id :block/uuid :block/name]}
-])
-`;
+/*
+ *
+ */
+interface IParseQueueIbs {
+  result: any,
+  sortByPriority?: boolean
+}
 
-function parseQueueIbs({ result, sortByPriority=true }: { result: any, sortByPriority?: boolean }) : QueueIb[] {
+function parseQueueIbs({ result, sortByPriority=true }: IParseQueueIbs) : QueueIb[] {
   let qibs = (result as Array<Array<any>>).map<QueueIb>((r) => {
     const [block, tags] = r;
     const beta = new Beta(block['properties']['ib-a'], block['properties']['ib-b']);
@@ -68,12 +63,38 @@ function parseQueueIbs({ result, sortByPriority=true }: { result: any, sortByPri
     };
   });
   if (sortByPriority) {
-    qibs = qibs.sort((a, b) => b.priority - a.priority);
+    qibs = sortQibsByPriority(qibs);
   }
   return qibs;  
 }
 
-export async function queryDueIbs({ dueAt, refs, includeOutdated=true, sortByPriority=true }: DueIbs) : Promise<QueueIb[]> {
+/*
+ *
+ */
+const QUEUE_IB_PULLS = `
+(pull ?b [
+  :db/id
+  :block/uuid 
+  :block/content 
+  :block/properties
+  {:block/path-refs [:db/id :block/uuid :block/name]}
+]) 
+(pull ?bp [
+  {:block/tags [:db/id :block/uuid :block/name]}
+])
+`;
+
+/*
+ * 
+ */
+interface IQueryDueIbs {
+  dueAt?: Date,
+  refs?: string[],
+  includeOutdated?: boolean,
+  sortByPriority?: boolean,
+}
+
+export async function queryDueIbs({ dueAt, refs, includeOutdated=true, sortByPriority=true }: IQueryDueIbs) : Promise<QueueIb[]> {
   // Handle due filter clause
   const dueDate = dueAt ?? todayMidnight();
   let dueWhere = `
@@ -116,8 +137,19 @@ export async function queryDueIbs({ dueAt, refs, includeOutdated=true, sortByPri
   return qibs;
 }
 
-export async function queryQueueIbs({ uuids, sortByPriority=true }: { uuids: string[], sortByPriority?: boolean }) : Promise<QueueIb[]> {
-  const uuidsString = [...new Set(uuids)].map((uuid) => `#uuid "${uuid}"`).join(', ');
+/*
+ * 
+ */
+interface IQueryQueueIbs {
+  uuids: string[],
+  sortByPriority?: boolean,
+  keepDuplicates?: boolean
+}
+
+export async function queryQueueIbs({ uuids, sortByPriority=true, keepDuplicates=false }: IQueryQueueIbs) : Promise<QueueIb[]> {
+  const uuidCounts = counter<string>(uuids);
+  const uniqueUuids = [...uuidCounts.keys()];
+  const uuidsString = uniqueUuids.map((uuid) => `#uuid "${uuid}"`).join(', ');
   const query = `[
     :find ${QUEUE_IB_PULLS}
     :where
@@ -135,10 +167,18 @@ export async function queryQueueIbs({ uuids, sortByPriority=true }: { uuids: str
     console.log(error);
     return [];
   }
-  const qibs = parseQueueIbs({ result: ret, sortByPriority });
+  let qibs = parseQueueIbs({ result: ret, sortByPriority });
+  if (keepDuplicates && uniqueUuids.length < uuids.length) {
+    qibs = qibs.reduce((dupeIbs, qib) => {
+      return dupeIbs.concat((new Array(uuidCounts.get(qib.uuid)).fill({...qib})));
+    }, new Array<QueueIb>())
+  }
   return qibs ?? [];
 }
 
+/*
+ *
+ */
 export async function queryOverdueUnupdatedIbs() : Promise<IncrementalBlock[]> {
   const today = todayMidnight().getTime();
   const where = `
