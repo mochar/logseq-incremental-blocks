@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import IbPopover from "./widgets/Popover";
-import MainWindow from "./widgets/MainWindow";
+import LearnWindow from "./widgets/LearnWindow";
 import { useAppVisible } from "./logseq/events";
 import MedxPopover from "./medx/MedxPopover";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
@@ -11,8 +11,7 @@ import MedxArgs from "./medx/args";
 import { finishRep, getUserRefs, refreshDueIbs } from "./learn/learnSlice";
 import { isDark } from "./utils/logseq";
 import { themeModeChanged } from "./state/appSlice";
-import { getDueLogseqCards } from "./anki/anki";
-import { loadMedia } from "./anki/ankiSlice";
+import MainWindow from "./main/MainWindow";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
@@ -85,11 +84,12 @@ export default function App() {
     logseq.App.onThemeModeChanged(({ mode }) => dispatch(themeModeChanged(mode)));
 
     dispatch(getUserRefs());
-    dispatch(loadMedia());
+    //dispatch(loadMedia());
   }, []);
 
   function tryHide(e: any) {
-    if (document.getElementById('ib-main')?.contains(e.target) ||
+    if (document.getElementById('ib-learn')?.contains(e.target) ||
+      document.getElementById('ib-main')?.contains(e.target) ||
       document.getElementById('ib-popover')?.contains(e.target) ||
       document.getElementById('ib-insert')?.contains(e.target) ||
       document.getElementById('ib-medx')?.contains(e.target)) {
@@ -103,6 +103,9 @@ export default function App() {
   switch (view.type) {
     case ViewType.main:
       viewComponent = <MainWindow />;
+      break;
+    case ViewType.learn:
+      viewComponent = <LearnWindow />;
       break;
     case ViewType.ib:
       const ibData = view.data! as IbViewData;
@@ -126,9 +129,10 @@ export default function App() {
 
   let classesIfCentered = '';
   switch (view.type) {
+    case ViewType.main:
     case ViewType.medx:
     case ViewType.insert:
-      classesIfCentered = 'backdrop-filter backdrop-blur-md items-center justify-center';
+      classesIfCentered = 'backdrop-brightness-90 items-center justify-center';
       break;
   }
   return (

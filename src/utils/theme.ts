@@ -77,14 +77,26 @@ class ThemeObject {
   }
 }
 
+const bgActiveLight = new ThemeData('bg-gray-100');
+const bgActiveDark = new ThemeData('bg-gray-700');
+
 export const BG = new ThemeObject({
   light: new ThemeModeData({
     data: new ThemeData('bg-white'), 
-    hoverData: new ThemeData('bg-gray-100')
+    hoverData: bgActiveLight
   }), 
   dark: new ThemeModeData({
     data: new ThemeData('bg-slate-900'), 
-    hoverData: new ThemeData('bg-gray-700')
+    hoverData: bgActiveDark
+  }),
+});
+
+export const BG_ACTIVE = new ThemeObject({
+  light: new ThemeModeData({
+    data: bgActiveLight
+  }), 
+  dark: new ThemeModeData({
+    data: bgActiveDark
   }),
 });
 

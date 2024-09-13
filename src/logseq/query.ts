@@ -31,6 +31,26 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
 }
 
 /*
+ * TODO: This only looks if block has priority.
+ * Should provide arguments to also assume other properties.
+ */
+interface IQueryIbs {
+  uuids: string[],
+}
+
+export async function queryIbs({ uuids }: IQueryIbs): Promise<IncrementalBlock[]> {
+  const uniqueUuids = [...new Set(uuids)];
+  const uuidsString = uniqueUuids.map((uuid) => `#uuid "${uuid}"`).join(', ');
+  const where = `
+    [?b :block/uuid ?uuid]
+    [(contains? #{${uuidsString}} ?uuid)] 
+    [(get ?prop :ib-a) _]
+    [(get ?prop :ib-b) _]
+  `;
+  return queryIncrementalBlocks(where);
+}
+
+/*
  *
  */
 export function sortQibsByPriority(qibs: QueueIb[]): QueueIb[] {

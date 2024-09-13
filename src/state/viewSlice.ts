@@ -3,7 +3,7 @@ import { AppDispatch, RootState } from './store';
 import { BlockEntity } from '@logseq/libs/dist/LSPlugin.user';
 import MedxArgs from '../medx/args';
 
-export enum ViewType { main, ib, medx, insert }
+export enum ViewType { main, learn, ib, medx, insert }
 
 export interface BlockViewData {
   block: BlockEntity
@@ -56,6 +56,9 @@ export const toggleView = (request: ViewRequest) => {
       logseq.hideMainUI();
     } else if (request.viewType == ViewType.main) {
       dispatch(setView({ type: ViewType.main }));
+      logseq.showMainUI();
+    } else if (request.viewType == ViewType.learn) {
+      dispatch(setView({ type: ViewType.learn }));
       logseq.showMainUI();
     } else if (request.viewType == ViewType.ib) {
       if (!request.blockUuid || !request.slotId) return;

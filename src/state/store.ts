@@ -3,6 +3,7 @@ import appReducer from './appSlice';
 import viewReducer from './viewSlice';
 import ankiReducer from '../anki/ankiSlice';
 import learnReducer from '../learn/learnSlice';
+import mainReducer from '../main/mainSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     view: viewReducer,
     learn: learnReducer,
     anki: ankiReducer,
+    main: mainReducer
   }
 })
 

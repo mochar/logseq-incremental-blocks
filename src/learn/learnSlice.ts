@@ -7,7 +7,7 @@ import { nextInterval } from "../algorithm/scheduling";
 import { addDays, todayMidnight } from "../utils/datetime";
 import { convertBlockToIb } from "../logseq/command";
 import { queryDueIbs, queryQueueIbs, sortQibsByPriority } from "../logseq/query";
-import { getDueLogseqCards, invoke } from "../anki/anki";
+import { getLogseqCards, invoke } from "../anki/anki";
 import { logseq as PL } from "../../package.json";
 
 export enum RepAction { 
@@ -206,7 +206,7 @@ export const refreshDueIbs = createAsyncThunk<QueueIb[], void, { state: RootStat
     // Anki cards
     let cardQibs: QueueIb[] = [];
     try {
-      const cards = await getDueLogseqCards({ deck: state.anki.deckName });
+      const cards = await getLogseqCards({ due: true, deck: state.anki.deckName });
       const qibs = await queryQueueIbs({ 
         uuids: cards.map((card: any) => card.fields.uuid.value),
         sortByPriority: true, // To set order of anki cards in deck

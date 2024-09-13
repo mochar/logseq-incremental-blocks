@@ -31,13 +31,12 @@ export async function invoke(action: string, params = {}): Promise<any> {
   });
 }
 
-export async function getDueLogseqCards({ deck }: { deck?: string }) : Promise<Map<string, any>[]> {
+export async function getLogseqCards({ due=false, deck }: { due?: boolean, deck?: string }) : Promise<Map<string, any>[]> {
   const graph = await logseq.App.getCurrentGraph();
   if (graph == null) return [];
-  let query = `(is:due or is:new) note:${graph.name}Model`;
-  if (deck) {
-    query = `${query} deck:${deck}`
-  }
+  let query = `note:${graph.name}Model`;
+  if (due) query = `(is:due or is:new) ${query}`;
+  if (deck) query = `${query} deck:${deck}`;
   const cardIds = await invoke('findCards', { query });
   const cardsData = await invoke('cardsInfo', { cards: cardIds });
   return cardsData;
