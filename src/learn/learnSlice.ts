@@ -229,16 +229,6 @@ export const refreshDueIbs = createAsyncThunk<QueueIb[], void, { state: RootStat
           cardQibs.push({...qib, cardId: card.cardId});
         }
       }
-
-      console.log('card qibs', cardQibs);
-
-      // Match anki cards in filtered deck to priority order of ibs.
-      let order = 100_000;
-      const results = (await Promise.all(cardQibs.map((cardQib) => {
-        return invoke('setSpecificValueOfCard', 
-          { card: cardQib.cardId, keys: ['due'], newValues: [order--]});
-      }))).map((r) => r[0]);
-      console.log('due results', results);
     } catch (e) {
       logseq.UI.showMsg('Failed to load anki cards', 'warning');
 
@@ -292,20 +282,28 @@ export const startLearning = () => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     let state = getState();
     const blockListenerActive = state.learn.blockListenerActive;
-    dispatch(learnSlice.actions.learningStarted(selectFilteredDueIbs(state)));
+    const queue = selectFilteredDueIbs(state);
+
+    // Match anki cards in filtered deck to priority order of ibs.
+    const cardQibs = state.learn.queue.filter((qib) => qib.cardId != undefined);
+    let order = 100_000;
+    const results = (await Promise.all(cardQibs.map((cardQib) => {
+      return invoke('setSpecificValueOfCard', 
+        { card: cardQib.cardId, keys: ['due'], newValues: [order--]});
+    }))).map((r) => r[0]);
+    console.log('due results', results);
+
+    dispatch(learnSlice.actions.learningStarted(queue));
+
     state = getState();
     if (state.learn.learning) { 
       reflectLearningChangedInGui(true, state.learn.dueIbs[0].uuid);
       await dispatch(nextRep());
+
       if (!blockListenerActive) {
         logseq.DB.onChanged(({ blocks, txData, txMeta }) => {
-          // console.log('------------------')
-          // console.log(txMeta?.outlinerOp);
-          // console.log(blocks, txData)
-          // console.log('------------------')
           const state = getState();
           if (state.learn.learning && state.learn.autoIb && txMeta?.outlinerOp == 'insert-blocks') {
-            // console.log('converting to ib');
             blocks.forEach(async (block) => {
               convertBlockToIb({
                 uuid: block.uuid,
