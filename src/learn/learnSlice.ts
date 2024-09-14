@@ -49,7 +49,11 @@ export interface CurrentIBData {
   manualInterval?: number,
 }
 
-export declare type FilterMode = 'inclusion' | 'exclusion';
+export const typeFilters = ['all', 'cards', 'blocks'] as const;
+export declare type TypeFilter = typeof typeFilters[number];
+
+export const refFilterModes = ['off', 'inclusion', 'exclusion'] as const;
+export declare type RefFilterMode = typeof refFilterModes[number];
 
 interface Learn {
   learning: boolean,
@@ -65,7 +69,8 @@ interface Learn {
   // Refs to filter on
   refs: Ref[],
   selectedRefs: Ref[],
-  refFilterMode: FilterMode,
+  refFilterMode: RefFilterMode,
+  typeFilter: TypeFilter,
   current: CurrentIBData | null,
   // Whether or not we have started listening for new block events, as the listener
   // should only be installed once.
@@ -81,7 +86,8 @@ const initialState: Learn = {
   queueStatus: 'idle',
   refs: [],
   selectedRefs: [],
-  refFilterMode: 'inclusion',
+  refFilterMode: 'off',
+  typeFilter: 'all',
   current: null,
   refreshState: null,
   blockListenerActive: false,
@@ -109,8 +115,14 @@ const learnSlice = createSlice({
         state.selectedRefs.splice(selectedIndex, 1);
       }
     },
-    refFilterModeToggled(state, action: PayloadAction<FilterMode | undefined>) {
-      state.refFilterMode = action.payload ?? (state.refFilterMode == 'inclusion' ? 'exclusion' : 'inclusion');
+    refsSelected(state, action: PayloadAction<Ref[]>) {
+      state.selectedRefs = action.payload;
+    },
+    refFilterModeToggled(state, action: PayloadAction<RefFilterMode>) {
+      state.refFilterMode = action.payload;
+    },
+    typeFilterSelected(state, action: PayloadAction<TypeFilter>) {
+      state.typeFilter = action.payload;
     },
     learningStarted(state, action: PayloadAction<QueueIb[]>) {
       if (state.learning) return;
@@ -193,7 +205,7 @@ const learnSlice = createSlice({
   }
 });
 
-export const { userRefsLoaded, manualIntervention, dueIbAdded, dueIbRemoved } = learnSlice.actions;
+export const { userRefsLoaded, refsSelected, manualIntervention, dueIbAdded, dueIbRemoved, typeFilterSelected } = learnSlice.actions;
 
 export const refreshDueIbs = createAsyncThunk<QueueIb[], void, { state: RootState }>(
   'learn/refreshDueIbs', 
@@ -487,7 +499,7 @@ export const getUserRefs = () => {
     ]`;
     const ret = await logseq.DB.datascriptQuery(query);
     const refs = (ret as []).map<Ref>((r) => { return { id: r[0], name: r[1], uuid: r[2] } });
-    dispatch(userRefsLoaded(refs))
+    dispatch(userRefsLoaded(refs));
   }
 }
 
@@ -512,7 +524,7 @@ export const removeRef = (refName: string) => {
   }
 }
 
-export const toggleFilterMode = (filterMode?: FilterMode) => {
+export const setRefFilterMode = (filterMode: RefFilterMode) => {
   return (dispatch: AppDispatch) => {
     dispatch(learnSlice.actions.refFilterModeToggled(filterMode));
   }
@@ -525,15 +537,28 @@ export const selectFilteredDueIbs = createSelector.withTypes<RootState>()(
     state => state.learn.dueIbs, 
     state => state.learn.selectedRefs, 
     state => state.learn.refFilterMode, 
+    state => state.learn.typeFilter
   ],
-  (dueIbs, refs, mode) => {
-    if (refs.length == 0) {
-      return dueIbs;
-    } 
+  (dueIbs, refs, mode, type) => {
     const refIds = refs.map((r) => r.id);
     return dueIbs.filter((qib) => {
-      const containsRef = qib.refs.some((r) => refIds.includes(r.id));
-      return mode == 'inclusion' ? containsRef : !containsRef;
+      let keep = true;
+
+      // Filter on type
+      const isCard = qib.cardId != undefined;
+      if (type == 'blocks') {
+        keep &&= !isCard;
+      } else if (type == 'cards') {
+        keep &&= isCard;
+      }
+
+      // Filter on ref
+      if (mode != 'off') {
+        const containsRef = qib.refs.some((r) => refIds.includes(r.id));
+        keep &&= mode == 'inclusion' ? containsRef : !containsRef;  
+      }
+
+      return keep;
     });
   }
 );

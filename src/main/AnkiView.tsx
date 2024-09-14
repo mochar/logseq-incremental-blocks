@@ -38,7 +38,7 @@ export default function AnkiView() {
 
   return (
   <div>
-    <div className="flex justify-between mb-1">
+    <div className="flex justify-between items-center mb-1">
       <div>
         <span>Due cards</span>
       </div>
@@ -151,7 +151,7 @@ function AnkiCardsContent() {
     deckView = (
     <div className="mt-1">
       <GroupedVirtuoso
-        style={{ height: '250px', overflowX: 'clip' }}
+        style={{ height: '380px', overflowX: 'clip' }}
         groupCounts={deckCounts}
         groupContent={(i) => {
           const deck = decks[i];

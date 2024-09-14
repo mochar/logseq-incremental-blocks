@@ -1,15 +1,19 @@
 import React from "react";
-import { refreshDueIbs, removeRef, selectFilteredDueIbs, startLearning, toggleRef } from "../learn/learnSlice";
+import { getUserRefs, RefFilterMode, refFilterModes, refreshDueIbs, refsSelected, removeRef, selectFilteredDueIbs, startLearning, setRefFilterMode, toggleRef, TypeFilter, typeFilters, typeFilterSelected } from "../learn/learnSlice";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
 import { Virtuoso } from "react-virtuoso";
 import IbItem from "../widgets/IbItem";
 import { setView, ViewType } from "../state/viewSlice";
+import Select from "../widgets/Select";
+import { capitalize } from "../utils/utils";
 
 export default function QueueView() {
   const dispatch = useAppDispatch();
   const refreshState = useAppSelector(state => state.learn.refreshState);
   const refreshDate = useAppSelector(state => state.learn.refreshDate);
+  const typeFilter = useAppSelector(state => state.learn.typeFilter);
+  const refFilterMode = useAppSelector(state => state.learn.refFilterMode);
   const queue = useAppSelector(selectFilteredDueIbs);
 
   React.useEffect(() => {
@@ -29,7 +33,10 @@ export default function QueueView() {
   }, []);
 
   async function refresh() {
-    await dispatch(refreshDueIbs());
+    await Promise.all([
+      dispatch(refreshDueIbs()),
+      dispatch(getUserRefs()),
+    ]);
   }
 
   function learn() {
@@ -41,12 +48,17 @@ export default function QueueView() {
     dispatch(setView({ type: ViewType.learn }));
   }
 
+  function refFilterModeSelected(filterMode: string) {
+    dispatch(setRefFilterMode(filterMode as RefFilterMode));
+    if (filterMode == 'off') dispatch(refsSelected([]));
+  }
+
   let queueView;
   if (queue.length > 0) {
     queueView = (
     <div className="mt-1">
       <Virtuoso
-        style={{ height: '250px', overflowX: 'clip' }}
+        style={{ height: '380px', overflowX: 'clip' }}
         totalCount={queue.length}
         itemContent={(i) => IbItem({ qib: queue[i] })}
       ></Virtuoso>
@@ -54,22 +66,30 @@ export default function QueueView() {
     );
   } else {
     queueView = (
-      <div className="text-neutral-500 flex justify-center">
-        <span>Queue is empty.</span>
+      <div className="text-neutral-500 flex justify-center mt-2">
+        <span>Queue is empty</span>
       </div>
     );
   }
 
   return (
-  <div> 
+  <div className="flex flex-col h-full"> 
     <div className="flex justify-between mb-1">
-      <button 
-        className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded ${queue.length == 0 && "cursor-not-allowed"}`}
-        disabled={queue.length == 0}
-        onClick={learn}
-      >
-        Learn 
-      </button>
+      <div className="flex space-x-2">
+        <Select
+          options={typeFilters}
+          isSelected={(f) => f == typeFilter}
+          selected={(f) => dispatch(typeFilterSelected(f as TypeFilter))}
+          textBuilder={capitalize}
+        ></Select>
+        <span className="text-xs pl-1">Ref filter</span>
+        <Select
+          options={refFilterModes}
+          isSelected={(f) => f == refFilterMode}
+          selected={refFilterModeSelected}
+          textBuilder={capitalize}
+        ></Select>
+      </div>
 
       <div>
         <button 
@@ -87,11 +107,19 @@ export default function QueueView() {
       </div>
     </div>
 
-    <hr className="dark:border-gray-800"></hr>
-
-    <RefFilter />
+    {refFilterMode != 'off' && <RefFilter />}
 
     {queueView}
+
+    <div className="grow"></div>
+
+    {queue.length > 0 && <button 
+        className={`self-end bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded ${queue.length == 0 && "cursor-not-allowed"}`}
+        disabled={queue.length == 0}
+        onClick={learn}
+      >
+        Learn 
+    </button>}
   </div>
   );
 }
@@ -100,7 +128,6 @@ export default function QueueView() {
 function RefFilter() {
   const refs = useAppSelector(state => state.learn.refs);
   const selectedRefs = useAppSelector(state => state.learn.selectedRefs);
-  const filterMode = useAppSelector(state => state.learn.refFilterMode);
   const dispatch = useAppDispatch();
 
   if (refs.length == 0) return <></>;
@@ -130,7 +157,7 @@ function RefFilter() {
   });
 
   return (
-  <div className="p-2 space-y-1">
+  <div className="p-1 space-y-1 bg-gray-50 dark:bg-gray-800 border rounded">
     {refButtons}
   </div>
   );

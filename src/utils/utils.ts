@@ -80,3 +80,7 @@ export function counter<T>(array: T[]) : Map<T, number> {
     return map
   }, new Map<T, number>);
 }
+
+export function capitalize(string: string): string {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}

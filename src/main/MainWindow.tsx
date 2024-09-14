@@ -36,7 +36,7 @@ export default function MainWindow() {
   <div
     ref={ref}
     id="ib-main"
-    style={{ height: '30rem' }}
+    style={{ minHeight: '30rem' }}
     className={`fixed flex flex-col rounded shadow-md p-2 sm:w-9/12 md:w-8/12 lg:w-6/12 ${theme.BG} ${theme.BORDER}`}
   >
     <div className="flex items-center justify-between mb-2">
@@ -48,8 +48,8 @@ export default function MainWindow() {
       </button>
     </div>
   
-    <form onSubmit={(e) => e.preventDefault()} className={`w-full ${busy && 'animate-pulse'}`}>
-    <fieldset className="flex" disabled={busy}>
+    <form onSubmit={(e) => e.preventDefault()} className={`w-full h-full ${busy && 'animate-pulse'}`}>
+    <fieldset className="flex h-full" disabled={busy}>
       <ul className="flex-column space-y space-y-4 text-sm font-medium text-gray-500 dark:text-gray-400 md:me-4 mb-4 md:mb-0">
         {tabs}
       </ul>
