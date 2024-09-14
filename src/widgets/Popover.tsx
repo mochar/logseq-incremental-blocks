@@ -126,7 +126,7 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     } else if (!curIsToday && newIsToday) {
       const qibs = await queryQueueIbs({ uuids: [block.uuid] });
       if (qibs.length > 0) {
-        dispatch(dueIbAdded(qibs[0]));
+        dispatch(dueIbAdded({ qib: qibs[0] }));
       }
     }
 

@@ -153,13 +153,20 @@ const learnSlice = createSlice({
         }
       }
     },
-    dueIbAdded(state, action: PayloadAction<QueueIb>) {
-      const qib = action.payload;
-      for (let i = 0; i < state.dueIbs.length; i++) {
-        if (state.dueIbs[i].priority < qib.priority) {
-          state.dueIbs.splice(i, 0, qib);
-          break;
-        }
+    dueIbAdded(state, action: PayloadAction<{ qib: QueueIb, addToQueue?: boolean }>) {
+      function squeezeInQueue(queue: QueueIb[], qib: QueueIb) {
+        for (let i = 0; i < queue.length; i++) {
+          if (queue[i].priority < qib.priority) {
+            queue.splice(i, 0, qib);
+            break;
+          }
+        }  
+      }
+
+      const qib = action.payload.qib;
+      squeezeInQueue(state.dueIbs, qib);
+      if (action.payload.addToQueue ?? false) {
+        squeezeInQueue(state.queue, qib);
       }
     }
   },
@@ -442,15 +449,8 @@ export const laterRep = () => {
       if (priority > state.learn.queue[1].priority) {
         priority = Math.max(0., state.learn.queue[1].priority - 0.01);
       }
-      dispatch(dueIbAdded({
-        id: current.qib.id,
-        uuid: current.qib.uuid,
-        content: current.qib.content,
-        priority,
-        pathRefs: current.qib.pathRefs,
-        pageTags: current.qib.pageTags,
-        refs: current.qib.refs
-      }));
+      const qib = {...current.qib, priority };
+      dispatch(dueIbAdded({ qib, addToQueue: true }));
     }
     await dispatch(nextRep());
   }

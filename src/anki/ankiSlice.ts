@@ -45,6 +45,7 @@ const ankiSlice = createSlice({
         }
       })
       .addCase(getDueCards.pending, (state) => {
+        state.cards = [];
         state.refreshState = 'loading';
       })
       .addCase(getDueCards.fulfilled, (state, action) => {
