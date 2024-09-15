@@ -38,9 +38,6 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
       const cardsData = await invoke('cardsInfo', { cards: [cardId] });
       if (cardsData.length == 0) throw new Error('Failed to fetch card.');
       const cardData = cardsData[0];
-      if (cardData.deck == deckName) {
-        throw new Error(`Deck "${deckName}" is not empty. Resync anki to fix.`)
-      }
       card.current = cardData;
 
       // 
@@ -50,7 +47,6 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
       console.log('init reviews', reviews);
       cardReviewCount.current = reviews.length;
       console.log(cardReviewCount.current);
-      await invoke('changeDeck', { cards: [cardId], deck: deckName });
       await invoke('guiDeckReview', { name: deckName });
       await invoke('guiShowQuestion');
       pollTimer = setInterval(pollReviewTime, 100);

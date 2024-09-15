@@ -305,11 +305,11 @@ export const startLearning = () => {
 
     // Match anki cards in filtered deck to priority order of ibs.
     const cardQibs = state.learn.queue.filter((qib) => qib.cardId != undefined);
-    let order = 100_000;
+    let order = -100_000;
     const results = (await Promise.all(cardQibs.map((cardQib) => {
       return invoke('setSpecificValueOfCard', 
-        { card: cardQib.cardId, keys: ['due'], newValues: [order--]});
-    }))).map((r) => r[0]);
+        { card: cardQib.cardId, keys: ['due'], newValues: [order++]});
+    })));
     console.log('due results', results);
 
     dispatch(learnSlice.actions.learningStarted(queue));
