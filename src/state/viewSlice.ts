@@ -55,7 +55,11 @@ export const toggleView = (request: ViewRequest) => {
       dispatch(setView({ type: null }));
       logseq.hideMainUI();
     } else if (request.viewType == ViewType.main) {
-      dispatch(setView({ type: ViewType.main }));
+      if (state.learn.learning) {
+        dispatch(setView({ type: ViewType.learn }));
+      } else {
+        dispatch(setView({ type: ViewType.main }));
+      }
       logseq.showMainUI();
     } else if (request.viewType == ViewType.learn) {
       dispatch(setView({ type: ViewType.learn }));
