@@ -37,7 +37,7 @@ export default function MainWindow() {
     ref={ref}
     id="ib-main"
     style={{ minHeight: '30rem' }}
-    className={`fixed flex flex-col rounded shadow-md p-2 sm:w-9/12 md:w-8/12 lg:w-6/12 ${theme.BG} ${theme.BORDER}`}
+    className={`fixed flex flex-col rounded shadow-md p-2 sm:w-9/12 md:w-8/12 lg:w-7/12 ${theme.BG} ${theme.BORDER}`}
   >
     <div className="flex items-center justify-between mb-2">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Incremental blocks</h3>

@@ -145,6 +145,7 @@ function AnkiCardsContent() {
     filteredDeckName, 
     ...[...cardsByDeck.keys()].filter((d) => d != filteredDeckName)];
   const deckCounts = decks.map((deck) => cardsByDeck.get(deck)!.length);
+  const noCards =  deckCounts.reduce((s, c) => s + c, 0) == 0;
 
   let deckView;
   if (cards.length > 0) {
@@ -157,14 +158,17 @@ function AnkiCardsContent() {
           const deck = decks[i];
           const isFiltered = deck == filteredDeckName;
           const isEmpty = deckCounts[i] == 0;
+          const isOnlyEmpty = isEmpty && noCards;
           return <div className="py-1">
             <h4 className={`font-medium ${isFiltered && "bg-gray-100 dark:bg-gray-700"}`}>
               Deck: { deck }
             </h4>
             {isFiltered && isEmpty && 
-              <span className="text-xs">
+              <p className="text-xs">
                 Rebuild filtered deck to interleave cards with reading.
-              </span>
+
+                To process your cards in the queue, create a new filtered deck named "ib" with the query <code>(is:due or is:new) {'graphName'}Model</code>
+              </p>
             }
           </div>
         }}
