@@ -48,3 +48,13 @@ export async function getLogseqCards({ due=false, deck }: { due?: boolean, deck?
   console.log('cards data', cardsData);
   return cardsData;
 }
+
+export async function extractSourcesFromCard(content: string) : Promise<Map<string, string>> {
+  const regex = /src="([^"]*)"/g;
+  const sources = [...content.matchAll(regex)].map((r) => r[1]).filter((s) => !s.startsWith('_'));
+  const contents = new Map<string, string>();
+  await Promise.all(
+    sources.map(async (s) => contents.set(s, atob(await invoke('retrieveMediaFile', { filename: s }))))
+  );
+  return contents;
+}
