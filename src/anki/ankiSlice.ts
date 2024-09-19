@@ -1,9 +1,10 @@
-import { createAsyncThunk, createSelector, createSlice } from "@reduxjs/toolkit"
+import { createAsyncThunk, createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
 import { getLogseqCards, invoke } from "./anki";
 import Beta from "../algorithm/beta";
 import { queryIbs, queryQueueIbs } from "../logseq/query";
-import { QueueIb } from "../learn/learnSlice";
+import { startAppListening } from "../state/listenerMiddleware";
+import { stopLearning } from "../learn/learnSlice";
 
 interface CardMedia {
   front: string,
@@ -19,11 +20,19 @@ export interface AnkiCard {
   priority?: Beta
 }
 
+interface CurrentCard {
+  deckName: string,
+  cardId: number,
+  buttons: number[],
+  nextReviews: string[]
+}
+
 interface AnkiState {
   media: CardMedia,
   deckName: string,
   cards: AnkiCard[],
   refreshState: null | 'loading' | 'fulfilled' | 'failed',
+  currentCard?: CurrentCard
 }
 
 const initialState: AnkiState = {
@@ -36,7 +45,18 @@ const initialState: AnkiState = {
 const ankiSlice = createSlice({
   name: 'anki',
   initialState,
-  reducers: {  },
+  reducers: {
+    cardOpened(state, action: PayloadAction<CurrentCard | undefined>) {
+      let isSame = state.currentCard == action.payload;
+      if (state.currentCard && action.payload) {
+	isSame ||= state.currentCard.cardId == action.payload.cardId;
+      }
+      if (!isSame) {	
+	state.currentCard = action.payload;
+	console.log('Anki card changed:', action.payload);
+      }
+    }
+  },
   extraReducers: builder => {
     builder
       .addCase(loadMedia.fulfilled, (state, action) => {
@@ -58,7 +78,7 @@ const ankiSlice = createSlice({
   }
 });
 
-export const {} = ankiSlice.actions;
+export const { cardOpened } = ankiSlice.actions;
 
 export const loadMedia = createAsyncThunk<CardMedia | null, void, { state: RootState }>(
   'anki/loadMedia',
@@ -146,3 +166,32 @@ export const selectCardsByCriteria = createSelector.withTypes<RootState>()(
     });
   }
 );
+
+startAppListening({
+  predicate(action, currentState, prevState) {
+    return currentState.learn.learning != prevState.learn.learning;
+  },
+  effect: async (action, listenerApi) => {
+    listenerApi.cancelActiveListeners();
+    const state = listenerApi.getState();
+    if (!state.learn.learning) return;
+    while (true) {
+      await listenerApi.delay(500);
+      try {
+	const currentCard = await invoke('guiCurrentCard');
+	listenerApi.dispatch(cardOpened({
+	  deckName: currentCard.deckName,
+	  cardId: currentCard.cardId,
+	  buttons: currentCard.buttons,
+	  nextReviews: currentCard.nextReviews
+	}));
+      } catch (e: any) {
+	listenerApi.dispatch(stopLearning());
+	logseq.UI.showMsg('Anki error: ' + e.toString(), 'error');
+	listenerApi.cancel();
+	return;
+      }
+    }
+  }
+});
+

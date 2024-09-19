@@ -4,6 +4,7 @@ import viewReducer from './viewSlice';
 import ankiReducer from '../anki/ankiSlice';
 import learnReducer from '../learn/learnSlice';
 import mainReducer from '../main/mainSlice';
+import { listenerMiddleware } from './listenerMiddleware';
 
 export const store = configureStore({
   reducer: {
@@ -12,10 +13,12 @@ export const store = configureStore({
     learn: learnReducer,
     anki: ankiReducer,
     main: mainReducer
-  }
+  },
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware().prepend(listenerMiddleware.middleware)
 })
 
-// Infer the type of `store`
+// infer the type of `store`
 export type AppStore = typeof store
 // Infer the `AppDispatch` type from the store itself
 export type AppDispatch = typeof store.dispatch
