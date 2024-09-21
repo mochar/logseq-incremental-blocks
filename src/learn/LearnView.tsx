@@ -110,7 +110,7 @@ function IbComponent({ setBusy }: { setBusy: (busy: boolean) => void }) {
 
   async function later() {
     setBusy(true);
-    await dispatch(laterRep());
+    await dispatch(laterRep({}));
     setBusy(false);
   }
 

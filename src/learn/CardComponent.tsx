@@ -1,23 +1,19 @@
 import React from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { invoke } from "../anki/anki";
+import { CardReview, getCardReviews, invoke } from "../anki/anki";
 import * as theme from "../utils/theme";
 import { doneRep, finishRep, laterRep, stopLearning } from "./learnSlice";
-
-interface Review {
-  grade: number,
-  interval: number
-}
+import { getCurrentReviewCard } from "../anki/ankiSlice";
 
 export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) => void }) {
   const dispatch = useAppDispatch();
   const deckName = useAppSelector(state => state.anki.deckName);
+  const openedCard = useAppSelector(state => state.anki.currentCard);
   const qib = useAppSelector(state => state.learn.current!.qib);
   const cardId = qib.cardId!;
-  const cardMedia = useAppSelector(state => state.anki.media);
   const card = React.useRef<any>();
   const [error, setError] = React.useState<string>();
-  const [review, setReview] = React.useState<Review>();
+  const [review, setReview] = React.useState<CardReview>();
   const cardReviewCount = React.useRef<number>(0);
   const busy = error == undefined && card == undefined;
   let pollTimer: NodeJS.Timeout;
@@ -35,20 +31,21 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
     card.current = undefined;
     setError(undefined);
     try {
+      await dispatch(getCurrentReviewCard());
       const cardsData = await invoke('cardsInfo', { cards: [cardId] });
       if (cardsData.length == 0) throw new Error('Failed to fetch card.');
       const cardData = cardsData[0];
       card.current = cardData;
-
-      // 
-      console.log(card.current);
+      console.log('Current card:', card.current);
+      
+      //
       const reviewsCards = await invoke('getReviewsOfCards', { cards: [cardId] });
       const reviews = reviewsCards[cardId];
       console.log('init reviews', reviews);
       cardReviewCount.current = reviews.length;
       console.log(cardReviewCount.current);
-      await invoke('guiDeckReview', { name: deckName });
-      await invoke('guiShowQuestion');
+      // await invoke('guiDeckReview', { name: deckName });
+      // await invoke('guiShowQuestion');
       pollTimer = setInterval(pollReviewTime, 100);
     } catch (error: any) {
       setError(error.toString());
@@ -59,13 +56,13 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
 
   async function pollReviewTime() {
     try {
-      const reviewsCards = await invoke('getReviewsOfCards', { cards: [cardId] });
+      const reviewsCards = await getCardReviews([cardId]);
       const reviews = reviewsCards[cardId];
+      // console.log('Review length:', reviews.length);
       if (reviews.length > cardReviewCount.current) {
-        // TODO: Handle multiple reviews done
         const review = reviews[reviews.length-1];
-        setReview({ grade: review[3], interval: review[4] });
-        clearInterval(pollTimer);
+	console.log('Reviewed:', review);
+        setReview(review);
         wrapUpReview();
         return;
       }
@@ -74,8 +71,9 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
   }
   
   async function wrapUpReview() {
+    clearInterval(pollTimer);
     try {
-      await invoke('guiDeckBrowser');
+      // await invoke('guiDeckBrowser');
       console.log('wrap up', card.current);
     } catch (error) {
     }
@@ -84,8 +82,8 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
   async function finish() {
     if (review == undefined) return;
     setBusy(true);
-    if (review.interval < 1) {
-      await dispatch(laterRep());
+    if (review.ivl < 1) {
+      await dispatch(laterRep({}));
     } else {
       await dispatch(finishRep());
     }
@@ -101,7 +99,7 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
   async function later() {
     if (review) return;
     setBusy(true);
-    await dispatch(laterRep());
+    await dispatch(laterRep({}));
     setBusy(false);
   }
 
@@ -118,7 +116,7 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
   } else if (card.current == undefined) {
     cardContent = <p>Loading...</p>;
   } else if (review) {
-    cardContent = <p>Answered with grade {review.grade}.</p>
+    cardContent = <p>Answered with ease <i>{review.ease}</i>.</p>
   } else {
     cardContent = <p>Card opened in Anki. Review and come back.</p>
   }

@@ -1,5 +1,5 @@
 import React from "react";
-import { getUserRefs, RefFilterMode, refFilterModes, refreshDueIbs, refsSelected, removeRef, selectFilteredDueIbs, startLearning, setRefFilterMode, toggleRef, TypeFilter, typeFilters, typeFilterSelected } from "../learn/learnSlice";
+import { getUserRefs, RefFilterMode, refFilterModes, refsSelected, removeRef, selectFilteredDueIbs, startLearning, setRefFilterMode, toggleRef, TypeFilter, typeFilters, typeFilterSelected, refreshLearn } from "../learn/learnSlice";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
 import { Virtuoso } from "react-virtuoso";
@@ -34,7 +34,7 @@ export default function QueueView() {
 
   async function refresh() {
     await Promise.all([
-      dispatch(refreshDueIbs()),
+      dispatch(refreshLearn()),
       dispatch(getUserRefs()),
     ]);
   }

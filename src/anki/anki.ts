@@ -58,3 +58,91 @@ export async function extractSourcesFromCard(content: string) : Promise<Map<stri
   );
   return contents;
 }
+
+export interface CardData {
+  question: string,
+  answer: string,
+  deckName: string,
+  modelName: string,
+  fieldOrder: number,
+  fields: any,
+  css: string,
+  cardId: number,
+  interval: number,
+  note: number,
+  ord: number,
+  type: number,
+  queue: number,
+  due: number,
+  reps: number,
+  lapses: number,
+  left: number,
+  mod: number
+}
+
+export async function getCardData(cardIds: number[]) : Promise<CardData[]> {
+  const data = await invoke('cardsInfo', { cards: cardIds });
+  return data as CardData[];
+}
+
+export interface DeckReview {
+  reviewTime: number,
+  cardID: number,
+  usn: number,
+  buttonPressed: number,
+  newInterval: number,
+  previousInterval: number,
+  newFactor: number,
+  reviewDuration: number,
+  reviewType: number
+}
+
+export async function getDeckReviews(deck: string, sinceUnix: number) : Promise<DeckReview[]> {
+  const reviews = await invoke('cardReviews', { deck, startID: sinceUnix });
+  return reviews.map((r: any) => {
+    return {
+      reviewTime: r[0],
+      cardID: r[1],
+      usn: r[2],
+      buttonPressed: r[3],
+      newInterval: r[4],
+      previousInterval: r[5],
+      newFactor: r[6],
+      reviewDuration: r[7],
+      reviewType: r[8]
+    };
+  });
+}
+
+// https://github.com/ankidroid/Anki-Android/wiki/Database-Structure#review-log
+export interface CardReview {
+  // epoch-milliseconds timestamp of when you did the review
+  id: number,
+  // update sequence number: for finding diffs when syncing
+  usn: number, 
+  // which button you pushed to score your recall. 
+  // review:  1(wrong), 2(hard), 3(ok), 4(easy)
+  // learn/relearn:   1(wrong), 2(ok), 3(easy)
+  ease: number,
+  // interval (i.e. as in the card table)
+  ivl: number,
+  // last interval, i.e. the last value of ivl. Note that this value is not
+  // necessarily equal to the actual interval between this review and the
+  // preceding review.
+  lastIvl: number,
+  // factor
+  factor: number,
+  // how many milliseconds your review took, up to 60000 (60s)
+  time: number,
+  // 0=learn, 1=review, 2=relearn, 3=filtered, 4=manual
+  type: number, 
+}
+
+interface CardReviews {
+  [key: string]: CardReview[]
+}
+
+export async function getCardReviews(cardIds: number[]) : Promise<CardReviews> {
+  const reviews = await invoke('getReviewsOfCards', { cards: cardIds });
+  return reviews as CardReviews;
+}

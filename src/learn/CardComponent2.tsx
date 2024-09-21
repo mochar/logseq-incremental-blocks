@@ -64,7 +64,7 @@ export default function CardComponent({ setBusy }: { setBusy: (busy: boolean) =>
 
   async function later() {
     setBusy(true);
-    await dispatch(laterRep());
+    await dispatch(laterRep({}));
     setBusy(false);
   }
 

@@ -2,9 +2,8 @@ import { createAsyncThunk, createSelector, createSlice, PayloadAction } from "@r
 import { AppDispatch, RootState } from "../state/store";
 import { getLogseqCards, invoke } from "./anki";
 import Beta from "../algorithm/beta";
-import { queryIbs, queryQueueIbs } from "../logseq/query";
+import { queryIbs } from "../logseq/query";
 import { startAppListening } from "../state/listenerMiddleware";
-import { stopLearning } from "../learn/learnSlice";
 
 interface CardMedia {
   front: string,
@@ -15,7 +14,7 @@ export interface AnkiCard {
   uuid: string,
   type: string,
   breadcrumb: string,
-  cardId: string,
+  cardId: number,
   deckName: string,
   priority?: Beta
 }
@@ -24,7 +23,8 @@ interface CurrentCard {
   deckName: string,
   cardId: number,
   buttons: number[],
-  nextReviews: string[]
+  nextReviews: string[],
+  date: Date
 }
 
 interface AnkiState {
@@ -32,21 +32,22 @@ interface AnkiState {
   deckName: string,
   cards: AnkiCard[],
   refreshState: null | 'loading' | 'fulfilled' | 'failed',
-  currentCard?: CurrentCard
+  currentCard: CurrentCard | null
 }
 
 const initialState: AnkiState = {
   media: { front: '', back: '' },
   deckName: 'ib',
   cards: [],
-  refreshState: null
+  refreshState: null,
+  currentCard: null
 }
 
 const ankiSlice = createSlice({
   name: 'anki',
   initialState,
   reducers: {
-    cardOpened(state, action: PayloadAction<CurrentCard | undefined>) {
+    cardOpened(state, action: PayloadAction<CurrentCard | null>) {
       let isSame = state.currentCard == action.payload;
       if (state.currentCard && action.payload) {
 	isSame ||= state.currentCard.cardId == action.payload.cardId;
@@ -148,6 +149,45 @@ export const getDueCards = createAsyncThunk<AnkiCard[], void, { state: RootState
   }
 )
 
+export const getCurrentReviewCard = () => {
+  return async (dispatch: AppDispatch, getState: () => RootState): Promise<CurrentCard | null> => {
+    let currentCard: CurrentCard | null;
+    try {
+      const currentCardData = await invoke('guiCurrentCard');
+      currentCard = {
+	deckName: currentCardData.deckName,
+	cardId: currentCardData.cardId,
+	buttons: currentCardData.buttons,
+	nextReviews: currentCardData.nextReviews,
+	date: new Date()
+      };
+    } catch (e: any) {
+      currentCard = null;
+    }
+    dispatch(cardOpened(currentCard));
+    return currentCard;
+  }
+}
+
+/*
+Match anki cards in filtered deck to priority order of ibs.
+TODO: Check if cards are in the appropriate deck first.
+They should be, but check anyway.
+*/
+export const orderCardsInDeck = ({ by }: { by: 'due' | 'queue' }) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
+    const queue = by == 'due' ? state.learn.dueIbs : state.learn.queue;
+    const cardQibs = queue.filter((qib) => qib.cardId != undefined);
+    let order = -100_000;
+    const results = await Promise.all(cardQibs.map((cardQib) => {
+      return invoke('setSpecificValueOfCard', 
+        { card: cardQib.cardId, keys: ['due'], newValues: [order++]});
+    }));
+    console.log('due results', results);
+  }
+}
+
 export default ankiSlice.reducer;
 
 export const selectCardsByCriteria = createSelector.withTypes<RootState>()(
@@ -169,28 +209,18 @@ export const selectCardsByCriteria = createSelector.withTypes<RootState>()(
 
 startAppListening({
   predicate(action, currentState, prevState) {
-    return currentState.learn.learning != prevState.learn.learning;
+    if (currentState.learn.learning != prevState.learn.learning) {
+      return true;
+    }
+    return currentState.learn.current?.qib.uuid != prevState.learn.current?.qib.uuid;
   },
   effect: async (action, listenerApi) => {
     listenerApi.cancelActiveListeners();
     const state = listenerApi.getState();
-    if (!state.learn.learning) return;
+    if (!state.learn.learning || state.learn.current?.qib.cardId == undefined) return;
     while (true) {
+      const reviewCard = await listenerApi.dispatch(getCurrentReviewCard());
       await listenerApi.delay(500);
-      try {
-	const currentCard = await invoke('guiCurrentCard');
-	listenerApi.dispatch(cardOpened({
-	  deckName: currentCard.deckName,
-	  cardId: currentCard.cardId,
-	  buttons: currentCard.buttons,
-	  nextReviews: currentCard.nextReviews
-	}));
-      } catch (e: any) {
-	listenerApi.dispatch(stopLearning());
-	logseq.UI.showMsg('Anki error: ' + e.toString(), 'error');
-	listenerApi.cancel();
-	return;
-      }
     }
   }
 });

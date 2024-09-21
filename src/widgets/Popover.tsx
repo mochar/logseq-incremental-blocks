@@ -13,7 +13,7 @@ import { initialIntervalFromMean } from "../algorithm/scheduling";
 import BetaGraph from "./BetaGraph";
 import PrioritySlider from "./PrioritySlider";
 import { useAppDispatch } from "../state/hooks";
-import { dueIbAdded, dueIbRemoved } from "../learn/learnSlice";
+import { qibAdded, qibRemoved } from "../learn/learnSlice";
 import { queryQueueIbs } from "../logseq/query";
 
 enum SideView { none, priority, schedule }
@@ -122,11 +122,11 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     const curIsToday = dueDate && dateDiffInDays(today, dueDate) == 0;
     const newIsToday = dateDiffInDays(today, date) == 0;
     if (curIsToday && !newIsToday) {
-      dispatch(dueIbRemoved(block.uuid));
+      dispatch(qibRemoved({ uuid: block.uuid }));
     } else if (!curIsToday && newIsToday) {
       const qibs = await queryQueueIbs({ uuids: [block.uuid] });
       if (qibs.length > 0) {
-        dispatch(dueIbAdded({ qib: qibs[0] }));
+        dispatch(qibAdded({ qib: qibs[0] }));
       }
     }
 
@@ -155,7 +155,7 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
     setBusy(true)
     const ib = await IncrementalBlock.fromUuid(block.uuid, { propsOnly: false });
     await ib.done()
-    dispatch(dueIbRemoved(block.uuid));
+    dispatch(qibRemoved({ uuid: block.uuid }));
     setBusy(false)
     logseq.hideMainUI();
   }
