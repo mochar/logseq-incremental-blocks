@@ -86,7 +86,7 @@ interface Learn {
 
 const initialState: Learn = {
   learning: false,
-  anki: true,
+  anki: false,
   dueIbs: [],
   queue: [],
   queueStatus: 'idle',
