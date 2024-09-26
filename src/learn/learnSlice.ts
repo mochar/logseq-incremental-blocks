@@ -371,7 +371,7 @@ Does not clean up current ib, and therefore should not be
 called directly, but as a final step of a repetition action.
 */
 export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: RootState }>(
-  'learn/nextRep', 
+  'learn/nextIb', 
   async (_, { getState, dispatch }) => {
     let { learn, anki } = getState();
 
