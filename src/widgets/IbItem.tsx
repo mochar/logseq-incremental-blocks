@@ -27,5 +27,6 @@ IbItem({ qib }: { qib: QueueIb }) {
       {(qib.priority*100).toFixed(2)}%
     </span>
     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis'}}>{content}</span>
+    {/* <span>{ qib.cardId ? 'Card' : 'Source'}</span> */}
   </div>;
 }

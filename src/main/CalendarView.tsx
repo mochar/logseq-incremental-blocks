@@ -1,6 +1,6 @@
 import React from "react";
 import { QueueIb } from "../learn/learnSlice";
-import { todayMidnight } from "../utils/datetime";
+import { formatDate, todayMidnight } from "../utils/datetime";
 import { useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
 import DatePicker from "react-datepicker";
@@ -39,9 +39,9 @@ export default function CalendarView() {
   let queueView;
   if (queue.length > 0) {
     queueView = (
-      <div className="mt-1">
+      <div className="mt-1 w-full">
         <Virtuoso
-          style={{ height: '250px', overflowX: 'clip' }}
+          style={{ height: '380px', overflowX: 'clip' }}
           totalCount={queue.length}
           itemContent={(i) => IbItem({ qib: queue[i] })}
         ></Virtuoso>
@@ -57,8 +57,10 @@ export default function CalendarView() {
 
   return (
   <div>
-    <div className="flex justify-between mb-1">
-      <div></div>
+    <div className="flex justify-between items-center mb-1">
+      <div>
+        { date && queue && <span>{queue.length} scheduled for {formatDate(date)}</span> }
+      </div>
       <div>
         <button 
           className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-1 rounded`}
