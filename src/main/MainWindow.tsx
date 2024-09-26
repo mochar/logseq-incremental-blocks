@@ -12,6 +12,7 @@ export default function MainWindow() {
   const dispatch = useAppDispatch();
   const busy = useAppSelector((state) => state.main.busy);
   const activeTab = useAppSelector((state) => state.main.activeTab);
+  const ankiMode = useAppSelector((state) => state.learn.anki);
 
   function close() {
     dispatch(setView({ type: null }));
@@ -19,7 +20,7 @@ export default function MainWindow() {
 
   const tabs = [
     <Tab tab="queue" title="📚 Queue" key="queue"></Tab>,
-    <Tab tab="anki" title="⭐ Anki" key="anki"></Tab>,
+    ... ankiMode ? [<Tab tab="anki" title="⭐ Anki" key="anki"></Tab>] : [],
     <Tab tab="calendar" title="📅 Calendar" key="calendar"></Tab>
   ].map((tab) => <li>{tab}</li>);
 
