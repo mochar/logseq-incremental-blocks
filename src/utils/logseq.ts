@@ -75,6 +75,8 @@ export async function getBlockHierarchyContent(uuid: string, maxDepth: number): 
 export function getFilterRefs() : string[] {
   const refsString = logseq.settings?.subsetQueries;
   if (!refsString) return [];
-  const refs = (refsString as string).split(', ').filter((r) => !/^\s*$/.test(r));
+  const refs = (refsString as string).split(',')
+    .filter((r) => !/^\s*$/.test(r))
+    .map((r) => r.trim().toLowerCase());
   return refs;
 }

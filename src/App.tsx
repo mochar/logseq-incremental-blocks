@@ -10,7 +10,7 @@ import { renderMediaEmbed } from "./medx/macro";
 import MedxArgs from "./medx/args";
 import { finishRep, getUserRefs, refreshDueIbs } from "./learn/learnSlice";
 import { isDark } from "./utils/logseq";
-import { themeModeChanged } from "./state/appSlice";
+import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import MainWindow from "./main/MainWindow";
 
 // This is our popup.
@@ -82,6 +82,9 @@ export default function App() {
 
     isDark().then((dark) => dispatch(themeModeChanged(dark ? 'dark' : 'light')));
     logseq.App.onThemeModeChanged(({ mode }) => dispatch(themeModeChanged(mode)));
+
+    logseq.onSettingsChanged((a, b) =>
+      dispatch(handleSettingsChanged({ old: b, new: a })));
 
     dispatch(getUserRefs());
     //dispatch(loadMedia());
