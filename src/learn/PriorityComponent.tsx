@@ -8,17 +8,13 @@ import PrioritySlider from "../widgets/PrioritySlider";
 export default function PriorityComponent() {
   const dispatch = useAppDispatch();
   const currentIbData = useAppSelector(state => state.learn.current!);
-
+  let pollTimer: NodeJS.Timeout;
+  
   React.useEffect(() => {
     // On a timer, get new priority updates. This is because
     // time spent on an ib increases priority.
-    let timer: NodeJS.Timeout;
-    const getRepeatUpdates = async function() {
-      await dispatch(getPriorityUpdates());
-      timer = setTimeout(getRepeatUpdates, 2000);
-    }
-    getRepeatUpdates();
-    return () => clearTimeout(timer);
+    pollTimer = setInterval(() => dispatch(getPriorityUpdates()), 2000);
+    return () => clearInterval(pollTimer);
   }, []);
 
   function updateManualPriority(meanPiority: number | null) {
