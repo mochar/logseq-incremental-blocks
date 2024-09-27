@@ -59,7 +59,10 @@ export default function CalendarView() {
   <div>
     <div className="flex justify-between items-center mb-1">
       <div>
-        { date && queue && <span>{queue.length} scheduled for {formatDate(date)}</span> }
+        { date && queue
+          ? <span>{queue.length} scheduled for {formatDate(date)}</span>
+          : <span>View scheduled ibs at date</span>
+        }
       </div>
       <div>
         <button 
