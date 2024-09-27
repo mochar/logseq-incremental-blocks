@@ -186,7 +186,7 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
           ></PrioritySlider>}
         </div>
 
-        {ib.priorityOnly && 
+        {ib.priorityOnly && false && 
         <button
           className="bg-white text-xs hover:bg-gray-100 text-gray-800 py-1 px-4 mb-1 border border-gray-400 rounded shadow"
           onMouseEnter={() => setSideView(SideView.none)}

@@ -99,7 +99,7 @@ function main() {
   }
 
   registerCommand('Convert to ib', onCreateIbCommand);
-  registerCommand('Convert to ib (no scheduling)', onCreatePbCommand);
+  registerCommand('Convert to ib (priority only)', onCreatePbCommand);
   registerCommand('Convert to ib (include siblings)', onCreateIbWithSiblingsCommand);
   logseq.App.registerCommandPalette({ key: 'ib-convert-selected', label: 'Convert selected to ibs'}, 
     onCreateSelectedIbsCommand);
