@@ -7,6 +7,7 @@ import IbItem from "../widgets/IbItem";
 import { setView, ViewType } from "../state/viewSlice";
 import Select from "../widgets/Select";
 import { capitalize } from "../utils/utils";
+import RefButton from "../widgets/RefButton";
 
 export default function QueueView() {
   const dispatch = useAppDispatch();
@@ -138,26 +139,13 @@ function RefFilter() {
 
   const refButtons = refs.map((r) => {
     const selected = selectedRefs.includes(r);
-    const classes = selected ? 'bg-gray-200 ring-1 ring-offset-1 ring-gray-500' : '';
     return (
-      <span 
+      <RefButton
         key={r.id}
-        className={"inline-flex items-center text-xs px-2 py-1 me-2 font-medium text-gray-900 bg-gray-100 rounded hover:bg-gray-200 hover:text-gray-900" + classes}
-      >
-        <button 
-          type="button" 
-          onClick={() => dispatch(toggleRef(r.name))} 
-          className="inline-flex items-center text-xs bg-transparent rounded-sm hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-300"
-        >
-          {r.name}
-        </button>
-        {/* <button type="button" onClick={() => dispatch(removeRef(r.name))} className="inline-flex items-center p-1 ms-2 text-xs text-gray-400 bg-transparent rounded-sm hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-300"> */}
-        {/*   <svg className="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14"> */}
-        {/*     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/> */}
-        {/*   </svg> */}
-        {/* </button> */}
-      </span>
-    );
+        label={r.name}
+        selected={selected}
+        onClick={() => dispatch(toggleRef(r.name))}
+      />);
   });
 
   return (

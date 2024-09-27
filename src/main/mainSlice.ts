@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { refreshDueIbs } from "../learn/learnSlice";
 
-export declare type MainWindowTab = 'queue' | 'anki' | 'calendar';
+export declare type MainWindowTab = 'queue' | 'anki' | 'calendar' | 'refs';
 
 interface MainState {
   activeTab: MainWindowTab,

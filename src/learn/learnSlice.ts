@@ -106,6 +106,7 @@ const learnSlice = createSlice({
   reducers: {
     userRefsLoaded(state, action: PayloadAction<Ref[]>) {
       state.refs = action.payload;
+      // TODO: remove deleted refs  from selectedRefs
     },
     refToggled(state, action: PayloadAction<{ refName: string, state?: boolean }>) {
       // Add or remove ref from selectedRefs
@@ -661,8 +662,18 @@ export const removeRef = (refName: string) => {
     const refs = state.learn.refs.map((r) => r.name);
     refs.splice(refs.indexOf(refName), 1);
     logseq.updateSettings({ subsetQueries: refs.join(', ') });
-    // Get updated user refs
-    await dispatch(getUserRefs());
+    return refs;
+  }
+}
+
+export const addRef = (refName: string) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) : Promise<string[]> => {
+    const state = getState();
+    const refs = state.learn.refs.map(r => r.name);
+    if (!refs.includes(refName)) {
+      refs.push(refName);
+    }
+    logseq.updateSettings({ subsetQueries: refs.join(', ') });
     return refs;
   }
 }

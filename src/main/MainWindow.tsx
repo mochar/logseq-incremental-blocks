@@ -6,6 +6,7 @@ import QueueView from "./QueueView";
 import CalendarView from "./CalendarView";
 import { setView } from "../state/viewSlice";
 import AnkiView from "./AnkiView";
+import RefsView from "./RefsView";
 
 export default function MainWindow() {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -21,7 +22,8 @@ export default function MainWindow() {
   const tabs = [
     <Tab tab="queue" title="📚 Queue" key="queue"></Tab>,
     ... ankiMode ? [<Tab tab="anki" title="⭐ Anki" key="anki"></Tab>] : [],
-    <Tab tab="calendar" title="📅 Calendar" key="calendar"></Tab>
+    <Tab tab="calendar" title="📅 Calendar" key="calendar"></Tab>,
+    <Tab tab="refs" title="📄 Refs" key="refs"></Tab>
   ].map((tab) => <li>{tab}</li>);
 
   let content = <>{activeTab}</>;
@@ -31,6 +33,8 @@ export default function MainWindow() {
     content = <CalendarView />
   } else if (activeTab == 'anki') {
     content = <AnkiView />
+  } else if (activeTab == 'refs') {
+    content = <RefsView />
   }
 
   return (

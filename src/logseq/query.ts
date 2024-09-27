@@ -2,7 +2,7 @@ import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
 import { counter, toCamelCase } from "../utils/utils";
 import { toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
-import { QueueIb } from "../learn/learnSlice";
+import { QueueIb, Ref } from "../learn/learnSlice";
 import Beta from "../algorithm/beta";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
@@ -194,6 +194,38 @@ export async function queryQueueIbs({ uuids, sortByPriority=true, keepDuplicates
     }, new Array<QueueIb>())
   }
   return qibs ?? [];
+}
+
+/*
+Find all ibs that have the given page as a page ref.
+ */
+interface IQueryRefIbs {
+  ref: Ref,
+  sortByPriority?: boolean
+}
+
+export async function queryRefIbs({ ref, sortByPriority=false }: IQueryRefIbs) : Promise<QueueIb[]> {
+  const query = `[
+    :find ${QUEUE_IB_PULLS}
+    :where
+      [?b :block/uuid ?uuid]
+      [?b :block/properties ?prop]
+      [(get ?prop :ib-a) _]
+      [(get ?prop :ib-b) _]
+      [?b :block/page ?bp]
+      [?p :block/name ?pagename] 
+      [(contains? #{"${ref.name}"} ?pagename)] 
+      (or [?b :block/path-refs ?p] [?bp :block/tags ?p])
+  ]`;
+  let ret: any;
+  try {
+    ret = await logseq.DB.datascriptQuery(query);  
+  } catch (error) {
+    console.log(error);
+    return [];
+  }
+  const qibs = parseQueueIbs({ result: ret, sortByPriority });
+  return qibs;
 }
 
 /*

@@ -60,8 +60,8 @@ export class Completer<T> {
   }
 }
 
-export function useDebounce(value: any, delay: number) {
-  const [debounceValue, setDebounceValue] = useState(value);
+export function useDebounce<T>(value: T, delay: number) : T {
+  const [debounceValue, setDebounceValue] = useState<T>(value);
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebounceValue(value);
