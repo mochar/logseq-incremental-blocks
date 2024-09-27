@@ -80,7 +80,7 @@ export async function convertBlockToIb({ uuid, block, priorityOnly=false, backTo
     block = await logseq.Editor.getBlock(uuid);
   }
 
-	if (!block) return;
+  if (!block) return;
 
   if (!content) content = block.content;
 

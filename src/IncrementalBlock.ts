@@ -3,6 +3,7 @@ import Beta from "./algorithm/beta";
 import { toDashCase } from "./utils/utils";
 import { todayMidnight, dateDiffInDays, toEndOfDay } from "./utils/datetime";
 import { RENDERER_MACRO_NAME as MACRO_NAME } from "./globals";
+import { removePropsFromContent } from "./utils/logseq";
 
 class IncrementalBlock {
   readonly uuid: string;
@@ -105,13 +106,15 @@ class IncrementalBlock {
 
   public async done() {
     if (!this.block) return;
-    const content = this.block.content.replace(MACRO_NAME, '');
-    await logseq.Editor.updateBlock(this.uuid, content);
+    const content = removePropsFromContent(this.block.content).replace(MACRO_NAME, '');
+    const properties = {};
     for (let prop of Object.keys(this.properties)) {
-      if (prop.startsWith('ib')) {
-        await logseq.Editor.removeBlockProperty(this.uuid, toDashCase(prop));
+      if (!prop.startsWith('ib')) {
+        //@ts-ignore
+        properties[toDashCase(prop)] = this.properties[prop];
       }
     }
+    await logseq.Editor.updateBlock(this.uuid, content, { properties });
   }
 
   public get priorityOnly() : boolean {
