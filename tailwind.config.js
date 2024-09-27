@@ -9,6 +9,7 @@ module.exports = {
   },
   plugins: [],
   safelist: [
-    'hover:dark:bg-gray-700'
+    'hover:dark:bg-gray-700',
+    'dark:bg-slate-900'
   ]
 }

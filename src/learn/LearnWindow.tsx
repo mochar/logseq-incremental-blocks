@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import LearnView from "../learn/LearnView";
 import QueueView from "../learn/QueueView";
 import { useAppSelector } from "../state/hooks";
+import * as theme from "../utils/theme";
 
 export default function LearnWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -11,7 +12,7 @@ export default function LearnWindow() {
     <div 
       ref={ref} 
       id="ib-learn" 
-      className="absolute top-10 right-10 bg-white dark:bg-slate-900 text-gray-800 dark:text-gray-200 rounded-lg p-2 w-96 border dark:border-gray-600 rounded shadow flex flex-col text-sm"
+      className={`absolute top-10 right-10 ${theme.BG} ${theme.TXT} rounded-lg p-2 w-96 border dark:border-gray-600 rounded shadow flex flex-col text-sm`}
     >
       {!learning && <QueueView></QueueView>}
       {learning && <LearnView></LearnView>}

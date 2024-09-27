@@ -107,6 +107,15 @@ export const BORDER = new ThemeObject({
   base: 'border'
 });
 
+export const TXT = new ThemeObject({
+  light: new ThemeModeData({
+    data: new ThemeData('text-gray-800'), 
+  }), 
+  dark: new ThemeModeData({
+    data: new ThemeData('text-gray-200'), 
+  }),
+});
+
 export const TXT_MUTED = new ThemeObject({
   light: new ThemeModeData({
     data: new ThemeData('text-gray-600')

@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import IbPopover from "./widgets/Popover";
-import LearnWindow from "./widgets/LearnWindow";
 import { useAppVisible } from "./logseq/events";
 import MedxPopover from "./medx/MedxPopover";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
@@ -12,6 +11,7 @@ import { finishRep, getUserRefs, refreshDueIbs } from "./learn/learnSlice";
 import { isDark } from "./utils/logseq";
 import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import MainWindow from "./main/MainWindow";
+import LearnWindow from "./learn/LearnWindow";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
