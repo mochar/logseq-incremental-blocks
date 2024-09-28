@@ -2,6 +2,8 @@ import React from "react";
 import { Range, getTrackBackground } from "react-range";
 import { IRenderThumbParams, IRenderTrackParams } from "react-range/lib/types";
 import { secondsToString } from "../utils/datetime";
+import { useAppSelector } from "../state/hooks";
+import * as theme from "../utils/theme";
 
 interface RangeSelectorProps {
   length: number,
@@ -14,6 +16,9 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
   const [selectRange, setSelectRange] = React.useState(range);
   // Min and max of slider
   const [regionRange, setRegionRange] = React.useState([0, length]);
+  const themeMode = useAppSelector(state => state.app.themeMode);
+
+  const bgColor = themeMode == 'dark' ? '#00000080' : '#f0f0f0';
   
   function renderRegionTrack({ props, children }: IRenderTrackParams) {
     return (
@@ -25,7 +30,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
           height: "12px",
           display: "flex",
           width: "100%",
-          border: "10px solid #f0f0f0",
+          border: `10px solid ${bgColor}`,
         }}
       >
         <div
@@ -59,7 +64,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
           ...props.style,
           height: "6px",
           width: "100%",
-          backgroundColor: "#ccc",
+          backgroundColor: bgColor,
         }}
       >
         <div
@@ -70,7 +75,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
             borderRadius: "4px",
             background: getTrackBackground({
               values: selectRange,
-              colors: ["#ccc", "#548BF4", "#ccc"],
+              colors: ["transparent", "#548BF4", "transparent"],
               min: regionRange[0],
               max: regionRange[1],
             }),
@@ -189,7 +194,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
 function TimeText({ seconds }: { seconds: number }) {
   const str = secondsToString(seconds);
   return (
-  <span className="text-gray-600 text-sm">
+    <span className={`text-gray-600 text-sm ${theme.TXT_MUTED}`}>
     {str}
   </span>);
 }

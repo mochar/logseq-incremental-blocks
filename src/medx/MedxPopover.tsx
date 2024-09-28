@@ -141,7 +141,7 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
           <label className="w-full h-full ml-2">
             <textarea
               ref={noteRef}
-              className="border w-full rounded p-1"
+              className={`w-full rounded p-1 ${theme.BG} ${theme.BORDER}`}
               placeholder="Note"
               rows={3}
               onChange={e => note.current = e.target.value}
@@ -161,7 +161,7 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
 
         <p className="ml-2">Interval</p>
         <input 
-          className="border w-16 ml-1" 
+          className={`w-16 ml-1 ${theme.BORDER} ${theme.BG}`}
           type="number" 
           value={interval}
           onChange={(e) => setInterval(parseFloat(e.target.value))}
@@ -185,7 +185,7 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
   <div 
     ref={ref} 
     id="ib-medx" 
-    className="fixed flex flex-col rounded border bg-white shadow-md p-2 text-sm"
+    className={`fixed flex flex-col rounded shadow-md p-2 text-sm sm:w-9/12 md:w-8/12 lg:w-7/12 ${theme.BG} ${theme.TXT} ${theme.BORDER}`}
   >
     <div id="medx-preview" className="mb-1">
       <ReactPlayer 

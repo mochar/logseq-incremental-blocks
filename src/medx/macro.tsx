@@ -3,18 +3,22 @@ import ReactPlayer from 'react-player/lazy';
 import { createRoot } from 'react-dom/client';
 import React from "react";
 import { secondsToString } from "../utils/datetime";
+import { isDark } from "../utils/logseq";
 
 //@ts-ignore
 export async function renderMedxMacro({ slot, payload }) {
   const args = MedxArgs.parse(payload.arguments);
   if (args == null) return;
   const isRef = args.flag.endsWith('_ref') && (args.start || args.end);
+  const dark = await isDark();
+  const txtColor = dark ? "text-gray-300" : "text-gray-600";
+  const bgColor = dark ? "bg-gray-700" : "bg-gray-100/10";
 
   let refHtml = '';
   if (isRef) {
     refHtml = `
     <button
-      class="flex"
+      class="flex ${bgColor}"
       data-on-click="playRange"
       data-slot-id="${slot}"
       data-media-url="${args.url}"
@@ -24,7 +28,7 @@ export async function renderMedxMacro({ slot, payload }) {
     </button>
 
     <button
-      class="rounded-lg border flex items-center h-8 ml-2"
+      class="rounded-lg border flex items-center h-8 ml-2 ${bgColor}"
       data-on-click="refToMedia" 
       data-block-uuid="${payload.uuid}"
     >
@@ -34,13 +38,13 @@ export async function renderMedxMacro({ slot, payload }) {
   }
 
   const html = `
-  <div class="text-sm bg-gray-100/20 text-gray-700 flex items-center">
+  <div class="text-sm flex items-center ${txtColor}">
     <div id="medx-player-${args.url}" class="medx-player flex"></div>
 
     ${refHtml}
     
     <button
-      class="rounded-lg border flex items-center h-8 ml-2"
+      class="rounded-lg border flex items-center h-8 ml-2 ${bgColor}"
       data-on-click="toggleMedxPopover" 
       data-block-uuid="${payload.uuid}"
       data-slot-id="${slot}"

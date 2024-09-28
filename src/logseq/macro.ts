@@ -1,10 +1,8 @@
 import IncrementalBlock from "../IncrementalBlock";
 import { renderMedxMacro } from "../medx/macro";
 import { AppStore } from "../state/store";
-import { formatDate, dateDiffInDays } from "../utils/datetime";
-import logo from "../../assets/logo.svg";
+import { dateDiffInDays } from "../utils/datetime";
 import { isDark } from "../utils/logseq";
-import * as theme from "../utils/theme";
 
 let store: AppStore;
 export const injectStore = (_store: AppStore) => {
