@@ -4,14 +4,16 @@ import { interpolateColor } from "../utils/utils";
 import * as theme from "../utils/theme";
 import { QueueIb } from "../learn/learnSlice";
 
-export default function 
-IbItem({ qib }: { qib: QueueIb }) {
+export default function IbItem({ qib, nChars }: { qib: QueueIb, nChars?: number }) {
 
   // If block is page property block, then it has no content field.
   // At least the one i checked..
   let content = qib.content;
   if (content) {
     content = content.split('\n')[0];
+    if (nChars && content.length > nChars) {
+      content = content.substring(0, nChars) + '...';
+    }
   }
 
   const bgColor = interpolateColor(PRIORITY_PALETTE, 1-qib.priority);

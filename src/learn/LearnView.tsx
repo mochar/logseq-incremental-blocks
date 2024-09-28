@@ -47,7 +47,7 @@ export default function LearnView() {
       <HeaderComponent></HeaderComponent>
 
       <div className={`${theme.BORDER} rounded`}>
-        <IbItem qib={currentQib}></IbItem>
+        <IbItem qib={currentQib} nChars={270}></IbItem>
       </div>
 
       <PriorityComponent></PriorityComponent>
