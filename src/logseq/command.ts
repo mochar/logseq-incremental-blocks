@@ -51,7 +51,7 @@ async function generateNewIbProps(uuid: string, priorityOnly: boolean = false, b
   }
   props['ib-a'] = beta.a;
   props['ib-b'] = beta.b;
-  if (!priorityOnly && (!ib.interval || !ib.dueDate)) {
+  if (!priorityOnly && ib.interval && ib.dueDate) {
     const interval = initialIntervalFromMean(beta.mean);
     const due = new Date();
     due.setDate(due.getDate() + interval);
