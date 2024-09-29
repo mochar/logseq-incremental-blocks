@@ -48,6 +48,12 @@ export function removePropsFromContent(content: string) : string {
   return lines.join('\n');
 }
 
+export function removeIbPropsFromContent(content: string) : string {
+  let lines = content.split(/\r?\n/);
+  lines = lines.filter((line) => !(PROP_REGEX.test(line) && line.startsWith('ib-')));
+  return lines.join('\n');
+}
+
 export async function getBlockHierarchyContent(uuid: string, maxDepth: number): Promise<Record<string, string>> {
   const contents: Record<string, string> = {};
   const block = await logseq.Editor.getBlock(uuid, { includeChildren: true });

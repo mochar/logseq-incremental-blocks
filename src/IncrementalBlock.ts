@@ -3,7 +3,7 @@ import Beta from "./algorithm/beta";
 import { toDashCase } from "./utils/utils";
 import { todayMidnight, dateDiffInDays, toEndOfDay } from "./utils/datetime";
 import { RENDERER_MACRO_NAME as MACRO_NAME } from "./globals";
-import { removePropsFromContent } from "./utils/logseq";
+import { removeIbPropsFromContent, removePropsFromContent } from "./utils/logseq";
 
 class IncrementalBlock {
   readonly uuid: string;
@@ -106,15 +106,15 @@ class IncrementalBlock {
 
   public async done() {
     if (!this.block) return;
-    const content = removePropsFromContent(this.block.content).replace(MACRO_NAME, '');
-    const properties = {};
+    // Remove properties by content and using removeBlockProperty, since former only
+    // works when props are visible and latter when props are hidden.
+    const content = removeIbPropsFromContent(this.block.content).replace(MACRO_NAME, '');
     for (let prop of Object.keys(this.properties)) {
-      if (!prop.startsWith('ib')) {
-        //@ts-ignore
-        properties[toDashCase(prop)] = this.properties[prop];
+      if (prop.startsWith('ib')) {
+        logseq.Editor.removeBlockProperty(this.uuid, toDashCase(prop));
       }
     }
-    await logseq.Editor.updateBlock(this.uuid, content, { properties });
+    await logseq.Editor.updateBlock(this.uuid, content);
   }
 
   public get priorityOnly() : boolean {
