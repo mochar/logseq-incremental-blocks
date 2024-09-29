@@ -34,7 +34,7 @@ async function renderIbMacro({ slot, payload }) {
     priorityHtml = '<span class="text-red-800">Not set</span>';
   }
   priorityHtml = `
-  <div class="mx-1 flex px-1" style="border-width: 0 2px">
+  <div class="flex px-1" style="border-width: 0 0 0 2px">
     ${priorityHtml}
   </div>
   `;
@@ -42,13 +42,12 @@ async function renderIbMacro({ slot, payload }) {
   let scheduleHtml = '';
   if (ib.dueDate) {
     const diff = dateDiffInDays(new Date(), ib.dueDate);
-    scheduleHtml = `<span>${diff}d</span>`;
+    scheduleHtml = `
+    <div class="px-1 flex border-l-1" style="border-width: 0 0 0 2px">
+      <span>${diff}d</span>
+    </div>
+    `;
   }
-  scheduleHtml = `
-  <div class="mx-1 flex">
-    ${scheduleHtml}
-  </div>
-  `;
 
   let repHtml = '';
   const current = store.getState().learn.current;
@@ -71,12 +70,12 @@ async function renderIbMacro({ slot, payload }) {
     template: `
     <div class="text-xs flex">
       <button
-        class="rounded-lg border flex px-1.5 py-0.5 items-center ${dark ? "bg-gray-700 text-gray-300" : "bg-gray-100/10 text-gray-600"}" 
+        class="rounded-lg border flex px-1 py-0.5 items-center ${dark ? "bg-gray-700 text-gray-300" : "bg-gray-100/10 text-gray-600"}" 
         data-on-click="toggleIbPopover" 
         data-block-uuid="${payload.uuid}"
         data-slot-id="${slot}"
       >
-        <div class="flex font-semibold">
+        <div class="flex font-semibold px-1">
           <span>IB</span>
         </div>
         ${priorityHtml}
