@@ -205,18 +205,13 @@ const learnSlice = createSlice({
       })
       .addCase(nextIb.fulfilled, (state, action) => {
         state.queueStatus = 'idle';
-        if (state.queue.length == 0) {
-          state.current = null;
-        } else {
-          // Remove current from queue
-          if (state.current) {
-            state.dueIbs.shift();
-            state.queue.shift();
-          }
-          state.current = action.payload;
+        if (state.current) {
+          state.queue.shift();
         }
+        state.current = action.payload;
       })
       .addCase(nextIb.rejected, (state, action) => {
+        console.error('next ib rejected');
         state.queueStatus = 'idle';
       })
       .addCase(getPriorityUpdates.fulfilled, (state, action) => {
@@ -329,7 +324,7 @@ export const stopLearning = () => {
     const state = getState();
     dispatch(refreshDueIbs());
     dispatch(learnSlice.actions.learningEnded());
-    reflectLearningChangedInGui(false, state.learn.dueIbs[0].uuid);
+    reflectLearningChangedInGui(false);
   }
 }
 
@@ -345,7 +340,7 @@ export const startLearning = () => {
 
     state = getState();
     if (state.learn.learning) { 
-      reflectLearningChangedInGui(true, state.learn.dueIbs[0].uuid);
+      reflectLearningChangedInGui(true);
       await dispatch(nextRep());
 
       if (!blockListenerActive) {
@@ -449,7 +444,6 @@ export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: Root
     nextQib = getNextQib();
     
     if (nextQib) {
-
       // Get the next ib and its metadata.
       const contents = await getBlockHierarchyContent(nextQib.uuid, 3);
       nextIbData = {
@@ -516,7 +510,6 @@ export const finishRep = (opts?: {}) => {
     let current = learn.current;
     
     if (current) {
-
       // If card, confirm card was reviewed
       const cardId = current.qib.cardId;
       if (cardId) {
@@ -563,7 +556,7 @@ export const finishRep = (opts?: {}) => {
 
       if (!cardId) {
         // Update schedule
-        const interval = nextInterval(current.ib);
+        const interval = current.manualInterval ?? nextInterval(current.ib);
         const newDue = addDays(todayMidnight(), interval);
         await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-interval', interval);
         await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
