@@ -14,16 +14,6 @@ export default function LearnView() {
   const queueStatus = useAppSelector(state => state.learn.queueStatus);
   const currentQib = useAppSelector(state => state.learn.current?.qib);
 
-  React.useEffect(() => {
-    if (currentQib == null) return;
-
-    // Move to next ib page.
-    const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
-    if (openIb) {
-      logseq.App.pushState('page', { name: currentQib.uuid })
-    }
-  }, [currentQib]);
-
   function quit() {
     dispatch(stopLearning());
   }
@@ -95,23 +85,23 @@ function HeaderComponent() {
 
 function IbComponent({ setBusy }: { setBusy: (busy: boolean) => void }) {
   const dispatch = useAppDispatch();
-
-  async function finish() {
+  
+  async function applyAction(action: Function, opts: Object = {}) {
     setBusy(true);
-    await dispatch(finishRep());
+    await dispatch(action(opts));
     setBusy(false);
+  }
+  
+  async function finish() {
+    await applyAction(finishRep);
   }
 
   async function done() {
-    setBusy(true);
-    await dispatch(doneRep());
-    setBusy(false);
+    await applyAction(doneRep);
   }
 
   async function later() {
-    setBusy(true);
-    await dispatch(laterRep({}));
-    setBusy(false);
+    await applyAction(laterRep);
   }
 
   function quit() {

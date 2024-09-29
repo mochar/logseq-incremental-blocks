@@ -494,6 +494,14 @@ export const nextRep = () => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     await dispatch(nextIb());
     await dispatch(getPriorityUpdates());
+
+    const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
+    if (openIb) {
+      const { learn } = getState();
+      if (learn.current) {
+        logseq.App.pushState('page', { name: learn.current.qib.uuid })
+      }
+    }
   }
 }
 
@@ -502,7 +510,7 @@ Repetition has been completed. Updates priority and scheduling accordingly.
 
 TODO: replace upserts with updateBlock
 */
-export const finishRep = () => {
+export const finishRep = (opts?: {}) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     const { learn, anki } = getState();
     let current = learn.current;
@@ -570,12 +578,12 @@ export const finishRep = () => {
 
 /*
 */
-export const postponeRep = (postponeInterval: number) => {
+export const postponeRep = ({ interval }: { interval: number }) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     const { learn } = getState();
     let current = learn.current;
     if (current) {
-      const newDue = addDays(todayMidnight(), postponeInterval);
+      const newDue = addDays(todayMidnight(), interval);
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
     }
     await dispatch(nextRep());
@@ -600,7 +608,7 @@ export const laterRep = ({ next=true }: { next?: boolean }) => {
   }
 }
 
-export const doneRep = () => {
+export const doneRep = (opts?: {}) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     const { learn } = getState();
     let current = learn.current;

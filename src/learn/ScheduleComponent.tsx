@@ -21,7 +21,7 @@ export default function ScheduleComponent({ setBusy }: { setBusy: (busy: boolean
 
   async function postpone() {
     setBusy(true);
-    await dispatch(postponeRep(interval!));
+    await dispatch(postponeRep({ interval: interval! }));
     await dispatch(getPriorityUpdates());
     setBusy(false);
   }
