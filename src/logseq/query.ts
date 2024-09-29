@@ -98,6 +98,7 @@ const QUEUE_IB_PULLS = `
   :block/content 
   :block/properties
   {:block/path-refs [:db/id :block/uuid :block/name]}
+  {:block/refs [:db/id :block/uuid :block/name]}
 ]) 
 (pull ?bp [
   {:block/tags [:db/id :block/uuid :block/name]}
@@ -270,20 +271,44 @@ export async function queryDueIbsWithoutSample() : Promise<IncrementalBlock[]> {
   return await queryIncrementalBlocks(query);
 }
 
-/* Return page properties of path refs. Path refs are
+/**
+ * Represents the page references of a block.
+ * directRefs: mentioned explicitely in the block
+ * pathRefs: mentioned somewhere in the path, but not within
+ *   the block itself
+ * pageRefs: tags of the page the block is in
+ * refs: union of all above refs
+ */
+export interface BlockRefs {
+  blockUuid: string,
+  directRefs: Ref[],
+  pathRefs: Ref[],
+  pageRefs: Ref[],
+  refs: Ref[]
+}
+
+interface IQueryBlockRefs {
+  uuid: string,
+  withPriority?: boolean
+}
+
+/**
+ * Return page properties of path refs. Path refs are
  * referenced pages inherited from the parents.
  */
-export async function queryPathRefPages(uuid: string) : Promise<Record<string, any>[]> {
-  const query = `
-  [
-    :find (pull ?p [*])
+export async function queryBlockRefs({ uuid, withPriority=false }: IQueryBlockRefs) : Promise<BlockRefs | null> {  
+  const query = `[
+  :find ${QUEUE_IB_PULLS}
     :where
-      [?b :block/path-refs ?p]
       [?b :block/uuid #uuid "${uuid}"]
-      [?p :block/properties ?prop]
-      [(get ?prop :ib-a) _]
-  ]
-  `;
+      [?b :block/page ?bp]
+  ]`;
   const ret = await logseq.DB.datascriptQuery(query);
-  return (ret || []).flat();
+  if (ret.length == 0) return null;
+  const blockData = ret[0];
+  const pageRefs = (blockData[1]?.tags ?? []) as Ref[];
+  const directRefs = (blockData[0].refs ?? []) as Ref[];
+  const pathRefs = (blockData[0]['path-refs'] ?? []) as Ref[];
+  const refs = [...new Set([...pageRefs, ...directRefs, ...pathRefs])];
+  return { blockUuid: uuid, pageRefs, directRefs, pathRefs, refs };
 }

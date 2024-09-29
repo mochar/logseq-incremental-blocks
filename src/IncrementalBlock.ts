@@ -1,4 +1,4 @@
-import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
+import { BlockEntity, PageEntity } from "@logseq/libs/dist/LSPlugin.user";
 import Beta from "./algorithm/beta";
 import { toDashCase } from "./utils/utils";
 import { todayMidnight, dateDiffInDays, toEndOfDay } from "./utils/datetime";
@@ -84,6 +84,10 @@ class IncrementalBlock {
 
   static fromBlock(block: BlockEntity) {
     return new this(block.uuid, block.properties ?? {}, block);
+  }
+
+  static fromPage(page: PageEntity) {
+    return new this(page.uuid, page.properties ?? {});
   }
 
   public copy() : IncrementalBlock {

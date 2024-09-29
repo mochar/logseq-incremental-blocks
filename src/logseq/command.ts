@@ -5,20 +5,17 @@ import { RENDERER_MACRO_NAME } from "../globals";
 import IncrementalBlock from "../IncrementalBlock";
 import { average } from "../utils/utils";
 import { addContentAndProps, removePropsFromContent } from "../utils/logseq";
-import { queryPathRefPages } from "./query";
+import { queryBlockRefs } from "./query";
 
-function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
+function blockRefsToBeta(refIbs: IncrementalBlock[]) : Beta | null {
   const as: number[] = [];
   const bs: number[] = [];
-  pathRefs.forEach((ref) => {
-      const props = ref.properties ?? {};
-      const a = parseFloat(props['ib-a']);
-      const b = parseFloat(props['ib-b']);
-      if (a && b) {
-        as.push(a);
-        bs.push(b);
-      }
-  });
+  for (const refIb of refIbs) {
+    if (refIb.beta) {
+      as.push(refIb.beta.a);
+      bs.push(refIb.beta.b);
+    }
+  }
   if (as.length > 0) {
     return new Beta(average(as), average(bs));
   }
@@ -57,9 +54,16 @@ async function generateNewIbProps({ uuid, priorityOnly=false, block } : IGenProp
   let beta = ib.beta;
   if (!beta) {
     // Try to calculate initial beta by inheriting from refs
-    const pathRefs = await queryPathRefPages(uuid);
-    if (pathRefs.length > 0) {
-      beta = pathRefsToBeta(pathRefs);
+    const refs = await queryBlockRefs({ uuid });
+    if (refs && refs.refs.length > 0) {
+      const refPages = await Promise.all(
+        refs.refs.map(r => logseq.Editor.getPage(r.uuid)));
+      const refIbs = refPages
+        .filter(p => p?.properties)
+        .map(p => IncrementalBlock.fromPage(p!));
+      if (refIbs.length > 0) {
+        beta = blockRefsToBeta(refIbs);
+      }
     } 
     // If none, use default priority 
     if (!beta) {
