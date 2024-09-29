@@ -27,22 +27,30 @@ function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
 
 /*
 Generate ib properties from block. If some of them already exist, keep them.
-*/
-async function generateNewIbProps(uuid: string, priorityOnly?: boolean, block?: BlockEntity | null) : Promise<Record<string, any> | null> {
+ */
+type PriorityOnly = boolean | 'inherit';
+
+interface IGenProps {
+  uuid: string,
+  priorityOnly?: PriorityOnly,
+  block?: BlockEntity | null
+}
+
+async function generateNewIbProps({ uuid, priorityOnly=false, block } : IGenProps) : Promise<Record<string, any> | null> {
   if (!block) block = await logseq.Editor.getBlock(uuid);
   if (!block) return null;
 
   // Parse the existing ib related properties
   const ib = IncrementalBlock.fromBlock(block);
 
-  // If priorityOnly flag explicitely set, then respect it. Otherwise, determine
+  // If priorityOnly flag is boolean, then respect it. Otherwise, determine
   // from existing ib properties (if they exist) if it has scheduling.
-  if (priorityOnly == undefined) {
+  if (priorityOnly == 'inherit') {
     priorityOnly = !(ib.dueDate && ib.interval);
   }
   
   const props: Record<string, any> = {};
-  if (!priorityOnly) {
+  if (priorityOnly == false) {
     props['ib-multiplier'] = ib.multiplier;
     props['ib-reps'] = ib.reps ?? 0;
   }
@@ -62,7 +70,7 @@ async function generateNewIbProps(uuid: string, priorityOnly?: boolean, block?: 
   props['ib-a'] = beta.a;
   props['ib-b'] = beta.b;
 
-  if (!priorityOnly) {
+  if (priorityOnly == false) {
     const interval = initialIntervalFromMean(beta.mean);
     const due = new Date();
     due.setDate(due.getDate() + interval);
@@ -72,9 +80,11 @@ async function generateNewIbProps(uuid: string, priorityOnly?: boolean, block?: 
   return props;
 }
 
+/*
+*/
 interface BlockToIb {
   uuid: string,
-  priorityOnly?: boolean,
+  priorityOnly?: PriorityOnly,
   block?: BlockEntity | null,
   backToEditing?: boolean
 }
@@ -98,7 +108,7 @@ export async function convertBlockToIb({ uuid, block, priorityOnly=false, backTo
 
   if (!content) content = block.content;
 
-  const props = await generateNewIbProps(uuid, priorityOnly, block);
+  const props = await generateNewIbProps({ uuid, priorityOnly, block });
   if (!props) {
     logseq.UI.showMsg('Failed to generate ib properties', 'error');
     return;
@@ -182,7 +192,7 @@ export async function extractSelectionCommand() {
   if (!selection) return;
   const block = await logseq.Editor.getCurrentBlock();
   if (!block) return;
-  const properties = await generateNewIbProps(block.uuid, false, block);
+  const properties = await generateNewIbProps({ uuid: block.uuid, priorityOnly: false, block });
   if (!properties) return;
   const content = `${selection}\n${RENDERER_MACRO_NAME}`;
   const extractUuid = await logseq.Editor.newBlockUUID()
@@ -205,7 +215,7 @@ export async function extractClozeCommand(asIb: boolean = true) {
   content = content.replace(selection, ` {{cloze ${selection}}} `);
   if (asIb) {
     // Child block will be ib
-    properties = await generateNewIbProps(block.uuid, false, block) || {};
+    properties = await generateNewIbProps({ uuid: block.uuid, priorityOnly: false, block }) || {};
     if (Object.keys(properties).length == 0) return;
     if (!content.includes(RENDERER_MACRO_NAME)) {
       content = `${content}\n${RENDERER_MACRO_NAME}`;
