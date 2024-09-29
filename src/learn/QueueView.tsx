@@ -45,7 +45,7 @@ export default function QueueView() {
           disabled={queue.length == 0}
           onClick={learn}
         >
-          Learn 
+           Learn ({queue.length})
         </button>
 
         <div>

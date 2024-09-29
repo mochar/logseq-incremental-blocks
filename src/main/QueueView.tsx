@@ -116,13 +116,14 @@ export default function QueueView() {
 
     {queue.length > 0 &&
       <div className="mt-2 flex items-center justify-between">
-        <span className={`${theme.TXT_MUTED}`}>{queue.length} ibs</span>
+        {/* <span className={`${theme.TXT_MUTED}`}>{queue.length} ibs</span> */}
+        <span></span>
         <button
           className={`self-end bg-blue-500 hover:bg-blue-400 text-white py-1 px-6 border-b-2 border-blue-700 hover:border-blue-500 rounded ${queue.length == 0 && "cursor-not-allowed"}`}
           disabled={queue.length == 0}
           onClick={learn}
         >
-           Learn
+           Learn ({queue.length})
         </button>
       </div>}
   </div>
