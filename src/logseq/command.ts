@@ -25,15 +25,25 @@ function pathRefsToBeta(pathRefs: Record<string, any>[]) : Beta | null {
   return null;
 }
 
-async function generateNewIbProps(uuid: string, priorityOnly: boolean = false, block?: BlockEntity | null) : Promise<Record<string, any> | null> {
+/*
+Generate ib properties from block. If some of them already exist, keep them.
+*/
+async function generateNewIbProps(uuid: string, priorityOnly?: boolean, block?: BlockEntity | null) : Promise<Record<string, any> | null> {
   if (!block) block = await logseq.Editor.getBlock(uuid);
   if (!block) return null;
 
+  // Parse the existing ib related properties
   const ib = IncrementalBlock.fromBlock(block);
-  const props: Record<string, any> = {
-    'ib-multiplier': ib.multiplier
-  };
+
+  // If priorityOnly flag explicitely set, then respect it. Otherwise, determine
+  // from existing ib properties (if they exist) if it has scheduling.
+  if (priorityOnly == undefined) {
+    priorityOnly = !(ib.dueDate && ib.interval);
+  }
+  
+  const props: Record<string, any> = {};
   if (!priorityOnly) {
+    props['ib-multiplier'] = ib.multiplier;
     props['ib-reps'] = ib.reps ?? 0;
   }
   let beta = ib.beta;
@@ -51,7 +61,8 @@ async function generateNewIbProps(uuid: string, priorityOnly: boolean = false, b
   }
   props['ib-a'] = beta.a;
   props['ib-b'] = beta.b;
-  if (!priorityOnly && ib.interval && ib.dueDate) {
+
+  if (!priorityOnly) {
     const interval = initialIntervalFromMean(beta.mean);
     const due = new Date();
     due.setDate(due.getDate() + interval);
@@ -80,12 +91,18 @@ export async function convertBlockToIb({ uuid, block, priorityOnly=false, backTo
     block = await logseq.Editor.getBlock(uuid);
   }
 
-  if (!block) return;
+  if (!block) {
+    logseq.UI.showMsg('Block not found', 'error');
+    return;
+  }
 
   if (!content) content = block.content;
 
   const props = await generateNewIbProps(uuid, priorityOnly, block);
-  if (!props) return;
+  if (!props) {
+    logseq.UI.showMsg('Failed to generate ib properties', 'error');
+    return;
+  }
 
   // await logseq.Editor.updateBlock(uuid, content, { properties: props });
 
@@ -95,6 +112,7 @@ export async function convertBlockToIb({ uuid, block, priorityOnly=false, backTo
   const newContent = addContentAndProps(content, { addition, props });
   await logseq.Editor.updateBlock(uuid, newContent);
   await logseq.Editor.exitEditingMode();
+  
   if (backToEditing) {
     setTimeout(() => {
       logseq.Editor.editBlock(uuid, { pos: cursorPos?.pos ?? 0 });
