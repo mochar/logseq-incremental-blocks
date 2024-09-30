@@ -14,6 +14,7 @@ export default function RangeSelector() {
   // Min and max of slider
   const regionRange = useAppSelector(state => state.medx.regionRange);
   const follow = useAppSelector(state => state.medx.follow);
+  const highlight = useAppSelector(state => state.medx.highlight);
   const themeMode = useAppSelector(state => state.app.themeMode);
   const dispatch = useAppDispatch();
 
@@ -57,7 +58,7 @@ export default function RangeSelector() {
             borderRadius: "1px",
             position: "absolute",
             background: getTrackBackground({
-              values: selectRange,
+              values: highlight ?? selectRange,
               //              colors: ["#ccc", "#548BF4", "#ccc"],
               colors: ["transparent", "#548BF4", "transparent"],
               min: 0,

@@ -7,12 +7,18 @@ import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
 
+export interface MedxExtract {
+  block: BlockEntity,
+  medFrag: MediaFragment,
+}
+
 export interface MedxData {
   medFrag: MediaFragment,
   slotId: string,
   block: BlockEntity,
   beta: Beta,
   interval: number,
+  extracts?: MedxExtract[],
   ytData?: VideoDetails
 }
 
@@ -23,7 +29,8 @@ interface MedxState {
   time?: number,
   duration?: number,
   selectRange: number[],
-  regionRange: number[]
+  regionRange: number[],
+  highlight: number[] | null
 }
 
 const initialState: MedxState = {
@@ -31,7 +38,8 @@ const initialState: MedxState = {
   language: 'en',
   follow: false,
   selectRange: [0, 0],
-  regionRange: [0, 0]
+  regionRange: [0, 0],
+  highlight: null
 }
 
 const medxSlice = createSlice({
@@ -39,8 +47,22 @@ const medxSlice = createSlice({
   initialState,
   reducers: {
     medSelected(state, action: PayloadAction<MedxData | null>) {
-      state.active = action.payload;
-      
+      const medxData = action.payload;
+      if (medxData?.block.children?.length) {
+        const extracts: MedxExtract[] = [];
+        for (let block of medxData.block.children) {
+          block = block as BlockEntity
+          if (!block.content) continue;
+          const matches = block.content.match(/\{\{renderer\s*:medx[^\}]+\}\}/);
+          if (matches == null || matches.length == 0) continue;
+          const args = matches[0].replace('{{renderer ', '').replace('}}', '');
+          const medFrag = MediaFragment.parse(args.split(', '));
+          if (medFrag == null) continue;
+          extracts.push({ block, medFrag });
+        }
+        medxData.extracts = extracts;
+      }
+      state.active = medxData;
     },
     ytDataLoaded(state, action: PayloadAction<VideoDetails>) {
       if (state.active) state.active.ytData = action.payload;
@@ -71,11 +93,14 @@ const medxSlice = createSlice({
     },
     regionChanged(state, action: PayloadAction<number[]>) {
       state.regionRange = action.payload;
+    },
+    rangeHighlighted(state, action: PayloadAction<number[] | null>) {
+      state.highlight = action.payload;
     }
   }
 });
 
-export const { playerProgressed, toggleFollow, selectionChanged, regionChanged, durationRetrieved } = medxSlice.actions;
+export const { playerProgressed, toggleFollow, selectionChanged, regionChanged, durationRetrieved, rangeHighlighted } = medxSlice.actions;
 
 // Actions
 
@@ -87,9 +112,10 @@ interface ISelectMedia {
 
 export const selectMedia = (selection: ISelectMedia | null) => {
   return async (dispatch: AppDispatch, getState: () => RootState) : Promise<MedxData | null> => {
+    const state = getState();
     let medxData: MedxData | null = null;
-    if (selection) {
-      const block = await logseq.Editor.getBlock(selection.blockUuid);
+    if (selection && selection.blockUuid != state.medx.active?.block.uuid) {
+      const block = await logseq.Editor.getBlock(selection.blockUuid, { includeChildren: true });
       if (block) {
         const ib = IncrementalBlock.fromBlock(block);
         medxData = {
