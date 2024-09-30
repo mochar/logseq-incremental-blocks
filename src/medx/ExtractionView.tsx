@@ -126,6 +126,8 @@ export default function ExtractionView({ data }: IExtractionView) {
       {loaded &&
         <>
           <RangeSelector />
+
+          <hr className="my-2 dark:border-gray-800"></hr>
           
         <div className="flex mr-2">
           <div className="flex flex-col space-y-0.5">

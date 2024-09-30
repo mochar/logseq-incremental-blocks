@@ -174,6 +174,37 @@ export default function RangeSelector() {
   return (
     <div className="flex flex-col" style={{ background: 'var(--lx-gray-02,var(--ls-secondary-background-color,hsl(var(--popover)))) '}}>
 
+      <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap'}}>
+        <Range
+          step={0.1}
+          min={0}
+          max={duration}
+          values={regionRange}
+          draggableTrack={true}
+          onChange={onRegionRangeChanged}
+          onFinalChange={() => {}}
+          renderTrack={renderRegionTrack}
+          renderThumb={renderRegionThumb}></Range>
+      </div>
+    
+      <div className="my-2 mt-6 flex items-center">
+        <TimeText seconds={regionRange[0]}></TimeText>
+        <div className="flex-grow mx-2">
+          <Range
+            label="Select your value"
+            step={0.1}
+            min={regionRange[0]}
+            max={regionRange[1]}
+            values={selectRange}
+            draggableTrack={true}
+            onChange={range => dispatch(selectionChanged(range))}
+            onFinalChange={range => dispatch(selectionChanged(range))}
+            renderTrack={renderSelectTrack}
+            renderThumb={renderSelectThumb}></Range>
+        </div>
+        <TimeText seconds={regionRange[1]}></TimeText>
+      </div>
+
       <CuteToggle
         title="Follow"
         tooltip="End range of selection follows along with player"
@@ -181,38 +212,8 @@ export default function RangeSelector() {
         onChange={() => dispatch(toggleFollow(!follow))}
       />
 
-    <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap'}}>
-      <Range
-        step={0.1}
-        min={0}
-        max={duration}
-        values={regionRange}
-        draggableTrack={true}
-        onChange={onRegionRangeChanged}
-        onFinalChange={() => {}}
-        renderTrack={renderRegionTrack}
-        renderThumb={renderRegionThumb}></Range>
-
     </div>
-    
-    <div className="my-2 mt-6 flex items-center">
-      <TimeText seconds={regionRange[0]}></TimeText>
-      <div className="flex-grow mx-2">
-        <Range
-          label="Select your value"
-          step={0.1}
-          min={regionRange[0]}
-          max={regionRange[1]}
-          values={selectRange}
-          draggableTrack={true}
-          onChange={range => dispatch(selectionChanged(range))}
-          onFinalChange={range => dispatch(selectionChanged(range))}
-          renderTrack={renderSelectTrack}
-          renderThumb={renderSelectThumb}></Range>
-      </div>
-      <TimeText seconds={regionRange[1]}></TimeText>
-    </div>
-  </div>);
+  );
 }
 
 function TimeText({ seconds }: { seconds: number }) {
