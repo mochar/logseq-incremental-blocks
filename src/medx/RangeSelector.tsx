@@ -77,6 +77,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
       <div
         onMouseDown={props.onMouseDown}
         onTouchStart={props.onTouchStart}
+        onDoubleClick={() => setRegionRange(selectRange)}
         style={{
           ...props.style,
           height: "6px",
