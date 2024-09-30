@@ -69,7 +69,6 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
     const interval = initialIntervalFromMean(newBeta.mean);
     setInterval(interval);
   }
-
   
   async function extract() {
     const newArgs = new MedxArgs({
@@ -190,7 +189,6 @@ export default function MedxPopover({ block, slot, args }: { block: BlockEntity,
     <div id="medx-preview" className="mb-1">
       <ReactPlayer 
         ref={(p) => player.current = p}
-        // width={args.format == 'audio' ? '300px' : '640px'}
         width={'640px'}
         height={args.format == 'audio' ? '2rem' : '360px'}
         url={playerUrl}

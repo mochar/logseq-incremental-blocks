@@ -42,7 +42,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
             background: getTrackBackground({
               values: regionRange,
               //              colors: ["#ccc", "#548BF4", "#ccc"],
-              colors: ["transparent", "#548BF4", "transparent"],
+              colors: ["transparent", "#548bf44d", "transparent"],
               min: 0,
               max: length,
             }),
@@ -50,6 +50,23 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
           }}
         >
           {children}
+        </div>
+        <div
+          style={{
+            height: "6px",
+            width: "100%",
+            borderRadius: "1px",
+            position: "absolute",
+            background: getTrackBackground({
+              values: selectRange,
+              //              colors: ["#ccc", "#548BF4", "#ccc"],
+              colors: ["transparent", "#548BF4", "transparent"],
+              min: 0,
+              max: length,
+            }),
+            alignSelf: "center",
+          }}
+        >
         </div>
       </div>
     );
@@ -123,7 +140,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
         className="text-sm"
         style={{
           position: "absolute",
-          top: "-28px",
+          top: "-25px",
           color: "#fff",
           fontSize: "14px",
           padding: "2px 4px",
@@ -171,7 +188,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
 
     </div>
     
-    <div className="my-2 mt-5 flex items-center">
+    <div className="my-2 mt-6 flex items-center">
       <TimeText seconds={regionRange[0]}></TimeText>
       <div className="flex-grow mx-2">
         <Range
