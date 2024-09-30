@@ -104,18 +104,22 @@ export const selectMedia = (selection: ISelectMedia | null) => {
     }
     dispatch(medxSlice.actions.medSelected(medxData));
 
-    if (medxData?.medFrag.format == 'youtube') {
-      try {
-        const lang = getState().medx.language;
-        const videoID = medxData.medFrag.url;
-        const videoDetails = await getVideoDetails({ videoID, lang });
-        dispatch(medxSlice.actions.ytDataLoaded(videoDetails));
-      } catch (e) {
-        logseq.UI.showMsg('Error fetching video details:' + e, 'warning');
-      }
-    }
-
     return medxData;
+  }
+}
+
+export const getYoutubeData = () => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const { medx } = getState();
+    if (medx.active?.medFrag.format != 'youtube') return;
+    try {
+      const lang = medx.language;
+      const videoID = medx.active.medFrag.url;
+      const videoDetails = await getVideoDetails({ videoID, lang });
+      dispatch(medxSlice.actions.ytDataLoaded(videoDetails));
+    } catch (e) {
+      logseq.UI.showMsg('Error fetching video details:' + e, 'warning');
+    }
   }
 }
 
