@@ -1,13 +1,13 @@
-import MedxArgs from "./args";
 import ReactPlayer from 'react-player/lazy';
 import { createRoot } from 'react-dom/client';
 import React from "react";
 import { secondsToString } from "../utils/datetime";
 import { isDark } from "../utils/logseq";
+import MediaFragment from './MediaFragment';
 
 //@ts-ignore
 export async function renderMedxMacro({ slot, payload }) {
-  const args = MedxArgs.parse(payload.arguments);
+  const args = MediaFragment.parse(payload.arguments);
   if (args == null) return;
   const isRef = args.flag.endsWith('_ref') && (args.start || args.end);
   const dark = await isDark();
@@ -73,7 +73,7 @@ export async function renderMedxMacro({ slot, payload }) {
 
 interface RenderMediaProps {
   playerDiv: Element, 
-  args: MedxArgs,
+  args: MediaFragment,
   play?: boolean
 }
 

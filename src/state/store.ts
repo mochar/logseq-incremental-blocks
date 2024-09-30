@@ -4,6 +4,7 @@ import viewReducer from './viewSlice';
 import ankiReducer from '../anki/ankiSlice';
 import learnReducer from '../learn/learnSlice';
 import mainReducer from '../main/mainSlice';
+import medxReducer from '../medx/medxSlice';
 import { listenerMiddleware } from './listenerMiddleware';
 
 export const store = configureStore({
@@ -11,6 +12,7 @@ export const store = configureStore({
     app: appReducer,
     view: viewReducer,
     learn: learnReducer,
+    medx: medxReducer,
     anki: ankiReducer,
     main: mainReducer
   },

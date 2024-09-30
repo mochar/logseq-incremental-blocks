@@ -1,7 +1,6 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AppDispatch, RootState } from './store';
 import { BlockEntity } from '@logseq/libs/dist/LSPlugin.user';
-import MedxArgs from '../medx/args';
 
 export enum ViewType { main, learn, ib, medx, insert }
 
@@ -15,13 +14,9 @@ export interface SlotViewData extends BlockViewData {
 }
 export type IbViewData = SlotViewData;
 
-export interface MedxViewData extends SlotViewData {
-  medArgs: MedxArgs
-}
-
 interface View {
   type: ViewType | null,
-  data?: SlotViewData | BlockViewData | MedxViewData
+  data?: SlotViewData | BlockViewData
 }
 
 const initialState: View = {
@@ -80,20 +75,8 @@ export const toggleView = (request: ViewRequest) => {
         logseq.UI.showMsg('Block not found.')
       }
     } else if (request.viewType == ViewType.medx) {
-      if (!request.blockUuid || !request.slotId || !request.medArgs) return;
-      const args = MedxArgs.parse(request.medArgs.split(','));
-      if (args == null) {
-        logseq.UI.showMsg('Invalid media args');
-        return;
-      }
-      const block = await logseq.Editor.getBlock(request.blockUuid);
-      if (block) {
-        const data: MedxViewData = { block, slotId: request.slotId, medArgs: args };
-        dispatch(setView({ type: ViewType.medx, data }))
-        logseq.showMainUI();
-      } else {
-        logseq.UI.showMsg('Block not found.')
-      }
+      dispatch(setView({ type: ViewType.medx }));
+      logseq.showMainUI();
     } else if (request.viewType == ViewType.insert) {
       if (!request.blockUuid) return;
       const block = await logseq.Editor.getBlock(request.blockUuid);

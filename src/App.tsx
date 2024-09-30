@@ -1,17 +1,18 @@
 import React, { useEffect } from "react";
 import IbPopover from "./widgets/Popover";
 import { useAppVisible } from "./logseq/events";
-import MedxPopover from "./medx/MedxPopover";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
-import { IbViewData, InsertViewData, MedxViewData, setView, toggleView, ViewType } from "./state/viewSlice";
+import { IbViewData, InsertViewData, setView, toggleView, ViewType } from "./state/viewSlice";
 import InsertPopover from "./medx/InsertPopover";
 import { renderMediaEmbed } from "./medx/macro";
-import MedxArgs from "./medx/args";
 import { finishRep, getUserRefs, refreshDueIbs } from "./learn/learnSlice";
 import { isDark } from "./utils/logseq";
 import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import MainWindow from "./main/MainWindow";
 import LearnWindow from "./learn/LearnWindow";
+import { selectMedia } from "./medx/medxSlice";
+import MediaFragment from "./medx/MediaFragment";
+import MedxWindow from "./medx/MedxWindow";
 
 // This is our popup.
 // The useAppVisible hook is used to close/open the popup.
@@ -38,13 +39,18 @@ export default function App() {
           slotId: e.dataset.slotId
         }));
       },
-      toggleMedxPopover(e: any) {
-        dispatch(toggleView({ 
-          viewType: ViewType.medx, 
-          blockUuid: e.dataset.blockUuid,
-          slotId: e.dataset.slotId,
-          medArgs: e.dataset.macroArgs
-        }));
+      async toggleMedxPopover(e: any) {
+        const medFrag = MediaFragment.parse(e.dataset.macroArgs.split(','));
+        const slotId = e.dataset.slotId;
+        const blockUuid = e.dataset.blockUuid;
+        if (medFrag && slotId && blockUuid) {
+          const medxData = await dispatch(selectMedia({ medFrag, slotId, blockUuid }));
+          if (medxData) {
+            dispatch(toggleView({ viewType: ViewType.medx }));
+          }
+        } else {
+          logseq.UI.showMsg('Invalid media args', 'warning');
+        }
       },
       async nextRep() {
         if (!learning) return;
@@ -61,7 +67,7 @@ export default function App() {
           logseq.UI.showMsg('Media not found in page');
           return;
         }
-        const args = MedxArgs.parse(macroArgs.split(','));
+        const args = MediaFragment.parse(macroArgs.split(','));
         if (!args) {
           logseq.UI.showMsg('Invalid media args');
           return;
@@ -115,12 +121,7 @@ export default function App() {
       viewComponent = <IbPopover block={ibData.block} slot={ibData.slotId} />;
       break;
     case ViewType.medx:
-      const medxData = view.data! as MedxViewData;
-      viewComponent = <MedxPopover 
-        block={medxData.block} 
-        slot={medxData.slotId} 
-        args={medxData.medArgs}
-      />;
+      viewComponent = <MedxWindow />;
       break;
     case ViewType.insert:
       const insertData = view.data! as InsertViewData;

@@ -2,37 +2,40 @@ import React from "react";
 import ReactPlayer from "react-player/lazy";
 import RangeSelector from "./RangeSelector";
 import Beta from "../algorithm/beta";
-import MedxArgs from "./args";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { OnProgressProps } from "react-player/base";
 import { betaFromMean } from "../algorithm/priority";
 import PrioritySlider from "../widgets/PrioritySlider";
 import * as theme from "../utils/theme";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
+import { durationRetrieved, MedxData, playerProgressed, selectionChanged } from "./medxSlice";
+import MediaFragment from "./MediaFragment";
 
 interface IExtractionView {
-  blockUuid: string,
-  priority: Beta,
-  medxArgs: MedxArgs
+  data: MedxData
 }
 
-export default function ExtractionView({ blockUuid, priority, medxArgs }: IExtractionView) {
+export default function ExtractionView({ data }: IExtractionView) {
+  const medFrag = data.medFrag;
   const noteRef = React.useRef<HTMLTextAreaElement>(null);
   const player = React.useRef<ReactPlayer | null>(null);
+  const dispatch = useAppDispatch();
+  const follow = useAppSelector(state => state.medx.follow);
+  const range = useAppSelector(state => state.medx.selectRange);
+  const duration = useAppSelector(state => state.medx.duration);
   const [playing, setPlaying] = React.useState<boolean>(false);
-  const [range, setRange] = React.useState<number[]>([0, 1]);
-  const [duration, setDuration] = React.useState<number>();
-  const [volume, setVolume] = React.useState<number>(medxArgs.volume);
-  const [rate, setRate] = React.useState<number>(medxArgs.rate);
-  const [loop, setLoop] = React.useState<boolean>(medxArgs.loop);
-  const [beta, setBeta] = React.useState<Beta>(priority);
+  const [volume, setVolume] = React.useState<number>(medFrag.volume);
+  const [rate, setRate] = React.useState<number>(medFrag.rate);
+  const [loop, setLoop] = React.useState<boolean>(medFrag.loop);
+  const [beta, setBeta] = React.useState<Beta>(data.beta);
   const [interval, setInterval] = React.useState<number>(initialIntervalFromMean(beta.mean));
   const note = React.useRef<string>('');
-  const playerUrl = medxArgs.format == 'youtube' ? `https://www.youtube.com/watch?v=${medxArgs.url}` : medxArgs.urlTimed;
+  const playerUrl = medFrag.format == 'youtube' ? `https://www.youtube.com/watch?v=${medFrag.url}` : medFrag.urlTimed;
 
   const playerConfig = {
     file: {
-      forceVideo: medxArgs.format == 'video',
-      forceAudio: medxArgs.format == 'audio',
+      forceVideo: medFrag.format == 'video',
+      forceAudio: medFrag.format == 'audio',
     }
   }
 
@@ -45,24 +48,25 @@ export default function ExtractionView({ blockUuid, priority, medxArgs }: IExtra
   }
 
   function onDuration(d: number) {
-    const start = medxArgs.start ?? 0;
-    const end = medxArgs.end ?? d;
-    setRange([start, end]);
-    setDuration(d);
+    dispatch(durationRetrieved(d));
     setPlaying(true);
   }
 
   function onProgress({ played, playedSeconds, loaded, loadedSeconds }: OnProgressProps) {
+    let time = playedSeconds;
     if (playedSeconds >= range[1]) {
-      player.current?.seekTo(range[0]);
-      setPlaying(loop);
+      if (follow) {
+        dispatch(selectionChanged([range[0], playedSeconds]));
+      } else {
+        time = range[0];
+        player.current?.seekTo(time);
+        setPlaying(loop);
+      }
     } else if (playedSeconds <= range[0]) {
-      player.current?.seekTo(range[0]);
+      time = range[0];
+      player.current?.seekTo(time);
     }
-  }
-
-  function updateRange(newRange: number[]) {
-    setRange(newRange);
+    dispatch(playerProgressed(time));
   }
 
   async function updatePriority(mean: number) {
@@ -73,10 +77,10 @@ export default function ExtractionView({ blockUuid, priority, medxArgs }: IExtra
   }
   
   async function extract() {
-    const newArgs = new MedxArgs({
+    const newArgs = new MediaFragment({
       flag: ':medx_ref',
-      url: medxArgs.url,
-      format: medxArgs.format,
+      url: medFrag.url,
+      format: medFrag.format,
       volume,
       rate,
       loop,
@@ -88,9 +92,9 @@ export default function ExtractionView({ blockUuid, priority, medxArgs }: IExtra
     const due = new Date();
     due.setDate(due.getDate() + interval);
     const properties = { 'ib-reps': 0, 'ib-a': beta.a, 'ib-b': beta.b, 'ib-due': due.getTime(), 'ib-interval': interval };
-    const b = await logseq.Editor.insertBlock(blockUuid, content, { properties, focus: false });
+    const b = await logseq.Editor.insertBlock(data.block.uuid, content, { properties, focus: false });
     reset();
-    setRange([range[1], Math.min(range[1]+(range[1]-range[0]), length)]);
+    dispatch(selectionChanged(([range[1], Math.min(range[1]+(range[1]-range[0]), length)])));
   }
 
   const loaded = duration != undefined;
@@ -100,7 +104,7 @@ export default function ExtractionView({ blockUuid, priority, medxArgs }: IExtra
         <ReactPlayer
           ref={(p) => player.current = p}
           width={'640px'}
-          height={medxArgs.format == 'audio' ? '2rem' : '360px'}
+          height={medFrag.format == 'audio' ? '2rem' : '360px'}
           url={playerUrl}
           playing={playing}
           loop={loop}
@@ -121,11 +125,7 @@ export default function ExtractionView({ blockUuid, priority, medxArgs }: IExtra
 
       {loaded &&
         <>
-          <RangeSelector 
-            length={duration}
-            range={range}
-            onChange={updateRange}
-          ></RangeSelector>
+          <RangeSelector />
           
         <div className="flex mr-2">
           <div className="flex flex-col space-y-0.5">

@@ -2,21 +2,20 @@ import React from "react";
 import { Range, getTrackBackground } from "react-range";
 import { IRenderThumbParams, IRenderTrackParams } from "react-range/lib/types";
 import { secondsToString } from "../utils/datetime";
-import { useAppSelector } from "../state/hooks";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
+import CuteToggle from "../widgets/CuteToggle";
+import { regionChanged, selectionChanged, toggleFollow } from "./medxSlice";
 
-interface RangeSelectorProps {
-  length: number,
-  range: number[],
-  onChange: (range: number[]) => void
-}
-
-export default function RangeSelector({ length, range, onChange }: RangeSelectorProps) {
+export default function RangeSelector() {
+  const duration = useAppSelector(state => state.medx.duration!);
   // Selected extract range
-  const [selectRange, setSelectRange] = React.useState(range);
+  const selectRange = useAppSelector(state => state.medx.selectRange);
   // Min and max of slider
-  const [regionRange, setRegionRange] = React.useState([0, length]);
+  const regionRange = useAppSelector(state => state.medx.regionRange);
+  const follow = useAppSelector(state => state.medx.follow);
   const themeMode = useAppSelector(state => state.app.themeMode);
+  const dispatch = useAppDispatch();
 
   const bgColor = themeMode == 'dark' ? '#00000080' : '#f0f0f0';
   
@@ -44,7 +43,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
               //              colors: ["#ccc", "#548BF4", "#ccc"],
               colors: ["transparent", "#548bf44d", "transparent"],
               min: 0,
-              max: length,
+              max: duration,
             }),
             alignSelf: "center",
           }}
@@ -62,7 +61,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
               //              colors: ["#ccc", "#548BF4", "#ccc"],
               colors: ["transparent", "#548BF4", "transparent"],
               min: 0,
-              max: length,
+              max: duration,
             }),
             alignSelf: "center",
           }}
@@ -77,7 +76,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
       <div
         onMouseDown={props.onMouseDown}
         onTouchStart={props.onTouchStart}
-        onDoubleClick={() => setRegionRange(selectRange)}
+        onDoubleClick={() => dispatch(regionChanged(selectRange))}
         style={{
           ...props.style,
           height: "6px",
@@ -155,7 +154,7 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
   }
 
   function onRegionRangeChanged(range: number[]) {
-    setRegionRange(range);
+    dispatch(regionChanged(range));
     let newSelectRange = [...selectRange];
     if (range[0] > selectRange[0]) {
       newSelectRange[0] = range[0];
@@ -169,17 +168,24 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
         newSelectRange[0] = newSelectRange[1];
       }
     }
-    setSelectRange(newSelectRange);
+    dispatch(selectionChanged(newSelectRange));
   }
 
   return (
-  <div className="flex flex-col" style={{ background: 'var(--lx-gray-02,var(--ls-secondary-background-color,hsl(var(--popover)))) '}}>
+    <div className="flex flex-col" style={{ background: 'var(--lx-gray-02,var(--ls-secondary-background-color,hsl(var(--popover)))) '}}>
+
+      <CuteToggle
+        title="Follow"
+        tooltip="End range of selection follows along with player"
+        state={follow}
+        onChange={() => dispatch(toggleFollow(!follow))}
+      />
 
     <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap'}}>
       <Range
         step={0.1}
         min={0}
-        max={length}
+        max={duration}
         values={regionRange}
         draggableTrack={true}
         onChange={onRegionRangeChanged}
@@ -199,8 +205,8 @@ export default function RangeSelector({ length, range, onChange }: RangeSelector
           max={regionRange[1]}
           values={selectRange}
           draggableTrack={true}
-          onChange={setSelectRange}
-          onFinalChange={onChange}
+          onChange={range => dispatch(selectionChanged(range))}
+          onFinalChange={range => dispatch(selectionChanged(range))}
           renderTrack={renderSelectTrack}
           renderThumb={renderSelectThumb}></Range>
       </div>

@@ -2,7 +2,7 @@ import { TemporalDimension } from "@kitaitimakoto/media-fragment";
 import { secondsToString } from "../utils/datetime";
 import React from "react";
 
-interface IMedxArgs {
+interface IMediaFragment {
   flag?: ':medx' | ':medx_ref',
   url: string,
   format: 'audio' | 'video' | 'youtube',
@@ -14,7 +14,7 @@ interface IMedxArgs {
   loop?: boolean
 }
 
-export default class MedxArgs {
+export default class MediaFragment {
   public flag: ':medx' | ':medx_ref';
   public url: string;
   public format: 'audio' | 'video' | 'youtube';
@@ -25,7 +25,7 @@ export default class MedxArgs {
   public rate: number;
   public loop: boolean;
 
-  constructor(args: IMedxArgs) {
+  constructor(args: IMediaFragment) {
     this.flag = args.flag ?? ':medx';
     this.url = args.url;
     this.format = args.format;
@@ -37,7 +37,7 @@ export default class MedxArgs {
     this.loop = args.loop ?? false;
   }
 
-  static parse(args: any[]) : MedxArgs | null {
+  static parse(args: any[]) : MediaFragment | null {
     if (args.length < 3) return null;
     let [flag, url, format, range, volume, rate, loop] = args;
     let start, end, urlTimed = url;

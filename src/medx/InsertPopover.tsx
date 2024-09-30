@@ -1,9 +1,9 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import React, { useMemo } from "react";
 import { useDebounce } from "../utils/utils";
-import MedxArgs from "./args";
 import { useAppDispatch } from "../state/hooks";
 import { toggleView } from "../state/viewSlice";
+import MediaFragment from "./MediaFragment";
 
 // https://stackoverflow.com/a/27728417/2374668
 function parseYoutubeId(url: string) : string | null {
@@ -58,7 +58,7 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
   async function insert() {
     const url_ = format == 'youtube' ? (parseYoutubeId(url) ?? url) : url;
     console.log(url_, format);
-    const args = new MedxArgs({
+    const args = new MediaFragment({
       url: url_,
       //@ts-ignore
       format, 

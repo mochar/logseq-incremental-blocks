@@ -3,7 +3,7 @@ import React from "react";
 export default function CuteToggle({ title, tooltip, state, onChange }: { title: string, tooltip: string, state: boolean, onChange: () => void }) {
   return (
   <button
-    className="border dark:border-gray-600 px-1.5 py-0.5 text-xs rounded-full flex items-center"
+    className="border dark:border-gray-600 w-fit px-1.5 py-0.5 text-xs rounded-full flex items-center"
     title={tooltip}
     onClick={() => onChange()}
   >
