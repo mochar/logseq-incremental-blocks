@@ -1,7 +1,7 @@
 import React from "react";
 import * as theme from "../utils/theme";
 import ExtractionView from "./ExtractionView";
-import JumpView from "./JumpView";
+import JumpView from "./jump/JumpView";
 import { useAppSelector } from "../state/hooks";
 
 export default function MedxWindow() {
@@ -26,8 +26,7 @@ export default function MedxWindow() {
     <div
       className={`w-64 min-w-64`}
     >
-      <JumpView
-      />
+      <JumpView/>
     </div>
   </div>
   );

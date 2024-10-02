@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
 import { getSubtitles, getVideoDetails, VideoDetails } from 'youtube-caption-extractor';
 import Beta from "../algorithm/beta";
@@ -6,6 +6,13 @@ import MediaFragment from "./MediaFragment";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
+
+export interface Extract {
+  start: number,
+  end: number,
+  text?: string,
+  index?: number
+}
 
 export interface MedxExtract {
   block: BlockEntity,
@@ -18,19 +25,31 @@ export interface MedxData {
   block: BlockEntity,
   beta: Beta,
   interval: number,
-  extracts?: MedxExtract[],
-  ytData?: VideoDetails
 }
 
 interface MedxState {
   active: MedxData | null,
+  extracts?: MedxExtract[],
+  subs?: Extract[],
+  selectedSubRange: number[] | null,
+  chapters?: Extract[],
+  selectionExtract: Extract | null,
   language: string,
   follow: boolean,
   time?: number,
   duration?: number,
   selectRange: number[],
   regionRange: number[],
-  highlight: number[] | null
+  highlight: number[] | null,
+  volume: number,
+  rate: number,
+  loop: boolean,
+  note: string,
+  beta: Beta,
+  interval: number,
+  // Should actions and views on extracts, subs, chapters be restricted
+  // to the selection range.
+  ranged: boolean
 }
 
 const initialState: MedxState = {
@@ -39,7 +58,16 @@ const initialState: MedxState = {
   follow: false,
   selectRange: [0, 0],
   regionRange: [0, 0],
-  highlight: null
+  highlight: null,
+  volume: 1,
+  rate: 1,
+  loop: false,
+  note: '',
+  beta: new Beta(1, 1),
+  interval: initialIntervalFromMean(0.5),
+  selectedSubRange: null,
+  selectionExtract: null,
+  ranged: true
 }
 
 const medxSlice = createSlice({
@@ -60,12 +88,22 @@ const medxSlice = createSlice({
           if (medFrag == null) continue;
           extracts.push({ block, medFrag });
         }
-        medxData.extracts = extracts;
+        state.extracts = extracts;
       }
       state.active = medxData;
     },
     ytDataLoaded(state, action: PayloadAction<VideoDetails>) {
-      if (state.active) state.active.ytData = action.payload;
+      if (!state.active) return;
+      state.subs = action.payload.subtitles
+        .map((sub, index) => {
+          const start = parseFloat(sub.start);
+          return {
+            start,
+            end: start + parseFloat(sub.dur),
+            text: sub.text,
+            index
+          }
+          });
     },
     durationRetrieved(state, action: PayloadAction<number>) {
       const medFrag = state.active?.medFrag;
@@ -96,11 +134,39 @@ const medxSlice = createSlice({
     },
     rangeHighlighted(state, action: PayloadAction<number[] | null>) {
       state.highlight = action.payload;
+    },
+    languageSelected(state, action: PayloadAction<string>) {
+      state.language = action.payload;
+    },
+    fragmentSelected(state, action: PayloadAction<{ range: number[], note?: string, beta?: Beta, interval?: number }>) {
+      state.selectRange = action.payload.range;
+      state.note = action.payload.note ?? '';
+      if (state.active) {
+        state.active.beta = action.payload.beta ?? state.active.beta;
+        state.active.interval = action.payload.interval ?? state.active.interval;
+      }
+    },
+    subRangeSelected(state, action: PayloadAction<number[] | null>) {
+      const range = action.payload;
+      state.selectedSubRange = range;
+      if (range == null) {
+        state.selectionExtract = null;
+      } else {
+        const subs = state.subs!.slice(range[0], range[1]);
+        state.selectionExtract = {
+          start: subs[0].start,
+          end: subs[subs.length-1].end,
+          text: subs.map(s => s.text ?? '').join('')
+        }
+      }
+    },
+    rangedToggled(state, action: PayloadAction<boolean | undefined>) {
+      state.ranged = action.payload == undefined ? !state.ranged : action.payload;
     }
   }
 });
 
-export const { playerProgressed, toggleFollow, selectionChanged, regionChanged, durationRetrieved, rangeHighlighted } = medxSlice.actions;
+export const { playerProgressed, toggleFollow, selectionChanged, regionChanged, durationRetrieved, rangeHighlighted, languageSelected, fragmentSelected, subRangeSelected, rangedToggled } = medxSlice.actions;
 
 // Actions
 
@@ -149,6 +215,76 @@ export const getYoutubeData = () => {
   }
 }
 
+interface ExtractData {
+  content: string,
+  properties: {}
+}
+
+export const genExtractData = ({ extract }: { extract?: Extract }) => {
+  return (dispatch: AppDispatch, getState: () => RootState) : ExtractData => {
+    const { medx } = getState();
+    const data = medx.active!;
+    const range = extract ? [extract.start, extract.end] : medx.selectRange;
+    const medFrag = new MediaFragment({
+      flag: ':medx_ref',
+      url: data.medFrag.url,
+      format: data.medFrag.format,
+      volume: medx.volume,
+      rate: medx.rate,
+      loop: medx.loop,
+      start: range[0],
+      end: range[1]
+    });
+    
+    const note = extract ? extract.text ?? '' : medx.note;
+    const content = `${note}\n${medFrag.render()} \n{{renderer :ib}}`;
+    const due = new Date();
+    due.setDate(due.getDate() + medx.interval);
+    const properties = {
+      'ib-reps': 0,
+      'ib-a': medx.beta.a,
+      'ib-b': medx.beta.b,
+      'ib-due': due.getTime(),
+      'ib-interval': medx.interval
+    };
+    
+    return { content, properties };
+  }
+}
+
+export const extractSubs = (withinSelection: boolean = false) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) : Promise<BlockEntity[] | null> => {
+    const { medx } = getState();
+    let extracts = selectRangedSubs(getState());
+    if (extracts == null) return null;
+    if (medx.selectedSubRange) {
+      const range = medx.selectedSubRange;
+      extracts = extracts.filter((_, i) => i >= range[0] && i <= range[1]);
+    }
+    const extractData = extracts.map(extract => dispatch(genExtractData({ extract })));
+    const blocks = await logseq.Editor.insertBatchBlock(medx.active!.block.uuid, extractData);
+    logseq.Editor.exitEditingMode();
+    return blocks;
+  }
+}
+
 export default medxSlice.reducer;
 
 // Selectors
+
+export function isExtractInRange(extract: Extract, range: number[]) : boolean {
+  return (extract.end >= range[0] && extract.end <= range[1]) ||
+    (extract.start >= range[0] && extract.start <= range[1]);
+}
+
+export const selectRangedSubs = createSelector.withTypes<RootState>()(
+  [
+    state => state.medx.subs,
+    state => state.medx.ranged,
+    state => state.medx.selectRange
+  ],
+  (subs, ranged, selection) => {
+    if (subs == null || subs.length == 0 || !ranged) return subs;
+    return subs.filter(sub => isExtractInRange(sub, selection))
+  }
+);

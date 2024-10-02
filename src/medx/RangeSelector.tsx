@@ -4,8 +4,8 @@ import { IRenderThumbParams, IRenderTrackParams } from "react-range/lib/types";
 import { secondsToString } from "../utils/datetime";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
-import CuteToggle from "../widgets/CuteToggle";
 import { regionChanged, selectionChanged, toggleFollow } from "./medxSlice";
+import { CuteButton, CuteToggle } from "../widgets/Buttons";
 
 export default function RangeSelector() {
   const duration = useAppSelector(state => state.medx.duration!);
@@ -77,7 +77,6 @@ export default function RangeSelector() {
       <div
         onMouseDown={props.onMouseDown}
         onTouchStart={props.onTouchStart}
-        onDoubleClick={() => dispatch(regionChanged(selectRange))}
         style={{
           ...props.style,
           height: "6px",
@@ -206,13 +205,19 @@ export default function RangeSelector() {
         <TimeText seconds={regionRange[1]}></TimeText>
       </div>
 
-      <CuteToggle
-        title="Follow"
-        tooltip="End range of selection follows along with player"
-        state={follow}
-        onChange={() => dispatch(toggleFollow(!follow))}
-      />
-
+      <div className="flex space-x-1">
+        <CuteToggle
+          title="Follow"
+          tooltip="End range of selection follows along with player"
+          state={follow}
+          onChange={() => dispatch(toggleFollow(!follow))}
+        />
+        <CuteToggle
+          title="Fit to range"
+          tooltip="Fit selection range bar to the selected range"
+          onChange={() => dispatch(regionChanged(selectRange))}
+        />
+      </div>
     </div>
   );
 }

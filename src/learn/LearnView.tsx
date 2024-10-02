@@ -2,11 +2,11 @@ import React from "react";
 import IbItem from "../widgets/IbItem";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import { doneRep, finishRep, laterRep, stopLearning, toggleAutoIb } from "./learnSlice";
-import CuteToggle from "../widgets/CuteToggle";
 import * as theme from "../utils/theme";
 import PriorityComponent from "./PriorityComponent";
 import ScheduleComponent from "./ScheduleComponent";
 import CardComponent from "./CardComponent";
+import { CuteToggle } from "../widgets/Buttons";
 
 export default function LearnView() {
   const [busy, setBusy] = React.useState<boolean>(false);
