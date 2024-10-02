@@ -179,23 +179,23 @@ interface ISelectMedia {
 export const selectMedia = (selection: ISelectMedia | null) => {
   return async (dispatch: AppDispatch, getState: () => RootState) : Promise<MedxData | null> => {
     const state = getState();
-    let medxData: MedxData | null = null;
-    if (selection && selection.blockUuid != state.medx.active?.block.uuid) {
-      const block = await logseq.Editor.getBlock(selection.blockUuid, { includeChildren: true });
-      if (block) {
-        const ib = IncrementalBlock.fromBlock(block);
-        medxData = {
-          ...selection,
-          block,
-          beta: ib.beta ?? new Beta(1, 1),
-          interval: initialIntervalFromMean(.5)
-        }
-      } else {
-        logseq.UI.showMsg('Block not found', 'warning');
+    if (selection == null) return null;
+    const activeMedia = state.medx.active;
+    if (activeMedia && selection.slotId == activeMedia.slotId) return activeMedia;
+    let medxData: MedxData | null = state.medx.active;
+    const block = await logseq.Editor.getBlock(selection.blockUuid, { includeChildren: true });
+    if (block) {
+      const ib = IncrementalBlock.fromBlock(block);
+      medxData = {
+        ...selection,
+        block,
+        beta: ib.beta ?? new Beta(1, 1),
+        interval: initialIntervalFromMean(.5)
       }
+    } else {
+      logseq.UI.showMsg('Block not found', 'warning');
     }
     dispatch(medxSlice.actions.medSelected(medxData));
-
     return medxData;
   }
 }
