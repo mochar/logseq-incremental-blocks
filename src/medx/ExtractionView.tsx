@@ -1,15 +1,11 @@
 import React from "react";
 import ReactPlayer from "react-player/lazy";
 import RangeSelector from "./RangeSelector";
-import Beta from "../algorithm/beta";
-import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { OnProgressProps } from "react-player/base";
-import { betaFromMean } from "../algorithm/priority";
 import PrioritySlider from "../widgets/PrioritySlider";
 import * as theme from "../utils/theme";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { durationRetrieved, MedxData, playerProgressed, selectionChanged } from "./medxSlice";
-import MediaFragment from "./MediaFragment";
+import { durationRetrieved, extract, intervalChanged, mediaAttrsChanged, MedxData, noteChanged, playerProgressed, priorityChanged, selectionChanged } from "./medxSlice";
 
 interface IExtractionView {
   data: MedxData
@@ -17,19 +13,13 @@ interface IExtractionView {
 
 export default function ExtractionView({ data }: IExtractionView) {
   const medFrag = data.medFrag;
-  const noteRef = React.useRef<HTMLTextAreaElement>(null);
   const player = React.useRef<ReactPlayer | null>(null);
   const dispatch = useAppDispatch();
   const follow = useAppSelector(state => state.medx.follow);
   const range = useAppSelector(state => state.medx.selectRange);
   const duration = useAppSelector(state => state.medx.duration);
+  const mediaAttrs = useAppSelector(state => state.medx.mediaAttrs);
   const [playing, setPlaying] = React.useState<boolean>(false);
-  const [volume, setVolume] = React.useState<number>(medFrag.volume);
-  const [rate, setRate] = React.useState<number>(medFrag.rate);
-  const [loop, setLoop] = React.useState<boolean>(medFrag.loop);
-  const [beta, setBeta] = React.useState<Beta>(data.beta);
-  const [interval, setInterval] = React.useState<number>(initialIntervalFromMean(beta.mean));
-  const note = React.useRef<string>('');
   const playerUrl = medFrag.format == 'youtube' ? `https://www.youtube.com/watch?v=${medFrag.url}` : medFrag.urlTimed;
 
   const playerConfig = {
@@ -37,14 +27,6 @@ export default function ExtractionView({ data }: IExtractionView) {
       forceVideo: medFrag.format == 'video',
       forceAudio: medFrag.format == 'audio',
     }
-  }
-
-  function reset() {
-    const b = beta ?? new Beta(1, 1);
-    setBeta(b);
-    setInterval(initialIntervalFromMean(b.mean));
-    note.current = '';
-    if (noteRef.current) noteRef.current.value = '';
   }
 
   function onDuration(d: number) {
@@ -60,41 +42,13 @@ export default function ExtractionView({ data }: IExtractionView) {
       } else {
         time = range[0];
         player.current?.seekTo(time);
-        setPlaying(loop);
+        setPlaying(mediaAttrs.loop);
       }
     } else if (playedSeconds <= range[0]) {
       time = range[0];
       player.current?.seekTo(time);
     }
     dispatch(playerProgressed(time));
-  }
-
-  async function updatePriority(mean: number) {
-    const newBeta = betaFromMean(mean, { currentBeta: beta });
-    setBeta(newBeta);
-    const interval = initialIntervalFromMean(newBeta.mean);
-    setInterval(interval);
-  }
-  
-  async function extract() {
-    const newArgs = new MediaFragment({
-      flag: ':medx_ref',
-      url: medFrag.url,
-      format: medFrag.format,
-      volume,
-      rate,
-      loop,
-      start: range[0],
-      end: range[1]
-    });
-    const noteText = note.current == '' ? '' : `${note.current} \n`;
-    const content = `${noteText}${newArgs.render()} \n{{renderer :ib}}`;
-    const due = new Date();
-    due.setDate(due.getDate() + interval);
-    const properties = { 'ib-reps': 0, 'ib-a': beta.a, 'ib-b': beta.b, 'ib-due': due.getTime(), 'ib-interval': interval };
-    const b = await logseq.Editor.insertBlock(data.block.uuid, content, { properties, focus: false });
-    reset();
-    dispatch(selectionChanged(([range[1], Math.min(range[1]+(range[1]-range[0]), length)])));
   }
 
   const loaded = duration != undefined;
@@ -107,10 +61,10 @@ export default function ExtractionView({ data }: IExtractionView) {
           height={medFrag.format == 'audio' ? '2rem' : '360px'}
           url={playerUrl}
           playing={playing}
-          loop={loop}
+          loop={mediaAttrs.loop}
           controls={true}
-          volume={volume}
-          playbackRate={rate}
+          volume={mediaAttrs.volume}
+          playbackRate={mediaAttrs.rate}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onDuration={onDuration}
@@ -129,83 +83,124 @@ export default function ExtractionView({ data }: IExtractionView) {
 
           <hr className="my-2 dark:border-gray-800"></hr>
           
-        <div className="flex mr-2">
-          <div className="flex flex-col space-y-0.5">
-            <label className="flex items-center justify-between">
-              Loop
-              <input
-                type="checkbox"
-                checked={loop}
-                onChange={() => setLoop(!loop)}
-              />
-            </label>
-            <label className="flex items-center justify-between">
-              Speed
-              <input
-                className={`${theme.BG} ${theme.BORDER}`}
-                type="number" 
-                value={rate}
-                onChange={(e) => setRate(parseFloat(e.target.value))}
-                min="0.1"
-                max="5"
-                step=".1"
-              />
-            </label>
-            <label className="flex items-center justify-between">
-              Volume
-              <input
-                className={`${theme.BG} ${theme.BORDER}`}
-                type="number" 
-                value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                min="0"
-                max="1"
-                step=".1"
-              />
-            </label>
+          <div className="flex mr-2">
+            <MediaAttributesPanel />
+            <NotePanel />
           </div>
-          <label className="w-full h-full ml-2">
-            <textarea
-              ref={noteRef}
-              className={`w-full rounded p-1 ${theme.BG} ${theme.BORDER}`}
-              placeholder="Note"
-              rows={3}
-              onChange={e => note.current = e.target.value}
-            />
-          </label>
-        </div>
-      <div className="flex items-center">
-        <p>Priority</p>
-
-        <div className="w-full ml-1">
-          <PrioritySlider
-            beta={beta}
-            varianceSlider={false}
-            onMeanChange={updatePriority}
-          ></PrioritySlider>
-        </div>
-
-        <p className="ml-2">Interval</p>
-        <input 
-          className={`w-16 ml-1 ${theme.BORDER} ${theme.BG}`}
-          type="number" 
-          value={interval}
-          onChange={(e) => setInterval(parseFloat(e.target.value))}
-          min="1" 
-          step="1"
-        ></input>
-
-        <div className="w-full"></div>
-
-        <button 
-          className="w-fit ml-2 mt-2 bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
-          onClick={extract}
-        >
-          Extract
-        </button>
-      </div>
-      </>  
+          <ExtractPanel />
+        </>  
       }
+    </div>
+  );
+}
+
+
+function MediaAttributesPanel() {
+  const dispatch = useAppDispatch();
+  const mediaAttrs = useAppSelector(state => state.medx.mediaAttrs);
+  
+  return (
+    <div className="flex flex-col space-y-0.5">
+      <label className="flex items-center justify-between">
+        Loop
+        <input
+          type="checkbox"
+          checked={mediaAttrs.loop}
+          onChange={() => dispatch(mediaAttrsChanged({ loop: !mediaAttrs.loop }))}
+        />
+      </label>
+      <label className="flex items-center justify-between">
+        Speed
+        <input
+          className={`${theme.BG} ${theme.BORDER}`}
+          type="number" 
+          value={mediaAttrs.rate}
+          onChange={(e) => dispatch(mediaAttrsChanged({ rate: parseFloat(e.target.value) }))}
+          min="0.1"
+          max="5"
+          step=".1"
+        />
+      </label>
+      <label className="flex items-center justify-between">
+        Volume
+        <input
+          className={`${theme.BG} ${theme.BORDER}`}
+          type="number" 
+          value={mediaAttrs.volume}
+          onChange={(e) => dispatch(mediaAttrsChanged({ volume: parseFloat(e.target.value) }))}
+          min="0"
+          max="1"
+          step=".1"
+        />
+      </label>
+    </div>   
+  );
+}
+
+function NotePanel() {
+  const ref = React.useRef<HTMLTextAreaElement>(null);
+  const dispatch = useAppDispatch();
+  const note = useAppSelector(state => state.medx.note);
+
+  React.useEffect(() => {
+    if (ref.current) ref.current.value = note;
+  }, [note]);
+
+  async function updateNote(text: string) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    if (ref.current?.value == text) {
+      dispatch(noteChanged(text));
+    }
+  }
+  
+  return (
+    <label className="w-full h-full ml-2">
+      <textarea
+        ref={ref}
+        className={`w-full rounded p-1 ${theme.BG} ${theme.BORDER}`}
+        placeholder="Note"
+        rows={5}
+        onChange={e => updateNote(e.target.value)}
+      />
+    </label>
+  );
+}
+
+function ExtractPanel() {
+  const dispatch = useAppDispatch();
+  const beta = useAppSelector(state => state.medx.beta);
+  const interval = useAppSelector(state => state.medx.interval);
+  
+  return (
+    <div className="flex items-center">
+      <p>Priority</p>
+      
+      <div className="w-full ml-1">
+        <PrioritySlider
+          beta={beta}
+          varianceSlider={false}
+          onMeanChange={mean => dispatch(priorityChanged(mean))}
+        ></PrioritySlider>
+      </div>
+
+      <p className="ml-2">Interval</p>
+      <input 
+        className={`w-16 ml-1 ${theme.BORDER} ${theme.BG}`}
+        type="number" 
+        value={interval}
+        onChange={(e) => dispatch(intervalChanged(parseFloat(e.target.value)))}
+        min="1" 
+        step="1"
+      ></input>
+
+      <div className="w-full"></div>
+
+      <button 
+        className="w-fit ml-2 mt-2 bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
+        onClick={() => dispatch(extract())}
+      >
+         Extract
+      </button>
     </div>
   );
 }

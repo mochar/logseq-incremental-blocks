@@ -2,11 +2,17 @@ import React from "react";
 import * as theme from "../utils/theme";
 import ExtractionView from "./ExtractionView";
 import JumpView from "./jump/JumpView";
-import { useAppSelector } from "../state/hooks";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
+import { reloadBlock } from "./medxSlice";
 
 export default function MedxWindow() {
   const ref = React.useRef<HTMLDivElement>(null);
-  const medxData = useAppSelector(state => state.medx.active);
+  const medxData = useAppSelector(state => state.medx.active)!;
+  const dispatch = useAppDispatch();
+
+  React.useEffect(() => {
+    dispatch(reloadBlock());
+  }, []);
 
   // This should never be reached
   if (medxData == null) {
