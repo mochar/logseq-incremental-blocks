@@ -13,6 +13,7 @@ import { BlockCommandCallback } from "@logseq/libs/dist/LSPlugin.user";
 import { injectStore as injectStoreMedx, insertIncrementalMedia } from "./medx/command";
 import { Provider } from "react-redux";
 import { store } from "./state/store";
+import { setupNav, injectStore as injectStoreNav } from "./logseq/nav";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -21,6 +22,7 @@ const pluginId = PL.id;
 
 injectStoreMedx(store);
 injectStoreMacro(store);
+injectStoreNav(store);
 
 function main() {
   console.info(`#${pluginId}: MAIN`);
@@ -92,6 +94,8 @@ function main() {
       </a>
     `
   });
+
+  setupNav();
 
   function registerCommand(tag: string, action: BlockCommandCallback) {
     logseq.Editor.registerSlashCommand(tag, action);

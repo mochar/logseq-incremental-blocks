@@ -16,5 +16,5 @@ export const BETA_BOUNDS = {
 }
 
 export const RENDERER_MACRO_NAME = '{{renderer :ib}}';
-
 export const PROP_REGEX = /[a-zA-Z0-9-_]+:: [^:]+/;
+export const PLUGIN_ROUTE = '/page/incremental-blocks';
