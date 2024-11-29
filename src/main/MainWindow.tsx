@@ -20,11 +20,17 @@ export default function MainWindow() {
   }
 
   const tabs = [
-    <Tab tab="queue" title="📚 Queue" key="queue"></Tab>,
-    ... ankiMode ? [<Tab tab="anki" title="⭐ Anki" key="anki"></Tab>] : [],
-    <Tab tab="calendar" title="📅 Calendar" key="calendar"></Tab>,
-    <Tab tab="refs" title="📄 Refs" key="refs"></Tab>
-  ].map((tab) => <li>{tab}</li>);
+    <li key="queue">
+      <Tab tab="queue" title="📚 Queue"></Tab>
+     </li>,
+    //... ankiMode ? [<li key="anki"><Tab tab="anki" title="⭐ Anki"></Tab></li>] : [],
+    <li key="calendar">  
+      <Tab tab="calendar" title="📅 Calendar"></Tab>
+    </li>,
+    <li key="refs">
+      <Tab tab="refs" title="📄 Refs"></Tab>
+    </li>
+  ];
 
   let content = <>{activeTab}</>;
   if (activeTab == 'queue') {

@@ -9,7 +9,7 @@ interface ISelect {
 
 export default function Select({ options, isSelected, selected, textBuilder }: ISelect) {
   const optionEls = options.map((option) => {
-    return <option value={option} selected={isSelected(option)}>
+    return <option key={option} value={option} selected={isSelected(option)}>
       { textBuilder ? textBuilder(option) : option }
     </option>;
   });
