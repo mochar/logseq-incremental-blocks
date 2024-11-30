@@ -23,7 +23,7 @@ export default function MedxWindow() {
   <div 
     ref={ref} 
     id="ib-medx" 
-    className={`fixed flex justify-between rounded shadow-md space-x-2 p-2 text-sm ${theme.BG} ${theme.TXT} ${theme.BORDER}`}
+    className={`fixed flex h-full justify-between space-x-2 p-2 text-sm ${theme.TXT}`}
   >
     <div className="w-full">
       <ExtractionView data={medxData} />

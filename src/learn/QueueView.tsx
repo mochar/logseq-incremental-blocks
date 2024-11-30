@@ -3,8 +3,8 @@ import { Virtuoso } from "react-virtuoso";
 import IbItem from "../widgets/IbItem";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import { selectFilteredDueIbs, startLearning } from "./learnSlice";
-import { setView, ViewType } from "../state/viewSlice";
 import * as theme from "../utils/theme";
+import { MainView, setMainView } from "../state/viewSlice";
 
 export default function QueueView() {
   const dispatch = useAppDispatch();
@@ -51,7 +51,7 @@ export default function QueueView() {
         <div>
           <button 
             className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 ml-1 rounded`}
-            onClick={() => dispatch(setView({ type: ViewType.main }))}
+            onClick={() => dispatch(setMainView({ view: MainView.main }))}
           >
             🔙
           </button>

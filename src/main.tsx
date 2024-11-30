@@ -2,7 +2,6 @@ import "@logseq/libs";
 
 import React from "react";
 import * as ReactDOM from "react-dom/client";
-import App from "./App";
 import "./index.css";
 import settings from './logseq/settings';
 
@@ -14,6 +13,8 @@ import { injectStore as injectStoreMedx, insertIncrementalMedia } from "./medx/c
 import { Provider } from "react-redux";
 import { store } from "./state/store";
 import { setupNav, injectStore as injectStoreNav } from "./logseq/nav";
+import PopoverApp from "./PopoverApp";
+import MainApp from "./MainApp";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -27,12 +28,20 @@ injectStoreNav(store);
 function main() {
   console.info(`#${pluginId}: MAIN`);
 
-  // Element is in index.html
-  const root = ReactDOM.createRoot(document.getElementById("app")!);
-  root.render(
+  const rootMain = ReactDOM.createRoot(document.getElementById("app")!);
+  rootMain.render(
     <React.StrictMode>
       <Provider store={store}>
-        <App />
+        <MainApp />
+      </Provider>
+    </React.StrictMode>
+  );
+  
+  const rootPopover = ReactDOM.createRoot(document.getElementById("app")!);
+  rootPopover.render(
+    <React.StrictMode>
+      <Provider store={store}>
+        <PopoverApp />
       </Provider>
     </React.StrictMode>
   );
@@ -44,7 +53,7 @@ function main() {
 
   logseq.provideModel(createModel());
   logseq.setMainUIInlineStyle({
-    zIndex: 11,
+    zIndex: 2,//11,
   });
 
   const openIconName = "ib-plugin-open";

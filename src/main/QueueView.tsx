@@ -4,10 +4,10 @@ import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
 import { Virtuoso } from "react-virtuoso";
 import IbItem from "../widgets/IbItem";
-import { setView, ViewType } from "../state/viewSlice";
 import Select from "../widgets/Select";
 import { capitalize } from "../utils/utils";
 import RefButton from "../widgets/RefButton";
+import { PopoverView, setPopoverView } from "../state/viewSlice";
 
 export default function QueueView() {
   const dispatch = useAppDispatch();
@@ -42,11 +42,11 @@ export default function QueueView() {
 
   function learn() {
     dispatch(startLearning());
-    dispatch(setView({ type: ViewType.learn }));
+    dispatch(setPopoverView({ view: PopoverView.learn }));
   }
 
   function check() {
-    dispatch(setView({ type: ViewType.learn }));
+    dispatch(setPopoverView({ view: PopoverView.learn }));
   }
 
   function refFilterModeSelected(filterMode: string) {

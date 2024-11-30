@@ -1,28 +1,25 @@
 import React, { useEffect } from "react";
-import IbPopover from "./widgets/Popover";
 import { useAppVisible } from "./logseq/events";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
-import { IbViewData, InsertViewData, setView, toggleView, ViewType } from "./state/viewSlice";
-import InsertPopover from "./medx/InsertPopover";
-import { renderMediaEmbed } from "./medx/macro";
+import { MainView, toggleMainView } from "./state/viewSlice";
+import MainWindow from "./main/MainWindow";
+import MedxWindow from "./medx/MedxWindow";
+import MediaFragment from "./medx/MediaFragment";
+import { selectMedia } from "./medx/medxSlice";
 import { finishRep, getUserRefs, refreshDueIbs } from "./learn/learnSlice";
+import { renderMediaEmbed } from "./medx/macro";
 import { isDark } from "./utils/logseq";
 import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
-import MainWindow from "./main/MainWindow";
-import LearnWindow from "./learn/LearnWindow";
-import { selectMedia } from "./medx/medxSlice";
-import MediaFragment from "./medx/MediaFragment";
-import MedxWindow from "./medx/MedxWindow";
+import useMainSizeAndPosition from "./hooks/useMainSizeAndPos";
+import { updateThemeStyle } from "./logseq/theme";
 
-// This is our popup.
-// The useAppVisible hook is used to close/open the popup.
-export default function App() {
+export default function MainApp() {
   const visible = useAppVisible();
-  const dispatch = useAppDispatch();
   const view = useAppSelector(state => state.view);
   const learning = useAppSelector(state => state.learn.learning);
   const currentIbData = useAppSelector(state => state.learn.current);
-  const themeMode = useAppSelector(state => state.app.themeMode);
+  const sizeAndPos = useMainSizeAndPosition();
+  const dispatch = useAppDispatch();
 
   const state = useAppSelector(state => state);
   console.log(state);
@@ -30,14 +27,7 @@ export default function App() {
   useEffect(() => {
     logseq.provideModel({
       toggleMain() {
-        dispatch(toggleView({ viewType: ViewType.main }));
-      },
-      toggleIbPopover(e: any) {
-        dispatch(toggleView({ 
-          viewType: ViewType.ib, 
-          blockUuid: e.dataset.blockUuid,
-          slotId: e.dataset.slotId
-        }));
+        dispatch(toggleMainView({ view: MainView.main }));
       },
       async toggleMedxPopover(e: any) {
         const medFrag = MediaFragment.parse(e.dataset.macroArgs.split(','));
@@ -46,7 +36,7 @@ export default function App() {
         if (medFrag && slotId && blockUuid) {
           const medxData = await dispatch(selectMedia({ medFrag, slotId, blockUuid }));
           if (medxData) {
-            dispatch(toggleView({ viewType: ViewType.medx }));
+            dispatch(toggleMainView({ view: MainView.medx }));
           }
         } else {
           logseq.UI.showMsg('Invalid media args', 'warning');
@@ -86,8 +76,12 @@ export default function App() {
     logseq.App.onCurrentGraphChanged((e) => dispatch(refreshDueIbs()));
     dispatch(refreshDueIbs());
 
+    updateThemeStyle();
     isDark().then((dark) => dispatch(themeModeChanged(dark ? 'dark' : 'light')));
-    logseq.App.onThemeModeChanged(({ mode }) => dispatch(themeModeChanged(mode)));
+    logseq.App.onThemeModeChanged(({ mode }) => {
+      dispatch(themeModeChanged(mode));
+      updateThemeStyle();
+    });
 
     logseq.onSettingsChanged((a, b) =>
       dispatch(handleSettingsChanged({ old: b, new: a })));
@@ -96,54 +90,30 @@ export default function App() {
     //dispatch(loadMedia());
   }, []);
 
-  function tryHide(e: any) {
-    if (document.getElementById('ib-learn')?.contains(e.target) ||
-      document.getElementById('ib-main')?.contains(e.target) ||
-      document.getElementById('ib-popover')?.contains(e.target) ||
-      document.getElementById('ib-insert')?.contains(e.target) ||
-      document.getElementById('ib-medx')?.contains(e.target)) {
-      return;
-    }
-    dispatch(setView({ type: null }));
-    window.logseq.hideMainUI();
-  }
+  if (!visible || view.main == null) return null;
 
   let viewComponent: JSX.Element = <></>;
-  switch (view.type) {
-    case ViewType.main:
+  switch (view.main?.view) {
+    case MainView.main:
       viewComponent = <MainWindow />;
       break;
-    case ViewType.learn:
-      viewComponent = <LearnWindow />;
-      break;
-    case ViewType.ib:
-      const ibData = view.data! as IbViewData;
-      viewComponent = <IbPopover block={ibData.block} slot={ibData.slotId} />;
-      break;
-    case ViewType.medx:
+    case MainView.medx:
       viewComponent = <MedxWindow />;
       break;
-    case ViewType.insert:
-      const insertData = view.data! as InsertViewData;
-      viewComponent = <InsertPopover block={insertData.block} />
-      break;
   }
-
-  if (!visible) return null;
-
-  let classesIfCentered = '';
-  switch (view.type) {
-    case ViewType.main:
-    case ViewType.medx:
-    case ViewType.insert:
-      classesIfCentered = 'backdrop-brightness-90 items-center justify-center';
-      break;
-  }
+ 
   return (
-    <main 
-      className={`bg-transparent fixed inset-0 flex ${classesIfCentered} ${themeMode == 'dark' && 'dark'}`}
-      onClick={tryHide} 
-    >
+    <main
+      style={{
+        width: sizeAndPos.width,
+        height: sizeAndPos.height,
+        left: sizeAndPos.left,
+        top: sizeAndPos.top,
+        position: 'relative',
+        backgroundColor: `var(--ls-primary-background-color, var(--ls-primary-background-color-plugin))`,
+        color: `var(--ls-primary-text-color, var(--ls-primary-text-color-plugin))`,
+        transition: 'background-color 0.3s, color 0.3s',
+      }}>
       {viewComponent}
     </main>
   );

@@ -18,3 +18,5 @@ export const BETA_BOUNDS = {
 export const RENDERER_MACRO_NAME = '{{renderer :ib}}';
 export const PROP_REGEX = /[a-zA-Z0-9-_]+:: [^:]+/;
 export const PLUGIN_ROUTE = '/page/incremental-blocks';
+// From: logseq-plugin-files-manager
+export const PARENT_MAIN_CONTAINER_ID = 'main-content-container';

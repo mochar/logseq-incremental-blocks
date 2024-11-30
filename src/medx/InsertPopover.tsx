@@ -2,7 +2,7 @@ import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import React, { useMemo } from "react";
 import { useDebounce } from "../utils/utils";
 import { useAppDispatch } from "../state/hooks";
-import { toggleView } from "../state/viewSlice";
+import { togglePopoverView } from "../state/viewSlice";
 import MediaFragment from "./MediaFragment";
 
 // https://stackoverflow.com/a/27728417/2374668
@@ -67,7 +67,7 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
       loop: false
     });
     await logseq.Editor.insertAtEditingCursor(args.render());
-    dispatch(toggleView({ viewType: null }));
+    dispatch(togglePopoverView({ view: null }));
   }
 
   return (

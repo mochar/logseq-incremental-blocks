@@ -4,9 +4,9 @@ import { useAppDispatch, useAppSelector } from "../state/hooks";
 import { MainWindowTab, tabSelected } from "./mainSlice";
 import QueueView from "./QueueView";
 import CalendarView from "./CalendarView";
-import { setView } from "../state/viewSlice";
 import AnkiView from "./AnkiView";
 import RefsView from "./RefsView";
+import { setMainView } from "../state/viewSlice";
 
 export default function MainWindow() {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -16,7 +16,7 @@ export default function MainWindow() {
   const ankiMode = useAppSelector((state) => state.learn.anki);
 
   function close() {
-    dispatch(setView({ type: null }));
+    dispatch(setMainView(null));
   }
 
   const tabs = [
@@ -48,13 +48,13 @@ export default function MainWindow() {
     ref={ref}
     id="ib-main"
     style={{ minHeight: '30rem' }}
-    className={`fixed flex flex-col rounded shadow-md p-2 sm:w-9/12 md:w-8/12 lg:w-7/12 ${theme.BG} ${theme.TXT} ${theme.BORDER}`}
+    className={`flex flex-col p-2 h-full ${theme.TXT}`}
   >
     <div className="flex items-center justify-between mb-2">
       <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Incremental blocks</h3>
       <button type="button" onClick={() => close()} className="inline-flex items-center p-1 text-gray-400 bg-transparent rounded-sm hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-300">
         <svg className="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-          <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
         </svg>
       </button>
     </div>

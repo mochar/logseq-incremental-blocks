@@ -19,7 +19,7 @@ export default function IbItem({ qib, nChars }: { qib: QueueIb, nChars?: number 
   const bgColor = interpolateColor(PRIORITY_PALETTE, 1-qib.priority);
 
   return <div
-    className={`flex items-baseline cursor-pointer ${theme.BG.hover} w-full text-sm`}
+    className={`flex items-baseline cursor-pointer w-full text-sm`}
     onClick={() => logseq.App.pushState('page', { name: qib.uuid })}
   >
     <span 

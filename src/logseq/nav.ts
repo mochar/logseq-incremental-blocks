@@ -1,6 +1,6 @@
 import { PLUGIN_ROUTE } from "../globals";
 import { AppStore } from "../state/store";
-import { toggleView, ViewType } from "../state/viewSlice";
+import { MainView, toggleMainView } from "../state/viewSlice";
 
 let store: AppStore;
 export const injectStore = (_store: AppStore) => {
@@ -29,7 +29,7 @@ function setupNavLink() {
 function setupRouteHandler() {
   logseq.App.onRouteChanged((e) => {
     if (e.path === PLUGIN_ROUTE) {
-      store.dispatch(toggleView({ viewType: ViewType.main }));
+      store.dispatch(toggleMainView({ view: MainView.main }));
     } else {
       logseq.hideMainUI();
     }
