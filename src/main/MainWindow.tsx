@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
-import { refreshIbs, selectIbPages } from "./mainSlice";
+import { refreshCollections, selectIbPages, toggleAllCollections, toggleCollections } from "./mainSlice";
 import { Virtuoso, GroupedVirtuoso } from "react-virtuoso";
 import IbItem from "../widgets/IbItem";
 
@@ -31,7 +31,7 @@ export default function MainWindow() {
 
   async function refresh() {
     await Promise.all([
-      dispatch(refreshIbs()),
+      dispatch(refreshCollections()),
     ]);
   }
 
@@ -57,65 +57,50 @@ export default function MainWindow() {
 }
 
 function IbsView() : JSX.Element {
+  const dispatch = useAppDispatch();
   const ref = useRef<HTMLDivElement>(null);
   const height = ref.current ? ref.current.clientHeight - 20 : 100;
-  const ibs = useAppSelector(state => state.main.ibs);
   const collections = useAppSelector(state => state.main.collections);
+  const loadedIbs = useAppSelector(state => state.main.loadedIbs);
+  const openedCollections = useMemo(
+    () => Object.keys(loadedIbs).map(i => parseInt(i)),
+    [loadedIbs]);
   const collectionCounts = useMemo(() => collections.map(c => c.count), [collections]);
-  const [toggledCollections, setToggledCollections] = useState<number[]>([]); //index
-  const filteredCollectionCounts = useMemo(
-    () => collectionCounts.map((cc, i) => toggledCollections.includes(i) ? 0 : cc),
-    [toggledCollections]);
+  const openedCollectionCounts = useMemo(
+    () => collectionCounts.map((cc, i) => openedCollections.includes(i) ? cc : 0),
+    [openedCollections]);
 
-  function toggleCollection(index: number) {
-    const i = toggledCollections.indexOf(index);
-    if (i === -1) {
-      setToggledCollections([index, ...toggledCollections])
-    } else {
-      setToggledCollections(toggledCollections.toSpliced(i, 1));
-    }
-  }
-
-  function toggleAll() {
-    if (toggledCollections.length == 0) {
-      setToggledCollections([...Array(collections.length).keys()]);
-    } else {
-      setToggledCollections([]);
-    }
-  }
-  
   return (
     <div className="mt-1 h-full">
       <div className="flex">
-        <a onClick={toggleAll}>
+        <a onClick={() => dispatch(toggleAllCollections())}>
           <span>Toggle all</span>
         </a>
       </div>
       <div ref={ref} className="border rounded-sm h-full">
         <GroupedVirtuoso
           style={{ height, overflowX: 'clip' }}
-          groupCounts={filteredCollectionCounts}
+          groupCounts={openedCollectionCounts}
           groupContent={i => {
             const collection = collections[i];
             return (
               <div
                 className="flex justify-between bg-gray-100 p-1 cursor-pointer"
-                onClick={() => toggleCollection(i)}
+                onClick={() => dispatch(toggleCollections([i]))}
               >
                 <p className="">
-                  {collection.name} ({collection.pageUuids.length} pages, {collection.count} ibs)
+                  {collection.name} ({collection.pageIds.length} pages, {collection.count} ibs)
                 </p>
               </div>
             );
           }}
           itemContent={(i, iCollection) => {
-            let index = i;
-            if (Math.max(...toggledCollections) >= iCollection) {
-              const fullSum = collectionCounts.slice(0, iCollection).reduce((s, x) => s + x, 0);
-              const filtSum = filteredCollectionCounts.slice(0, iCollection).reduce((s, x) => s + x, 0);
-              index += fullSum - filtSum;
-            }
-            return IbItem({ qib: ibs[index] });
+            const openSum = openedCollectionCounts.slice(0, iCollection).reduce((s, x) => s + x, 0);
+            const indexWithinCollection = i - openSum;
+            const collectionIbs = loadedIbs[iCollection.toString()];
+            if (!collectionIbs) return <span>Something went wrong</span>;
+            const ib = collectionIbs[indexWithinCollection];
+            return <IbItem qib={ib} />
           }}
         ></GroupedVirtuoso>
       </div>

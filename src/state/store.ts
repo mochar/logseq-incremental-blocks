@@ -7,6 +7,7 @@ import mainReducer from '../main/mainSlice';
 import medxReducer from '../medx/medxSlice';
 import { listenerMiddleware } from './listenerMiddleware';
 
+
 export const store = configureStore({
   reducer: {
     app: appReducer,

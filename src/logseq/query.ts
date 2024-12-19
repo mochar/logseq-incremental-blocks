@@ -65,7 +65,7 @@ interface IParseQueueIbs {
   sortByPriority?: boolean
 }
 
-function parseQueueIbs({ result, sortByPriority=true }: IParseQueueIbs) : QueueIb[] {
+export function parseQueueIbs({ result, sortByPriority=true }: IParseQueueIbs) : QueueIb[] {
   let qibs = (result as Array<Array<any>>).map<QueueIb>((r) => {
     const [block, tags] = r;
     const beta = new Beta(block['properties']['ib-a'], block['properties']['ib-b']);
@@ -73,7 +73,7 @@ function parseQueueIbs({ result, sortByPriority=true }: IParseQueueIbs) : QueueI
     const pathRefs = block['path-refs'];
     const pageTags = tags ? tags['tags'] : [];
     const page = block['page'];
-    const collection = page['journal'] as boolean ? 'journal' : page['properties'] ? block['page']['properties']['collection'] ?? null : null;
+    const collection = page['journal'] as boolean ? 'journal' : page['properties'] ? page['properties']['collection'] ?? null : null;
     return {
       id: block['id'],
       uuid: block['uuid'],
@@ -98,7 +98,7 @@ function parseQueueIbs({ result, sortByPriority=true }: IParseQueueIbs) : QueueI
 /*
  *
  */
-const QUEUE_IB_PULLS = `
+export const QUEUE_IB_PULLS = `
 (pull ?b [
   :db/id
   :block/uuid 

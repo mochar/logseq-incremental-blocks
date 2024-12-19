@@ -12,8 +12,7 @@ import { isDark } from "./utils/logseq";
 import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import useMainSizeAndPosition from "./hooks/useMainSizeAndPos";
 import { updateThemeStyle } from "./logseq/theme";
-import { queryDueIbs } from "./logseq/query";
-import { refreshIbs } from "./main/mainSlice";
+import { refreshCollections } from "./main/mainSlice";
 
 export default function MainApp() {
   const visible = useAppVisible();
@@ -90,7 +89,7 @@ export default function MainApp() {
     dispatch(getUserRefs());
     //dispatch(loadMedia());
 
-    dispatch(refreshIbs());
+    dispatch(refreshCollections());
   }, []);
 
   if (!visible || view.main == null) return null;
