@@ -21,8 +21,8 @@ interface ViewData {
 }
 
 interface ViewState {
-  main: ViewData,
-  popover: ViewData
+  main: ViewData | null,
+  popover: ViewData | null
 }
 
 const initialState: ViewState = {
@@ -97,7 +97,7 @@ export const toggleMainView = (request: ViewRequest) => {
     const state = getState();
     if (request.view == null || state.view.main?.view == request.view) {
       dispatch(setMainView(null));
-      if (state.popover == null) logseq.hideMainUI();
+      if (state.view.popover == null) logseq.hideMainUI();
     } else if (request.view == MainView.main) {
       dispatch(setMainView({ view: MainView.main }));
       if (state.view.popover) dispatch(setPopoverView(null));

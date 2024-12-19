@@ -16,7 +16,12 @@ function setupNavLink() {
   <span class='flex-1'>Incremental blocks</span>
   </a>`;
   navDiv.className = `inc-blocks-nav`;
-  navDiv.addEventListener('click', () => logseq.showMainUI());
+  navDiv.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (store.getState().view.main?.view != MainView.main) {
+      store.dispatch(toggleMainView({ view: MainView.main }));
+    }
+  });
 
   const navHeader = window.parent.document.querySelector('.nav-header');
   if (navHeader) {
@@ -28,10 +33,13 @@ function setupNavLink() {
 
 function setupRouteHandler() {
   logseq.App.onRouteChanged((e) => {
+    console.log(e.path);
     if (e.path === PLUGIN_ROUTE) {
-      store.dispatch(toggleMainView({ view: MainView.main }));
+      if (store.getState().view.main?.view != MainView.main) {
+        store.dispatch(toggleMainView({ view: MainView.main }));
+      }
     } else {
-      logseq.hideMainUI();
+      store.dispatch(toggleMainView({ view: null }));
     }
   });
 }
@@ -40,3 +48,4 @@ export async function setupNav() : Promise<void> {
   setupNavLink();
   setupRouteHandler();
 }
+
