@@ -25,12 +25,19 @@ export interface Ref {
   id: number
 }
 
+export interface Page {
+  uuid: string,
+  name: string,
+  collection: string | null
+}
+
 // Simplified ib data just for queue purposes.
 export interface QueueIb {
   id: number,
   uuid: string,
   content: string,
   priority: number,
+  page: Page,
   pathRefs: Ref[],
   pageTags: Ref[],
   // pathRefs + pageTags

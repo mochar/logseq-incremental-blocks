@@ -1,95 +1,124 @@
-import React from "react";
-import * as theme from "../utils/theme";
+import React, { useMemo, useRef, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { MainWindowTab, tabSelected } from "./mainSlice";
-import QueueView from "./QueueView";
-import CalendarView from "./CalendarView";
-import AnkiView from "./AnkiView";
-import RefsView from "./RefsView";
-import { setMainView } from "../state/viewSlice";
+import * as theme from "../utils/theme";
+import { refreshIbs, selectIbPages } from "./mainSlice";
+import { Virtuoso, GroupedVirtuoso } from "react-virtuoso";
+import IbItem from "../widgets/IbItem";
 
 export default function MainWindow() {
-  const ref = React.useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const busy = useAppSelector((state) => state.main.busy);
-  const activeTab = useAppSelector((state) => state.main.activeTab);
-  const ankiMode = useAppSelector((state) => state.learn.anki);
+  const ibs = useAppSelector(state => state.main.ibs);
+  const refreshState = useAppSelector(state => state.learn.refreshState);
+  const refreshDate = useAppSelector(state => state.learn.refreshDate);
 
-  function close() {
-    dispatch(setMainView(null));
-  }
+  React.useEffect(() => {
+    if (refreshState == 'fulfilled' || refreshState == 'failed') {
+      // Minutes since last refresh
+      const diff = (new Date()).getTime() - refreshDate!.getTime();
+      const minutesSinceLastRefresh = diff / (1000 * 60);
 
-  const tabs = [
-    <li key="queue">
-      <Tab tab="queue" title="📚 Queue"></Tab>
-     </li>,
-    //... ankiMode ? [<li key="anki"><Tab tab="anki" title="⭐ Anki"></Tab></li>] : [],
-    <li key="calendar">  
-      <Tab tab="calendar" title="📅 Calendar"></Tab>
-    </li>,
-    <li key="refs">
-      <Tab tab="refs" title="📄 Refs"></Tab>
-    </li>
-  ];
+      const minutesThreshold = logseq.settings?.queueTimer as number ?? 1.;
 
-  let content = <>{activeTab}</>;
-  if (activeTab == 'queue') {
-    content = <QueueView/>
-  } else if (activeTab == 'calendar') {
-    content = <CalendarView />
-  } else if (activeTab == 'anki') {
-    content = <AnkiView />
-  } else if (activeTab == 'refs') {
-    content = <RefsView />
+      if (minutesSinceLastRefresh != null && minutesSinceLastRefresh > minutesThreshold) {
+        refresh();
+      }
+    } else if (refreshState == null) {
+      refresh();
+    }
+  }, []);
+
+  async function refresh() {
+    await Promise.all([
+      dispatch(refreshIbs()),
+    ]);
   }
 
   return (
-  <div
-    ref={ref}
-    id="ib-main"
-    style={{ minHeight: '30rem' }}
-    className={`flex flex-col p-2 h-full ${theme.TXT}`}
-  >
-    <div className="flex items-center justify-between mb-2">
-      <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Incremental blocks</h3>
-      <button type="button" onClick={() => close()} className="inline-flex items-center p-1 text-gray-400 bg-transparent rounded-sm hover:bg-gray-200 hover:text-gray-900 dark:hover:bg-gray-800 dark:hover:text-gray-300">
-        <svg className="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
-          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
-        </svg>
-      </button>
-    </div>
-  
-    <form onSubmit={(e) => e.preventDefault()} className={`w-full h-full ${busy && 'animate-pulse'}`}>
-    <fieldset className="flex h-full" disabled={busy}>
-      <ul className="flex-column space-y space-y-4 text-sm font-medium text-gray-500 dark:text-gray-400 md:me-4 mb-4 md:mb-0">
-        {tabs}
-      </ul>
-      <div className="w-full text-sm">
-        {content}
+    <div
+      id="ib-main"
+      style={{ minHeight: '30rem' }}
+      className={`flex flex-col p-2 h-full ${theme.TXT}`}
+    >
+      <div>
       </div>
-    </fieldset>
-    </form>
-  </div>
+
+      <div className="h-full flex space-x-2" ref={ref}>
+        <div className="" style={{flex: "2 1 0%"}}>
+          <span>Tags</span>
+        </div>
+        <div className="w-full h-full" style={{flex: "4 1 0%"}}>
+          <IbsView />
+        </div>
+      </div>
+    </div>
   );
 }
 
-function Tab({ tab, title }: { tab: MainWindowTab, title: string }) {
-  const dispatch = useAppDispatch();
-  const activeTab = useAppSelector((state) => state.main.activeTab);
+function IbsView() : JSX.Element {
+  const ref = useRef<HTMLDivElement>(null);
+  const height = ref.current ? ref.current.clientHeight - 20 : 100;
+  const ibs = useAppSelector(state => state.main.ibs);
+  const collections = useAppSelector(state => state.main.collections);
+  const collectionCounts = useMemo(() => collections.map(c => c.count), [collections]);
+  const [toggledCollections, setToggledCollections] = useState<number[]>([]); //index
+  const filteredCollectionCounts = useMemo(
+    () => collectionCounts.map((cc, i) => toggledCollections.includes(i) ? 0 : cc),
+    [toggledCollections]);
 
-  const active = activeTab == tab;
+  function toggleCollection(index: number) {
+    const i = toggledCollections.indexOf(index);
+    if (i === -1) {
+      setToggledCollections([index, ...toggledCollections])
+    } else {
+      setToggledCollections(toggledCollections.toSpliced(i, 1));
+    }
+  }
 
-  const classes = active ? 
-    'bg-gray-200 dark:bg-gray-600 active' : 
-    'hover:text-gray-900 bg-gray-50 hover:bg-gray-100 w-full dark:bg-gray-800 dark:hover:bg-gray-700 dark:hover:text-white';
+  function toggleAll() {
+    if (toggledCollections.length == 0) {
+      setToggledCollections([...Array(collections.length).keys()]);
+    } else {
+      setToggledCollections([]);
+    }
+  }
   
   return (
-  <a 
-    href="#" 
-    className={`inline-flex items-center min-w-max px-4 py-3 rounded-lg active w-full ${classes}`}
-    onClick={() => dispatch(tabSelected(tab))}
-  >
-    <span>{title}</span>
-  </a>
+    <div className="mt-1 h-full">
+      <div className="flex">
+        <a onClick={toggleAll}>
+          <span>Toggle all</span>
+        </a>
+      </div>
+      <div ref={ref} className="border rounded-sm h-full">
+        <GroupedVirtuoso
+          style={{ height, overflowX: 'clip' }}
+          groupCounts={filteredCollectionCounts}
+          groupContent={i => {
+            const collection = collections[i];
+            return (
+              <div
+                className="flex justify-between bg-gray-100 p-1 cursor-pointer"
+                onClick={() => toggleCollection(i)}
+              >
+                <p className="">
+                  {collection.name} ({collection.pageUuids.length} pages, {collection.count} ibs)
+                </p>
+              </div>
+            );
+          }}
+          itemContent={(i, iCollection) => {
+            let index = i;
+            if (Math.max(...toggledCollections) >= iCollection) {
+              const fullSum = collectionCounts.slice(0, iCollection).reduce((s, x) => s + x, 0);
+              const filtSum = filteredCollectionCounts.slice(0, iCollection).reduce((s, x) => s + x, 0);
+              index += fullSum - filtSum;
+            }
+            return IbItem({ qib: ibs[index] });
+          }}
+        ></GroupedVirtuoso>
+      </div>
+    </div>
   );
 }

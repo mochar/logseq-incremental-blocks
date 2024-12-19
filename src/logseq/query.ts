@@ -72,10 +72,17 @@ function parseQueueIbs({ result, sortByPriority=true }: IParseQueueIbs) : QueueI
     const priority = beta.sample({ prefix: block['uuid'], seedToday: true });
     const pathRefs = block['path-refs'];
     const pageTags = tags ? tags['tags'] : [];
+    const page = block['page'];
+    const collection = page['journal'] as boolean ? 'journal' : page['properties'] ? block['page']['properties']['collection'] ?? null : null;
     return {
       id: block['id'],
       uuid: block['uuid'],
       content: block['content'],
+      page: {
+        uuid: page['uuid'],
+        name: page['name'],
+        collection: collection
+      },
       priority,
       pathRefs,
       pageTags,
@@ -97,6 +104,7 @@ const QUEUE_IB_PULLS = `
   :block/uuid 
   :block/content 
   :block/properties
+  {:block/page [:block/uuid :block/name :block/properties :block/journal]}
   {:block/path-refs [:db/id :block/uuid :block/name]}
   {:block/refs [:db/id :block/uuid :block/name]}
 ]) 
