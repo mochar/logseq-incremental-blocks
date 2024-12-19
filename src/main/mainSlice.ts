@@ -1,4 +1,4 @@
-import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
 import { QueueIb } from "../learn/learnSlice";
 import { todayMidnight, toEndOfDay, toStartOfDay } from "../utils/datetime";
@@ -10,8 +10,14 @@ interface Collection {
   count: number
 }
 
+interface CollectionIbs {
+  index: number,
+  ibs: QueueIb[]
+}
+
 interface MainState {
   busy: boolean,
+  // Null means no filter on due date
   dueDate: Date | null,
   collections: Collection[],
   // collection index -> ibs in that collection
@@ -39,8 +45,9 @@ const mainSlice = createSlice({
     },
     collectionsLoaded(state, action: PayloadAction<Collection[]>) {
       state.collections = action.payload;
+      state.loadedIbs = {};
     },
-    collectionsOpened(state, action: PayloadAction<{ index: number, ibs: QueueIb[] }[]>) {
+    collectionsOpened(state, action: PayloadAction<CollectionIbs[]>) {
       for (const collection of action.payload) {
         state.loadedIbs[collection.index.toString()] = collection.ibs;
       }
@@ -49,6 +56,9 @@ const mainSlice = createSlice({
       for (const index of action.payload) {
         delete state.loadedIbs[index.toString()];
       }
+    },
+    dueDateSelected(state, action: PayloadAction<Date | null>) {
+      state.dueDate = action.payload;
     }
   },
 });
@@ -58,17 +68,19 @@ export const { gotBusy } = mainSlice.actions;
 function buildIbQueryWhereBlock(state: MainState) : string {
   // Query collections, their pages, and their size
   // Handle due filter clause
-  const dueDate = todayMidnight();
-  const includeOutdated = true;
-  let dueWhere = `
-    [(get ?prop :ib-due) ?due]
-    [(<= ?due ${toEndOfDay(dueDate).getTime()})]
-  `;
-  if (!includeOutdated) {
+  let dueWhere = '';
+  if (state.dueDate) {
+    const includeOutdated = true;
     dueWhere = `
+    [(get ?prop :ib-due) ?due]
+    [(<= ?due ${toEndOfDay(state.dueDate).getTime()})]
+  `;
+    if (!includeOutdated) {
+      dueWhere = `
       ${dueWhere}
-      [(>= ?due ${toStartOfDay(dueDate).getTime()})]
+      [(>= ?due ${toStartOfDay(state.dueDate).getTime()})]
     `;
+    }
   }
 
   // Handle refs. Not sure if this works, but also not necessary as ref filtering
@@ -119,6 +131,7 @@ export const refreshCollections = () => {
       ]`;
     // Returns array of two-tuples: Page data object, and page ib count number
     const ret = await logseq.DB.datascriptQuery(query);
+    console.log(ret.length, ret);
 
     // Collapse to collections
     const collectionMap: { [ key: string ]: { pageIds: Set<string>, count: number } } = {};
@@ -145,6 +158,47 @@ export const refreshCollections = () => {
   }
 }
 
+async function loadCollectionsIbs(state: MainState, collectionIndices: number[]) : Promise<CollectionIbs[]> {
+  const collections = collectionIndices.map(i => state.collections[i]);
+  const pageIdsString = collections
+    .reduce((ids, c) => ids.concat(c.pageIds), new Array<string>())
+    .map((id) => `${id}`).join(', ');
+
+  // Query
+  const query = `[
+    :find
+      ${QUEUE_IB_PULLS}
+    :where
+      [?b :block/properties ?prop]
+      [?b :block/page ?bp]
+      [(contains? #{${pageIdsString}} ?bp)] 
+      ${buildIbQueryWhereBlock(state)}
+      ]`;
+  // Returns array of two-tuples: Page data object, and page ib count number
+  const ret = await logseq.DB.datascriptQuery(query);
+  const qibs = parseQueueIbs({ result: ret, sortByPriority: true });
+
+  // Need to map back ib to collection index
+  const collectionMap = new Map<string, QueueIb[]>();
+  for (const qib of qibs) {
+    const collection = qib.page.collection ?? qib.page.name;
+    if (collectionMap.has(collection)) {
+      collectionMap.get(collection)!.push(qib);
+    } else {
+      collectionMap.set(collection, [qib]);
+    }
+  }
+  const collectionNames = state.collections.map(c => c.name);
+  const collectionIbs = collectionMap.keys().map(cn => {
+    return {
+      index: collectionNames.indexOf(cn),
+      ibs: collectionMap.get(cn)!
+    }
+  }).toArray();
+
+  return collectionIbs;
+}
+
 export const toggleCollections = (collectionIndices: number[]) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     const state = getState();
@@ -161,43 +215,8 @@ export const toggleCollections = (collectionIndices: number[]) => {
     }
 
     const closedIndices = collectionIndices.filter(i => !(i.toString() in state.main.loadedIbs));
-    const collections = closedIndices.map(i => state.main.collections[i]);
-    const pageIdsString = collections
-      .reduce((ids, c) => ids.concat(c.pageIds), new Array<string>())
-      .map((id) => `${id}`).join(', ');
-
-    // Query
-    const query = `[
-    :find
-      ${QUEUE_IB_PULLS}
-    :where
-      [?b :block/properties ?prop]
-      [?b :block/page ?bp]
-      [(contains? #{${pageIdsString}} ?bp)] 
-      ${buildIbQueryWhereBlock(state.main)}
-      ]`;
-    // Returns array of two-tuples: Page data object, and page ib count number
-    const ret = await logseq.DB.datascriptQuery(query);
-    const qibs = parseQueueIbs({ result: ret, sortByPriority: true });
-
-    // Need to map back ib to collection index
-    const collectionMap = new Map<string, QueueIb[]>();
-    for (const qib of qibs) {
-      const collection = qib.page.collection ?? qib.page.name;
-      if (collectionMap.has(collection)) {
-        collectionMap.get(collection)!.push(qib);
-      } else {
-        collectionMap.set(collection, [qib]);
-      }
-    }
-    const collectionNames = state.main.collections.map(c => c.name);
-    const collectionIbs = collectionMap.keys().map(cn => {
-      return {
-        index: collectionNames.indexOf(cn),
-        ibs: collectionMap.get(cn)!
-      }
-    }).toArray();
-
+    const collectionIbs = await loadCollectionsIbs(state.main, closedIndices);
+    
     dispatch(mainSlice.actions.collectionsOpened(collectionIbs));
     dispatch(gotBusy(false));
   }
@@ -219,6 +238,15 @@ export const toggleAllCollections = () => {
       const toToggle = Array(nTotal).keys().filter(i => !loadedIndices.includes(i)).toArray();
       await dispatch(toggleCollections(toToggle));
     }
+  }
+}
+
+export const selectDueDate = (dueDate: Date | null) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
+    if (state.main.busy) return;
+    dispatch(mainSlice.actions.dueDateSelected(dueDate));
+    await dispatch(refreshCollections());
   }
 }
 
