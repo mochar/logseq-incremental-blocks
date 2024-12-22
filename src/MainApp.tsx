@@ -6,7 +6,7 @@ import MainWindow from "./main/MainWindow";
 import MedxWindow from "./medx/MedxWindow";
 import MediaFragment from "./medx/MediaFragment";
 import { selectMedia } from "./medx/medxSlice";
-import { finishRep, getUserRefs, refreshDueIbs } from "./learn/learnSlice";
+import { finishRep } from "./learn/learnSlice";
 import { renderMediaEmbed } from "./medx/macro";
 import { isDark } from "./utils/logseq";
 import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
@@ -74,8 +74,8 @@ export default function MainApp() {
       }
     });
 
-    logseq.App.onCurrentGraphChanged((e) => dispatch(refreshDueIbs()));
-    dispatch(refreshDueIbs());
+    logseq.App.onCurrentGraphChanged((e) => dispatch(refreshCollections()));
+    dispatch(refreshCollections());
 
     updateThemeStyle();
     isDark().then((dark) => dispatch(themeModeChanged(dark ? 'dark' : 'light')));
@@ -86,10 +86,8 @@ export default function MainApp() {
 
     logseq.onSettingsChanged((a, b) =>
       dispatch(handleSettingsChanged({ old: b, new: a })));
-    dispatch(getUserRefs());
+    //dispatch(getUserRefs());
     //dispatch(loadMedia());
-
-    dispatch(refreshCollections());
   }, []);
 
   if (!visible || view.main == null) return null;

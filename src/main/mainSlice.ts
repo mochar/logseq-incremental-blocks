@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
-import { QueueIb, Ref } from "../learn/learnSlice";
 import { toEndOfDay, toStartOfDay } from "../utils/datetime";
 import { parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
+import { QueueIb, Ref } from "../types";
 
 interface Collection {
   name: string,

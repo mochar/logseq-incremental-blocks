@@ -2,8 +2,8 @@ import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
 import { counter, toCamelCase } from "../utils/utils";
 import { toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
-import { QueueIb, Ref } from "../learn/learnSlice";
 import Beta from "../algorithm/beta";
+import { QueueIb, Ref } from "../types";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
   // Identify by ib-due. Put in ?due var. Used downstream.

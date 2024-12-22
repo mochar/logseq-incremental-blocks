@@ -2,14 +2,14 @@ import React from "react";
 import { Virtuoso } from "react-virtuoso";
 import IbItem from "../widgets/IbItem";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { selectFilteredDueIbs, startLearning } from "./learnSlice";
+import { startLearning } from "./learnSlice";
 import * as theme from "../utils/theme";
 import { MainView, setMainView } from "../state/viewSlice";
 
 export default function QueueView() {
   const dispatch = useAppDispatch();
   const busy = useAppSelector(state => state.main.busy);
-  const queue = useAppSelector(selectFilteredDueIbs);
+  const queue = useAppSelector(state => state.learn.queue);
 
   function learn() {
     dispatch(startLearning());

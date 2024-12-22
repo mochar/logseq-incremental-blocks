@@ -15,6 +15,7 @@ import { store } from "./state/store";
 import { setupNav, injectStore as injectStoreNav } from "./logseq/nav";
 import PopoverApp from "./PopoverApp";
 import MainApp from "./MainApp";
+import BarApp from "./BarApp";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -42,6 +43,15 @@ function main() {
     <React.StrictMode>
       <Provider store={store}>
         <PopoverApp />
+      </Provider>
+    </React.StrictMode>
+  );
+
+  const rootBar = ReactDOM.createRoot(document.getElementById("app")!);
+  rootBar.render(
+    <React.StrictMode>
+      <Provider store={store}>
+        <BarApp />
       </Provider>
     </React.StrictMode>
   );
