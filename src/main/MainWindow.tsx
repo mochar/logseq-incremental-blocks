@@ -5,6 +5,7 @@ import { refreshCollections, selectDueDate, toggleRef } from "./mainSlice";
 import IbsView from "./IbsView";
 import DatePicker from "react-datepicker";
 import { todayMidnight } from "../utils/datetime";
+import useCalculateHeight from "../hooks/useCalculateHeight";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -52,6 +53,8 @@ export default function MainWindow() {
 
 function RefsView() {
   const dispatch = useAppDispatch();
+  const ref = useRef<HTMLDivElement>(null);
+  const height = useCalculateHeight(ref.current);
   const busy = useAppSelector(state => state.main.busy);
   const all = useAppSelector(state => state.main.refs);
   const selected = useAppSelector(state => state.main.selectedRefs);
@@ -83,18 +86,20 @@ function RefsView() {
       <p>Tags</p>
       <hr />
       {selected.length > 0 && selectedView}
-      <ul className="overflow-y-scroll" style={{ maxHeight: "70%" }}>
-        {unselected.map(ref => (
-          <li key={ref.id}>
-            <button
-              className="text-left w-full"
-              onClick={() => dispatch(toggleRef(ref))}
-            >
-              {ref.name}
-            </button>
-          </li>
-        ))}
-      </ul>
+      <div ref={ref}>
+        <ul className="overflow-y-scroll" style={{ height, minHeight: 100 }}>
+          {unselected.map(ref => (
+            <li key={ref.id}>
+              <button
+                className="text-left w-full"
+                onClick={() => dispatch(toggleRef(ref))}
+              >
+                {ref.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
