@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
-import { QueueIb } from "../learn/learnSlice";
-import { todayMidnight, toEndOfDay, toStartOfDay } from "../utils/datetime";
+import { QueueIb, Ref } from "../learn/learnSlice";
+import { toEndOfDay, toStartOfDay } from "../utils/datetime";
 import { parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
 
 interface Collection {
@@ -20,6 +20,8 @@ interface MainState {
   // Null means no filter on due date
   dueDate: Date | null,
   collections: Collection[],
+  refs: Ref[],
+  selectedRefs: Ref[],
   // collection index -> ibs in that collection
   // redux doesnt like nonseriazlbale Map, but js
   // objects cannot contain numerical keys. so we
@@ -33,6 +35,8 @@ const initialState: MainState = {
   busy: false,
   dueDate: null,
   collections: [],
+  refs: [],
+  selectedRefs: [],
   loadedIbs: {}
 }
 
@@ -46,6 +50,12 @@ const mainSlice = createSlice({
     collectionsLoaded(state, action: PayloadAction<Collection[]>) {
       state.collections = action.payload;
       state.loadedIbs = {};
+    },
+    refsLoaded(state, action: PayloadAction<Ref[]>) {
+      state.refs = action.payload;
+    },
+    refsSelected(state, action: PayloadAction<Ref[]>) {
+      state.selectedRefs = action.payload;
     },
     collectionsOpened(state, action: PayloadAction<CollectionIbs[]>) {
       for (const collection of action.payload) {
@@ -86,9 +96,8 @@ function buildIbQueryWhereBlock(state: MainState) : string {
   // Handle refs. Not sure if this works, but also not necessary as ref filtering
   // in the queue happens after retrieving all due ibs.
   let refsWhere = '';
-  let refs: string[] = [];
-  if (refs && refs.length > 0) {
-    const refString = refs.map((r) => `"${r}"`).join(', ');
+  if (state.selectedRefs.length > 0) {
+    const refString = state.selectedRefs.map((r) => `"${r.name}"`).join(', ');
     refsWhere = `
       [?page :block/name ?pagename] 
       [(contains? #{${refString}} ?pagename)] 
@@ -131,7 +140,6 @@ export const refreshCollections = () => {
       ]`;
     // Returns array of two-tuples: Page data object, and page ib count number
     const ret = await logseq.DB.datascriptQuery(query);
-    console.log(ret.length, ret);
 
     // Collapse to collections
     const collectionMap: { [ key: string ]: { pageIds: Set<string>, count: number } } = {};
@@ -154,8 +162,34 @@ export const refreshCollections = () => {
     });
     
     dispatch(mainSlice.actions.collectionsLoaded(collections));
+
+    // Get tags
+    const refs = await refreshRefs(state.main);
+    dispatch(mainSlice.actions.refsLoaded(refs));
+
     dispatch(gotBusy(false));
   }
+}
+
+/*
+ */
+async function refreshRefs(state: MainState) : Promise<Ref[]> {
+  const query = `[
+    :find
+      (pull ?ref [
+       :db/id :block/uuid :block/name
+      ])
+    :where
+      [?b :block/properties ?prop]
+      [?b :block/page ?bp]
+      [(get ?prop :ib-a) _]
+      [(get ?prop :ib-b) _]
+      ${buildIbQueryWhereBlock(state)}
+      [?b :block/refs ?ref]
+      [?ref :block/name _]
+    ]`;
+  const ret = await logseq.DB.datascriptQuery(query);
+  return ret.map((r: any) => r[0] as Ref);
 }
 
 async function loadCollectionsIbs(state: MainState, collectionIndices: number[]) : Promise<CollectionIbs[]> {
@@ -170,6 +204,8 @@ async function loadCollectionsIbs(state: MainState, collectionIndices: number[])
       ${QUEUE_IB_PULLS}
     :where
       [?b :block/properties ?prop]
+      [(get ?prop :ib-a) _]
+      [(get ?prop :ib-b) _]
       [?b :block/page ?bp]
       [(contains? #{${pageIdsString}} ?bp)] 
       ${buildIbQueryWhereBlock(state)}
@@ -246,6 +282,18 @@ export const selectDueDate = (dueDate: Date | null) => {
     const state = getState();
     if (state.main.busy) return;
     dispatch(mainSlice.actions.dueDateSelected(dueDate));
+    await dispatch(refreshCollections());
+  }
+}
+
+export const toggleRef = (ref: Ref) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
+    const index = state.main.selectedRefs.findIndex(r => r.id == ref.id);
+    const refs = index == -1
+      ? [...state.main.selectedRefs, ref]
+      : state.main.selectedRefs.toSpliced(index, 1);
+    dispatch(mainSlice.actions.refsSelected(refs));
     await dispatch(refreshCollections());
   }
 }

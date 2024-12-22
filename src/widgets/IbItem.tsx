@@ -1,7 +1,6 @@
 import React from "react";
 import { PRIORITY_PALETTE } from "../globals";
 import { interpolateColor } from "../utils/utils";
-import * as theme from "../utils/theme";
 import { QueueIb } from "../learn/learnSlice";
 
 export default function IbItem({ qib, nChars }: { qib: QueueIb, nChars?: number }) {
