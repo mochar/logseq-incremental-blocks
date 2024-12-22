@@ -33,11 +33,17 @@ export default function IbsView() : JSX.Element {
           groupCounts={openedCollectionCounts}
           groupContent={i => {
             const collection = collections[i];
+            const opened = openedCollections.includes(i);
             return (
               <div
-                className="flex justify-between bg-gray-100 p-1 cursor-pointer"
+                className="flex bg-gray-100 p-1 cursor-pointer"
                 onClick={() => dispatch(toggleCollections([i]))}
               >
+                <button
+                  className="px-2 text-neutral-500 items-center font-medium"
+                >
+                  <span>{opened ? "v" : ">"}</span>
+                </button>
                 <p className="">
                   {collection.name} ({collection.pageIds.length} pages, {collection.count} ibs)
                 </p>

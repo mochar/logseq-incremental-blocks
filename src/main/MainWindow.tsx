@@ -36,6 +36,7 @@ export default function MainWindow() {
           <button
             className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-6 border-b-2 border-blue-700 hover:border-blue-500 rounded`}
             onClick={() => {}}
+            disabled={busy}
           >
              Review ({totalIbs})
           </button>
