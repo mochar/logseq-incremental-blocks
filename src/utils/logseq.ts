@@ -2,6 +2,7 @@ import { AppGraphInfo, BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import removeMarkdown from 'remove-markdown';
 import { toDashCase } from "./utils";
 import { PROP_REGEX } from "../globals";
+import { RootState } from "../state/store";
 
 export async function isDark(): Promise<boolean> {
   const config = await logseq.App.getUserConfigs();
@@ -85,4 +86,14 @@ export function getFilterRefs() : string[] {
     .filter((r) => !/^\s*$/.test(r))
     .map((r) => r.trim().toLowerCase());
   return refs;
+}
+
+export function updateVisiblity(state: RootState) {
+  const shouldHide = state.view.main == null && state.view.popover == null;// && !state.learn.learning;
+  console.log('shouldHide', shouldHide);
+  if (shouldHide) {
+    logseq.hideMainUI();
+  } else {
+    logseq.showMainUI();
+  }
 }

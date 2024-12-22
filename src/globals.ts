@@ -20,3 +20,4 @@ export const PROP_REGEX = /[a-zA-Z0-9-_]+:: [^:]+/;
 export const PLUGIN_ROUTE = '/page/incremental-blocks';
 // From: logseq-plugin-files-manager
 export const PARENT_MAIN_CONTAINER_ID = 'main-content-container';
+export const PARENT_HEAD_ID = 'head';

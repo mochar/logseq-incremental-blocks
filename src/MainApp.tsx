@@ -13,6 +13,9 @@ import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import useMainSizeAndPosition from "./hooks/useMainSizeAndPos";
 import { updateThemeStyle } from "./logseq/theme";
 import { refreshCollections } from "./main/mainSlice";
+import * as ReactDOM from "react-dom/client";
+import { Provider, useStore } from "react-redux";
+import BarApp from "./BarApp";
 
 export default function MainApp() {
   const visible = useAppVisible();
@@ -21,6 +24,7 @@ export default function MainApp() {
   const currentIbData = useAppSelector(state => state.learn.current);
   const sizeAndPos = useMainSizeAndPosition();
   const dispatch = useAppDispatch();
+  const store = useStore();
 
   const state = useAppSelector(state => state);
   console.log(state);
@@ -28,7 +32,16 @@ export default function MainApp() {
   useEffect(() => {
     logseq.provideModel({
       toggleMain() {
-        dispatch(toggleMainView({ view: MainView.main }));
+        // dispatch(toggleMainView({ view: MainView.main }));
+
+        const rootBar = ReactDOM.createRoot(parent!.document.getElementById("ib-review-bar")!);
+        rootBar.render(
+          <React.StrictMode>
+            <Provider store={store}>
+              <BarApp />
+            </Provider>
+          </React.StrictMode>
+        );
       },
       async toggleMedxPopover(e: any) {
         const medFrag = MediaFragment.parse(e.dataset.macroArgs.split(','));

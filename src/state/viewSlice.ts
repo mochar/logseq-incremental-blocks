@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { AppDispatch, RootState } from './store';
 import { BlockEntity } from '@logseq/libs/dist/LSPlugin.user';
+import { updateVisiblity } from '../utils/logseq';
 
 export enum MainView { main, medx }
 export enum PopoverView { learn, ib, insert }
@@ -36,11 +37,9 @@ const viewSlice = createSlice({
   reducers: {
     setMainView: (state, action: PayloadAction<ViewData | null>) => {
       state.main = action.payload;
-      if (state.main == null && state.popover == null) logseq.hideMainUI();
     },
     setPopoverView: (state, action: PayloadAction<ViewData | null>) => {
       state.popover = action.payload;
-      if (state.main == null && state.popover == null) logseq.hideMainUI();
     }
   }
 });
@@ -59,10 +58,8 @@ export const togglePopoverView = (request: ViewRequest) => {
     const state = getState();
     if (request.view == null || state.view.popover?.view == request.view) {
       dispatch(setPopoverView(null));
-      if (state.main == null) logseq.hideMainUI();
     } else if (request.view == PopoverView.learn) {
       dispatch(setPopoverView({ view: PopoverView.learn }));
-      logseq.showMainUI();
     } else if (request.view == PopoverView.ib) {
       if (!request.blockUuid || !request.slotId) return;
       // Don't show when currently learning
@@ -74,7 +71,6 @@ export const togglePopoverView = (request: ViewRequest) => {
       if (block) {
         const data: SlotViewData = { block, slotId: request.slotId };
         dispatch(setPopoverView({ view: PopoverView.ib, data }))
-        logseq.showMainUI();
       } else {
         logseq.UI.showMsg('Block not found.')
       }
@@ -84,11 +80,11 @@ export const togglePopoverView = (request: ViewRequest) => {
       if (block) {
         const data: BlockViewData = { block };
         dispatch(setPopoverView({ view: PopoverView.insert, data }))
-        logseq.showMainUI();
       } else {
         logseq.UI.showMsg('Block not found.')
       }
     }
+    updateVisiblity(getState());
   }
 }
 
@@ -97,15 +93,13 @@ export const toggleMainView = (request: ViewRequest) => {
     const state = getState();
     if (request.view == null || state.view.main?.view == request.view) {
       dispatch(setMainView(null));
-      if (state.view.popover == null) logseq.hideMainUI();
     } else if (request.view == MainView.main) {
       dispatch(setMainView({ view: MainView.main }));
       if (state.view.popover) dispatch(setPopoverView(null));
-      logseq.showMainUI();
     } else if (request.view == MainView.medx) {
       dispatch(setMainView({ view: MainView.medx }));
-      logseq.showMainUI();
     }
+    updateVisiblity(getState());
   }
 }
 

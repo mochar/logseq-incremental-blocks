@@ -29,7 +29,7 @@ injectStoreNav(store);
 function main() {
   console.info(`#${pluginId}: MAIN`);
 
-  const rootMain = ReactDOM.createRoot(document.getElementById("app")!);
+  const rootMain = ReactDOM.createRoot(document.getElementById("app-main")!);
   rootMain.render(
     <React.StrictMode>
       <Provider store={store}>
@@ -38,7 +38,7 @@ function main() {
     </React.StrictMode>
   );
   
-  const rootPopover = ReactDOM.createRoot(document.getElementById("app")!);
+  const rootPopover = ReactDOM.createRoot(document.getElementById("app-popover")!);
   rootPopover.render(
     <React.StrictMode>
       <Provider store={store}>
@@ -47,14 +47,14 @@ function main() {
     </React.StrictMode>
   );
 
-  const rootBar = ReactDOM.createRoot(document.getElementById("app")!);
-  rootBar.render(
-    <React.StrictMode>
-      <Provider store={store}>
-        <BarApp />
-      </Provider>
-    </React.StrictMode>
-  );
+  logseq.provideUI({
+    key: 'ib-review-bar',
+    path: '#main-content-container',
+    template: `
+    <div id="ib-review-bar" class="p-2" style="position: fixed; width: 100%; left: 0; bottom: 0">
+    </div>
+    `
+  });
 
   function createModel() {
     return {
