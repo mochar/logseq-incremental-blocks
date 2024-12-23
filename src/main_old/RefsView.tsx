@@ -1,7 +1,7 @@
 import React from "react";
 import * as theme from "../utils/theme";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { addRef, Ref, removeRef } from "../learn/learnSlice";
+import { addRef, Ref, removeRef } from "../learn/learnSlice.tsx~";
 import { Virtuoso } from "react-virtuoso";
 import { queryRefIbs } from "../logseq/query";
 

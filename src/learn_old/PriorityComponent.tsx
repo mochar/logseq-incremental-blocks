@@ -3,10 +3,11 @@ import { useAppDispatch, useAppSelector } from "../state/hooks";
 import { getPriorityUpdates, manualIntervention } from "./learnSlice";
 import * as theme from "../utils/theme";
 import BetaGraph from "../widgets/BetaGraph";
+import PrioritySlider from "../widgets/PrioritySlider";
 
 export default function PriorityComponent() {
   const dispatch = useAppDispatch();
-  const currentIbData = useAppSelector(state => state.learn.current);
+  const currentIbData = useAppSelector(state => state.learn.current!);
   let pollTimer: NodeJS.Timeout;
   
   React.useEffect(() => {
@@ -19,8 +20,6 @@ export default function PriorityComponent() {
   function updateManualPriority(meanPiority: number | null) {
     dispatch(manualIntervention({ priority: meanPiority }))
   }
-
-  if (!currentIbData) return <></>;
 
   const currentIb = currentIbData.ib;
 
@@ -41,9 +40,40 @@ export default function PriorityComponent() {
   }
 
   return (
-    <div className={`${theme.BORDER}`}>
-      <BetaGraph beta={currentIb.beta!} width={60} height={30}></BetaGraph>
-      {/* <BetaGraph beta={newBeta!} width={120} height={60}></BetaGraph> */}
+    <div className="pt-2">
+
+      <div className="flex items-center justify-between">
+        <p>Priority</p>
+        <p>
+          {prioritizeManually && <span className="text-neutral-600">
+            manual
+            <button
+            className={`button ${theme.BORDER} ${theme.BG.hover}`}
+            onClick={() => updateManualPriority(null)}
+            >
+              <span>⮌</span>
+            </button>
+          </span>
+          }
+        </p>
+      </div>
+
+      <div className="flex items-center justify-center">
+        <div className={`${theme.BORDER} grow-0`}>
+          <BetaGraph beta={currentIb.beta!} width={120} height={60}></BetaGraph>
+        </div>
+        <p className="text-neutral-400 px-2">🠲</p>
+        <div className={`${theme.BORDER} grow-0`}>
+          <BetaGraph beta={newBeta!} width={120} height={60}></BetaGraph>
+        </div>
+      </div>
+
+      <div className="py-1 px-6">
+        <PrioritySlider
+          beta={newBeta!}
+          onMeanChange={updateManualPriority}
+        ></PrioritySlider>
+      </div>
     </div>
   );
 }

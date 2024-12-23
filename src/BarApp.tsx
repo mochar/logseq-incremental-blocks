@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAppVisible } from "./logseq/events";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
 import { PARENT_MAIN_CONTAINER_ID } from "./globals";
+import LearnBar from "./learn/LearnBar";
 
 export default function BarApp() {
   const visible = useAppVisible();
@@ -39,19 +40,15 @@ export default function BarApp() {
   return (
     <div
       id="ib-review-bar-content"
-      className="border border-2 rounded shadow-sm p-1"
+      className="flex justify-center"
       style={{
         position: "relative",
-        zIndex: 3,
         left: sizeAndPos.left,
         width: sizeAndPos.width,
-        backgroundColor: `var(--ls-primary-background-color, var(--ls-primary-background-color-plugin))`,
-        color: `var(--ls-primary-text-color, var(--ls-primary-text-color-plugin))`,
         transition: 'background-color 0.3s, color 0.3s',
       }}
     >
-       Review bar
-      <button onClick={() => console.log('hoi')}>Hoi</button>
+      <LearnBar />
     </div>
   );
 }

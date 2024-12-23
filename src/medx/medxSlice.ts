@@ -7,6 +7,7 @@ import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
 import { betaFromMean } from "../algorithm/priority";
+import { BetaParams } from "../types";
 
 export interface MediaAttrs {
   loop: boolean,
@@ -50,7 +51,7 @@ interface MedxState {
   highlight: number[] | null,
   mediaAttrs: MediaAttrs,
   note: string,
-  beta: Beta,
+  betaParams: BetaParams,
   interval: number,
   // Should actions and views on extracts, subs, chapters be restricted
   // to the selection range.
@@ -66,7 +67,7 @@ const initialState: MedxState = {
   highlight: null,
   mediaAttrs: { volume: 1, rate: 1, loop: false },
   note: '',
-  beta: new Beta(1, 1),
+  betaParams: {a: 1, b: 2},
   interval: initialIntervalFromMean(0.5),
   selectedSubRange: null,
   selectionExtract: null,
@@ -96,8 +97,9 @@ const medxSlice = createSlice({
   initialState,
   reducers: {
     reset(state) {
-      state.beta = state.active?.beta ?? new Beta(1, 1);
-      state.interval = initialIntervalFromMean(state.beta.mean);
+      const beta = state.active?.beta ?? new Beta(1, 1);
+      state.betaParams = beta.params;
+      state.interval = initialIntervalFromMean(beta.mean);
       state.note = '';
       state.selectedSubRange = null;
       state.selectionExtract = null;
@@ -115,7 +117,7 @@ const medxSlice = createSlice({
       const ib = IncrementalBlock.fromBlock(block);
       if (ib.beta) {
         state.active.beta = ib.beta;
-        state.beta = ib.beta;
+        state.betaParams = ib.beta.params;
         state.interval = initialIntervalFromMean(ib.beta.mean);
       }
     },
@@ -198,8 +200,8 @@ const medxSlice = createSlice({
     },
     priorityChanged(state, action: PayloadAction<number>) {
       const mean = action.payload;
-      const newBeta = betaFromMean(mean, { currentBeta: new Beta(state.beta.a, state.beta.b) });
-      state.beta = newBeta;
+      const newBeta = betaFromMean(mean, { currentBeta: new Beta(state.betaParams.a, state.betaParams.b) });
+      state.betaParams = newBeta.params;
       state.interval = initialIntervalFromMean(newBeta.mean);
     },
     intervalChanged(state, action: PayloadAction<number>) {
@@ -297,8 +299,8 @@ function genExtractData(medx: MedxState, extract?: Extract) : ExtractData {
   due.setDate(due.getDate() + medx.interval);
   const properties = {
     'ib-reps': 0,
-    'ib-a': medx.beta.a,
-    'ib-b': medx.beta.b,
+    'ib-a': medx.betaParams.a,
+    'ib-b': medx.betaParams.b,
     'ib-due': due.getTime(),
     'ib-interval': medx.interval
   };

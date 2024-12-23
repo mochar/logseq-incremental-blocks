@@ -33,6 +33,10 @@ export function secondsToString(seconds: number): string {
   return new Date(1000 * seconds).toISOString().substr(11, 8);
 }
 
-export function toUnixTimestamp(date: Date) : number {
+export function dateToUnixTimestamp(date: Date) : number {
   return Math.floor(date.getTime() / 1000);
+}
+
+export function unixTimestampToDate(unixTimestamp: number): Date {
+  return new Date(unixTimestamp * 1000);
 }

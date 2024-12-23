@@ -1,5 +1,6 @@
 import { BETA_BOUNDS } from "../globals";
 import { CurrentIBData } from "../learn/learnSlice";
+import { unixTimestampToDate } from "../utils/datetime";
 import Beta from "./beta";
 import stringComparison from "string-comparison";
 
@@ -47,7 +48,8 @@ export interface PriorityUpdate {
 export function getPriorityUpdate(data: CurrentIBData) : PriorityUpdate {
   // Time component
   const now = new Date();
-  const durationSeconds = (now.getTime() - data.start.getTime()) / 1000;
+  const start = unixTimestampToDate(data.start);
+  const durationSeconds = (now.getTime() - start.getTime()) / 1000;
   const timeBeta = logistic(1., 30, -.1, .2)(durationSeconds);
 
   // Content component

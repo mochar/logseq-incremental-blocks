@@ -4,13 +4,12 @@ import { getPriorityUpdate, PriorityUpdate } from "../algorithm/priority";
 import { AppDispatch, RootState } from "../state/store";
 import { getBlockHierarchyContent } from "../utils/logseq";
 import { nextInterval } from "../algorithm/scheduling";
-import { addDays, todayMidnight, toUnixTimestamp } from "../utils/datetime";
+import { addDays, dateToUnixTimestamp, todayMidnight } from "../utils/datetime";
 import { convertBlockToIb } from "../logseq/command";
-import { getCardData, getCardReviews, getDeckReviews } from "../anki/anki";
 import { logseq as PL } from "../../package.json";
-import { startAppListening } from "../state/listenerMiddleware";
-import { cardOpened, getCurrentReviewCard, orderCardsInDeck } from "../anki/ankiSlice";
-import { QueueIb } from "../types";
+import { QueueItem } from "../types";
+import { parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
+import { buildIbQueryWhereBlock } from "../main/mainSlice";
 
 export enum RepAction { 
   finish, // Rep finished, update priority and schedule
@@ -21,9 +20,9 @@ export enum RepAction {
 
 // Detailed data on currently learning ib
 export interface CurrentIBData {
-  qib: QueueIb,
+  item: QueueItem,
   ib: IncrementalBlock,
-  start: Date,
+  start: number,
   contents: Record<string, string>,
   newContents: Record<string, string>,
   priorityUpdate?: PriorityUpdate,
@@ -31,13 +30,13 @@ export interface CurrentIBData {
   manualInterval?: number,
 }
 
-interface Learn {
+interface LearnState {
   learning: boolean,
-  learnStart?: Date,
+  learnStart?: number,
   // Whether or not anki cards should be part of queue
   anki: boolean,
-  queue: QueueIb[],
-  queueStatus: 'busy' | 'idle',
+  queue: QueueItem[],
+  busy: boolean,
   current: CurrentIBData | null,
   // Whether or not we have started listening for new block events, as the listener
   // should only be installed once.
@@ -46,11 +45,11 @@ interface Learn {
   autoIb: boolean
 }
 
-const initialState: Learn = {
-  learning: true,
+const initialState: LearnState = {
+  learning: false,
   anki: false,
   queue: [],
-  queueStatus: 'idle',
+  busy: false,
   current: null,
   blockListenerActive: false,
   autoIb: logseq.settings?.learnAutoIb as boolean ?? false
@@ -60,10 +59,10 @@ const learnSlice = createSlice({
   name: 'learn',
   initialState,
   reducers: {
-    learningStarted(state, action: PayloadAction<QueueIb[]>) {
+    learningStarted(state, action: PayloadAction<QueueItem[]>) {
       if (state.learning) return;
       state.learning = true;
-      state.learnStart = new Date();
+      state.learnStart = dateToUnixTimestamp(new Date());
       state.queue = action.payload;
       // Assume listener activated on first learn
       if (!state.blockListenerActive) {
@@ -83,45 +82,32 @@ const learnSlice = createSlice({
       if (intervention.priority !== undefined) state.current.manualPriority = intervention.priority ?? undefined;
       if (intervention.interval !== undefined) state.current.manualInterval = intervention.interval ?? undefined;
     },
-    qibRemoved(state, action: PayloadAction<{ uuid: string, removeFromQueue?: boolean }>) {
-      function removeFromQueue(queue: QueueIb[], uuid: string) {
-        for (let i = 0; i < queue.length; i++) {
-          if (queue[i].uuid == uuid) {
-            queue.splice(i, 1);
-          }
-        }        
-      }
-      
-      const uuid = action.payload.uuid;
-      //removeFromQueue(state.dueIbs, uuid);
-      if (action.payload.removeFromQueue ?? false) {
-        removeFromQueue(state.queue, uuid);
-      }
+    queueItemRemoved(state, action: PayloadAction<string>) {
+      const uuid = action.payload;
+      for (let i = 0; i < state.queue.length; i++) {
+        if (state.queue[i].uuid == uuid) {
+          state.queue.splice(i, 1);
+          break;
+        }
+      }        
     },
-    qibAdded(state, action: PayloadAction<{ qib: QueueIb, addToQueue?: boolean }>) {
-      function squeezeInQueue(queue: QueueIb[], qib: QueueIb) {
-        for (let i = 0; i < queue.length; i++) {
-          if (queue[i].priority < qib.priority) {
-            queue.splice(i, 0, qib);
-            break;
-          }
-        }  
-      }
-
-      const qib = action.payload.qib;
-      //squeezeInQueue(state.dueIbs, qib);
-      if (action.payload.addToQueue ?? false) {
-        squeezeInQueue(state.queue, qib);
-      }
+    queueItemAdded(state, action: PayloadAction<QueueItem>) {
+      const item = action.payload;
+      for (let i = 0; i < state.queue.length; i++) {
+        if (state.queue[i].priority < item.priority) {
+          state.queue.splice(i, 0, item);
+          break;
+        }
+      }  
     }
   },
   extraReducers: builder => {
     builder
       .addCase(nextIb.pending, (state, action) => {
-        state.queueStatus = 'busy';
+        state.busy = true;
       })
       .addCase(nextIb.fulfilled, (state, action) => {
-        state.queueStatus = 'idle';
+        state.busy = false;
         if (state.current) {
           state.queue.shift();
         }
@@ -129,7 +115,7 @@ const learnSlice = createSlice({
       })
       .addCase(nextIb.rejected, (state, action) => {
         console.error('next ib rejected');
-        state.queueStatus = 'idle';
+        state.busy = false;
       })
       .addCase(getPriorityUpdates.fulfilled, (state, action) => {
         state.current = action.payload;
@@ -140,7 +126,7 @@ const learnSlice = createSlice({
   }
 });
 
-export const { manualIntervention, qibAdded, qibRemoved } = learnSlice.actions;
+export const { manualIntervention, queueItemAdded, queueItemRemoved } = learnSlice.actions;
 
 
 /*
@@ -176,10 +162,26 @@ export const startLearning = () => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     let state = getState();
     const blockListenerActive = state.learn.blockListenerActive;
-    const queue = state.learn.queue;
     
-    await dispatch(getCurrentReviewCard());
+    //await dispatch(getCurrentReviewCard());
 
+    // Get queue priorities
+    const query = `[
+      :find
+        ${QUEUE_IB_PULLS}
+      :where
+        [?b :block/properties ?prop]
+        [?b :block/page ?bp]
+        [(get ?prop :ib-a) _]
+        [(get ?prop :ib-b) _]
+        ${buildIbQueryWhereBlock(state.main)}
+        ]`;
+    // Returns array of two-tuples: Page data object, and page ib count number
+    const ret = await logseq.DB.datascriptQuery(query);
+    const qibs = parseQueueIbs({ result: ret, sortByPriority: true });
+    const queue = qibs.map<QueueItem>(ib => {
+      return { type: 'source', uuid: ib.uuid, priority: ib.priority }
+    });
     dispatch(learnSlice.actions.learningStarted(queue));
 
     state = getState();
@@ -213,18 +215,19 @@ called directly, but as a final step of a repetition action.
 export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: RootState }>(
   'learn/nextIb', 
   async (_, { getState, dispatch }) => {
-    let { learn, anki } = getState();
+    let { learn } = getState();
 
     // Check if there's another element in the queue.
-    // Since the current element stays at top of the queue,
+    // Since during review the current element stays at top of the queue,
     // the index that we have to check depends on if there's
-    // currently an active element that is being reviewed.
-    const getNextQib = (): QueueIb | undefined => learn.queue[learn.current ? 1 : 0];
-    
+    // currently an active element that is being reviewed or not.
+    const getNextItem = (): QueueItem | undefined => learn.queue[learn.current ? 1 : 0];
+
     // If the next ib is a card, need to make sure that
     // we are in sync with anki queue.
-    let nextQib = getNextQib();
-    if (nextQib && learn.anki && nextQib.cardId) {
+    let nextItem = getNextItem();
+    /*
+    if (nextItem && learn.anki && nextItem.type == 'card') {
       try {
         // Check if any cards were reviewed during duration of current ib,
         // or, if first element in queue, since start time of learning.
@@ -255,10 +258,7 @@ export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: Root
           for (let i = 0; i < cards.length; i++) {
             const card = cards[i];
             if (card.deckName != anki.deckName) {
-              dispatch(qibRemoved({
-                uuid: card.fields.uuid.value,
-                removeFromQueue: true
-              }));
+              dispatch(queueItemRemoved(card.fields.uuid.value as string));
               reviews.splice(i, 1);
             }
           }
@@ -279,21 +279,22 @@ export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: Root
         throw e;
       }
     }
+    */
 
     // Retrieve next qib's data.
     // Since the next qib may potentially have changed if it was a
     // reviewed card, re-get the next qib in line.
     let nextIbData: CurrentIBData | null = null;
     ({ learn } = getState());
-    nextQib = getNextQib();
+    nextItem = getNextItem();
     
-    if (nextQib) {
+    if (nextItem) {
       // Get the next ib and its metadata.
-      const contents = await getBlockHierarchyContent(nextQib.uuid, 3);
+      const contents = await getBlockHierarchyContent(nextItem.uuid, 3);
       nextIbData = {
-        qib: nextQib,
-        ib: await IncrementalBlock.fromUuid(nextQib.uuid, { propsOnly: false }),
-        start: new Date(),
+        item: nextItem,
+        ib: await IncrementalBlock.fromUuid(nextItem.uuid, { propsOnly: false }),
+        start: dateToUnixTimestamp(new Date()),
         contents: contents,
         newContents: contents
       };
@@ -303,7 +304,7 @@ export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: Root
   {
     condition: (_, { getState }) => {
       const { learn } = getState(); 
-      if (learn.queueStatus == 'busy') return false;
+      if (learn.busy) return false;
     }
   }
 );
@@ -337,7 +338,7 @@ export const nextRep = () => {
     if (openIb) {
       const { learn } = getState();
       if (learn.current) {
-        logseq.App.pushState('page', { name: learn.current.qib.uuid })
+        logseq.App.pushState('page', { name: learn.current.item.uuid })
       }
     }
   }
@@ -350,10 +351,11 @@ TODO: replace upserts with updateBlock
 */
 export const finishRep = (opts?: {}) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
-    const { learn, anki } = getState();
+    const { learn } = getState();
     let current = learn.current;
     
     if (current) {
+      /*
       // If card, confirm card was reviewed
       const cardId = current.qib.cardId;
       if (cardId) {
@@ -384,6 +386,7 @@ export const finishRep = (opts?: {}) => {
 	  return;
 	}
       }
+      */
       
       // Update priority 
       const newBeta = current.ib.beta!.copy();
@@ -398,7 +401,7 @@ export const finishRep = (opts?: {}) => {
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-a', newBeta.a);
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-b', newBeta.b);
 
-      if (!cardId) {
+      if (current.item.type != 'card') {
         // Update schedule
         const interval = current.manualInterval ?? nextInterval(current.ib);
         const newDue = addDays(todayMidnight(), interval);
@@ -436,8 +439,8 @@ export const laterRep = ({ next=true }: { next?: boolean }) => {
       if (priority > state.learn.queue[1].priority) {
         priority = Math.max(0., state.learn.queue[1].priority - 0.01);
       }
-      const qib = {...current.qib, priority };
-      dispatch(qibAdded({ qib, addToQueue: true }));
+      const item = {...current.item, priority };
+      dispatch(queueItemAdded(item));
     }
     if (next) {
       await dispatch(nextRep());
@@ -475,14 +478,3 @@ export const toggleAutoIb = createAsyncThunk<boolean, boolean, { state: RootStat
 );
 
 export default learnSlice.reducer;
-
-startAppListening({
-  actionCreator: cardOpened,
-  effect: async (action, listenerApi) => {
-    const reviewCard = action.payload;
-    const state = listenerApi.getState();
-    if (reviewCard !== null && state.learn.current!.qib.cardId != reviewCard.cardId) {
-      // throw new Error('Anki deck and logseq queue out of sync ');
-    }
-  }
-});

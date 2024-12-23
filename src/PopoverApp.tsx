@@ -4,7 +4,6 @@ import { useAppVisible } from "./logseq/events";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
 import { IbViewData, InsertViewData, PopoverView, setPopoverView, togglePopoverView } from "./state/viewSlice";
 import InsertPopover from "./medx/InsertPopover";
-import LearnWindow from "./learn/LearnWindow";
 
 export default function PopoverApp() {
   const visible = useAppVisible();
@@ -39,9 +38,9 @@ export default function PopoverApp() {
   let viewComponent: JSX.Element = <></>;
   let classesIfCentered = '';
   switch (view.popover?.view) {
-    case PopoverView.learn:
-      viewComponent = <LearnWindow />;
-      break;
+    // case PopoverView.learn:
+    //   viewComponent = <LearnWindow />;
+    //   break;
     case PopoverView.ib:
       const ibData = view.popover.data! as IbViewData;
       viewComponent = <IbPopover block={ibData.block} slot={ibData.slotId} />;

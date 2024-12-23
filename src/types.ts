@@ -10,6 +10,12 @@ export interface Page {
   collection: string | null
 }
 
+export interface QueueItem {
+  uuid: string,
+  priority: number,
+  type: 'source' | 'card'
+}
+
 // Simplified ib data just for queue purposes.
 export interface QueueIb {
   id: number,
@@ -23,6 +29,11 @@ export interface QueueIb {
   refs: Ref[],
   // Anki card id 
   cardId?: number
+}
+
+export interface BetaParams {
+  a: number,
+  b: number
 }
 
 // Used previously for filtering, handy for later

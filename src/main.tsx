@@ -15,7 +15,6 @@ import { store } from "./state/store";
 import { setupNav, injectStore as injectStoreNav } from "./logseq/nav";
 import PopoverApp from "./PopoverApp";
 import MainApp from "./MainApp";
-import BarApp from "./BarApp";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -51,7 +50,7 @@ function main() {
     key: 'ib-review-bar',
     path: '#main-content-container',
     template: `
-    <div id="ib-review-bar" class="p-2" style="position: fixed; width: 100%; left: 0; bottom: 0">
+    <div id="ib-review-bar" class="p-2" style="position: fixed; width: 100%; left: 0; bottom: 0; z-index: 2">
     </div>
     `
   });

@@ -3,6 +3,7 @@ import seedrandom from "seedrandom";
 import { todayMidnight } from "../utils/datetime";
 import { BETA_BOUNDS } from "../globals";
 import { PriorityUpdate } from "./priority";
+import { BetaParams } from "../types";
 
 function toBetaParams(mean: number, variance: number): {a: number, b: number} {
   let a = ((1 - mean) / variance - 1 / mean) * mean * mean;
@@ -175,6 +176,10 @@ class Beta {
 
   public copy() : Beta {
     return new Beta(this._a, this._b);
+  }
+
+  public get params() : BetaParams {
+    return {a: this._a, b: this._b};
   }
 
   public applyPriorityUpdate(priorityUpdate: PriorityUpdate) {

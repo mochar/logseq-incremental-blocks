@@ -33,15 +33,6 @@ export default function MainApp() {
     logseq.provideModel({
       toggleMain() {
         // dispatch(toggleMainView({ view: MainView.main }));
-
-        const rootBar = ReactDOM.createRoot(parent!.document.getElementById("ib-review-bar")!);
-        rootBar.render(
-          <React.StrictMode>
-            <Provider store={store}>
-              <BarApp />
-            </Provider>
-          </React.StrictMode>
-        );
       },
       async toggleMedxPopover(e: any) {
         const medFrag = MediaFragment.parse(e.dataset.macroArgs.split(','));
@@ -86,6 +77,25 @@ export default function MainApp() {
         await logseq.Editor.updateBlock(blockUuid, newContent);
       }
     });
+
+    function attemptReactRenderReviewBar() {
+      const el = parent!.document.getElementById("ib-review-bar");
+      if (el && !el.classList.contains('reacted')) {
+        const rootBar = ReactDOM.createRoot(el);
+        rootBar.render(
+          <React.StrictMode>
+            <Provider store={store}>
+              <BarApp />
+            </Provider>
+          </React.StrictMode>
+        );
+        el.classList.add('reacted');
+        console.log('Attached review bar component');
+      } else {
+        setTimeout(attemptReactRenderReviewBar, 1000);
+      }
+    }
+    attemptReactRenderReviewBar();
 
     logseq.App.onCurrentGraphChanged((e) => dispatch(refreshCollections()));
     dispatch(refreshCollections());

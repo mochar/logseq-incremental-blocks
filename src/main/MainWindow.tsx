@@ -1,11 +1,12 @@
 import React, { useMemo, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
-import { refreshCollections, selectDueDate, toggleRef } from "./mainSlice";
+import { gotBusy, refreshCollections, selectDueDate, toggleRef } from "./mainSlice";
 import IbsView from "./IbsView";
 import DatePicker from "react-datepicker";
 import { todayMidnight } from "../utils/datetime";
 import useCalculateHeight from "../hooks/useCalculateHeight";
+import { startLearning } from "../learn/learnSlice";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -22,20 +23,21 @@ export default function MainWindow() {
     await dispatch(refreshCollections());
   }
 
+  async function startReview() {
+    dispatch(startLearning());
+  }
+
   return (
     <div
       id="ib-main"
       style={{ minHeight: '30rem' }}
       className={`flex flex-col p-2 h-full ${theme.TXT}`}
     >
-      <div>
-      </div>
-
       <div className="h-full flex space-x-2" ref={ref}>
         <div className="flex flex-col px-2.5 space-y-4" style={{flex: "2 1 0%"}}>
           <button
             className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-6 border-b-2 border-blue-700 hover:border-blue-500 rounded`}
-            onClick={() => {}}
+            onClick={startReview}
             disabled={busy}
           >
              Review ({totalIbs})

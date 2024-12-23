@@ -1,7 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import appReducer from './appSlice';
 import viewReducer from './viewSlice';
-import ankiReducer from '../anki/ankiSlice';
 import learnReducer from '../learn/learnSlice';
 import mainReducer from '../main/mainSlice';
 import medxReducer from '../medx/medxSlice';
@@ -14,7 +13,6 @@ export const store = configureStore({
     view: viewReducer,
     learn: learnReducer,
     medx: medxReducer,
-    anki: ankiReducer,
     main: mainReducer
   },
   middleware: getDefaultMiddleware =>

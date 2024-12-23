@@ -1,10 +1,9 @@
 import React from "react";
 import { PRIORITY_PALETTE } from "../globals";
 import { interpolateColor } from "../utils/utils";
-import { QueueIb } from "../learn/learnSlice";
+import { QueueIb } from "../types";
 
 export default function IbItem({ qib, nChars }: { qib: QueueIb, nChars?: number }) {
-
   // If block is page property block, then it has no content field.
   // At least the one i checked..
   let content = qib.content;

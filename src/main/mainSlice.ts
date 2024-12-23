@@ -75,7 +75,7 @@ const mainSlice = createSlice({
 
 export const { gotBusy } = mainSlice.actions;
 
-function buildIbQueryWhereBlock(state: MainState) : string {
+export function buildIbQueryWhereBlock(state: MainState) : string {
   // Query collections, their pages, and their size
   // Handle due filter clause
   let dueWhere = '';
