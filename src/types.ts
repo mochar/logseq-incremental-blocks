@@ -36,6 +36,20 @@ export interface BetaParams {
   b: number
 }
 
+export interface Scheduling {
+  multiplier: number;
+  interval: number;
+  reps: number;
+  dueDate: number;
+}
+
+export interface IncrementalBlock {
+  uuid: string,
+  betaParams: BetaParams,
+  sample?: number,
+  scheduling?: Scheduling,
+}
+
 // Used previously for filtering, handy for later
 export const typeFilters = ['all', 'cards', 'blocks'] as const;
 export declare type TypeFilter = typeof typeFilters[number];

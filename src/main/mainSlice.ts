@@ -18,7 +18,7 @@ interface CollectionIbs {
 interface MainState {
   busy: boolean,
   // Null means no filter on due date
-  dueDate: Date | null,
+  dueDate: number | null,
   collections: Collection[],
   refs: Ref[],
   selectedRefs: Ref[],
@@ -67,7 +67,7 @@ const mainSlice = createSlice({
         delete state.loadedIbs[index.toString()];
       }
     },
-    dueDateSelected(state, action: PayloadAction<Date | null>) {
+    dueDateSelected(state, action: PayloadAction<number | null>) {
       state.dueDate = action.payload;
     }
   },
@@ -80,15 +80,16 @@ export function buildIbQueryWhereBlock(state: MainState) : string {
   // Handle due filter clause
   let dueWhere = '';
   if (state.dueDate) {
+    const dueDate = new Date(state.dueDate);
     const includeOutdated = true;
     dueWhere = `
     [(get ?prop :ib-due) ?due]
-    [(<= ?due ${toEndOfDay(state.dueDate).getTime()})]
+    [(<= ?due ${toEndOfDay(dueDate).getTime()})]
   `;
     if (!includeOutdated) {
       dueWhere = `
       ${dueWhere}
-      [(>= ?due ${toStartOfDay(state.dueDate).getTime()})]
+      [(>= ?due ${toStartOfDay(dueDate).getTime()})]
     `;
     }
   }
@@ -281,7 +282,7 @@ export const selectDueDate = (dueDate: Date | null) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     const state = getState();
     if (state.main.busy) return;
-    dispatch(mainSlice.actions.dueDateSelected(dueDate));
+    dispatch(mainSlice.actions.dueDateSelected(dueDate ? dueDate.getTime() : null));
     await dispatch(refreshCollections());
   }
 }

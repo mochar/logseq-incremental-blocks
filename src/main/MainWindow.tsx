@@ -7,6 +7,9 @@ import DatePicker from "react-datepicker";
 import { todayMidnight } from "../utils/datetime";
 import useCalculateHeight from "../hooks/useCalculateHeight";
 import { startLearning } from "../learn/learnSlice";
+import { queryDueIbs, queryIncrementalBlocks } from "../logseq/query";
+import { db } from "../db";
+import { IncrementalBlock } from "../types";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -27,22 +30,47 @@ export default function MainWindow() {
     dispatch(startLearning());
   }
 
+  async function importToDb() {
+    dispatch(gotBusy(true));
+    try {
+      const ibs = await queryIncrementalBlocks();
+      await Promise.all([ibs.forEach(async (ib) => {
+        console.log(ib.uuid);
+        const block = await logseq.Editor.getBlock(ib.uuid);
+        if (block) {
+          //          await logseq.Editor.upsertBlockProperty(block, 'id', ib.uuid);
+          await logseq.Editor.updateBlock(block.uuid, block.content, {properties: {id: ib.uuid}});
+        }
+      })]);
+      await db.ibs.bulkAdd(ibs);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      dispatch(gotBusy(false));
+    }
+  }
+
   return (
     <div
       id="ib-main"
       style={{ minHeight: '30rem' }}
       className={`flex flex-col p-2 h-full ${theme.TXT}`}
     >
+      <div className="flex">
+        <button
+          className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-6 border-b-2 border-blue-700 hover:border-blue-500 rounded`}
+          onClick={startReview}
+          disabled={busy}
+        >
+           Review ({totalIbs})
+        </button>
+        <button className="border ml-auto" onClick={importToDb} disabled={busy}>
+          <span>Import to db</span>
+        </button>
+      </div>
+
       <div className="h-full flex space-x-2" ref={ref}>
         <div className="flex flex-col px-2.5 space-y-4" style={{flex: "2 1 0%"}}>
-          <button
-            className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-6 border-b-2 border-blue-700 hover:border-blue-500 rounded`}
-            onClick={startReview}
-            disabled={busy}
-          >
-             Review ({totalIbs})
-          </button>
-
           <DueDateView />                    
           <RefsView />
         </div>

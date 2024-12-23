@@ -1,9 +1,9 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
-import IncrementalBlock from "../IncrementalBlock";
 import { counter, toCamelCase } from "../utils/utils";
 import { toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
 import Beta from "../algorithm/beta";
-import { QueueIb, Ref } from "../types";
+import { IncrementalBlock, QueueIb, Ref } from "../types";
+import { ibFromProperties } from "../ib";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
   // Identify by ib-due. Put in ?due var. Used downstream.
@@ -12,6 +12,8 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
     :find (pull ?b [*])
     :where
       [?b :block/properties ?prop]
+      [(get ?prop :ib-a) _]
+      [(get ?prop :ib-b) _]
       ${where}
   ]
   `;
@@ -25,7 +27,7 @@ export async function queryIncrementalBlocks(where: string = ''): Promise<Increm
     });
     props = Object.assign({}, ...keyValues);
     b.properties = props;
-    return IncrementalBlock.fromBlock(b);
+    return ibFromProperties(b.uuid, props);
   });
   return ibs;
 }

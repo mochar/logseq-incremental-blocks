@@ -4,7 +4,7 @@ import { getPriorityUpdate, PriorityUpdate } from "../algorithm/priority";
 import { AppDispatch, RootState } from "../state/store";
 import { getBlockHierarchyContent } from "../utils/logseq";
 import { nextInterval } from "../algorithm/scheduling";
-import { addDays, dateToUnixTimestamp, todayMidnight } from "../utils/datetime";
+import { addDays, todayMidnight } from "../utils/datetime";
 import { convertBlockToIb } from "../logseq/command";
 import { logseq as PL } from "../../package.json";
 import { QueueItem } from "../types";
@@ -62,7 +62,7 @@ const learnSlice = createSlice({
     learningStarted(state, action: PayloadAction<QueueItem[]>) {
       if (state.learning) return;
       state.learning = true;
-      state.learnStart = dateToUnixTimestamp(new Date());
+      state.learnStart = (new Date()).getTime();
       state.queue = action.payload;
       // Assume listener activated on first learn
       if (!state.blockListenerActive) {
@@ -294,7 +294,7 @@ export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: Root
       nextIbData = {
         item: nextItem,
         ib: await IncrementalBlock.fromUuid(nextItem.uuid, { propsOnly: false }),
-        start: dateToUnixTimestamp(new Date()),
+        start: (new Date()).getTime(),
         contents: contents,
         newContents: contents
       };
