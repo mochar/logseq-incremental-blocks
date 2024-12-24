@@ -1,5 +1,5 @@
 import { jStat } from "jstat";
-import IncrementalBlock from "../IncrementalBlock";
+import { IncrementalBlock } from "../types";
 
 export function initialIntervalFromMean(mean: number) : number {
   const rate = (1 - mean) * 25;
@@ -8,5 +8,5 @@ export function initialIntervalFromMean(mean: number) : number {
 }
 
 export function nextInterval(ib: IncrementalBlock) : number {
-  return Math.ceil(ib.interval! * ib.multiplier);
+  return Math.ceil(ib.scheduling!.interval * ib.scheduling!.multiplier);
 }

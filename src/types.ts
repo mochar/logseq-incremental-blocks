@@ -50,6 +50,8 @@ export interface IncrementalBlock {
   scheduling?: Scheduling,
 }
 
+export declare type Timestamp = number;
+
 // Used previously for filtering, handy for later
 export const typeFilters = ['all', 'cards', 'blocks'] as const;
 export declare type TypeFilter = typeof typeFilters[number];

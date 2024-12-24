@@ -44,6 +44,10 @@ class Beta {
     return new this(a, b);
   }
 
+  static fromParams(params: BetaParams) {
+    return new this(params.a, params.b);
+  }
+
   static fromMoments(mean: number, variance: number) {
     const {a, b} = toBetaParams(mean, variance);
     return new this(a, b);

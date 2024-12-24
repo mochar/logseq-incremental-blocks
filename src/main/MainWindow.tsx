@@ -64,9 +64,9 @@ export default function MainWindow() {
         >
            Review ({totalIbs})
         </button>
-        <button className="border ml-auto" onClick={importToDb} disabled={busy}>
-          <span>Import to db</span>
-        </button>
+        {/* <button className="border ml-auto" onClick={importToDb} disabled={busy}> */}
+        {/*   <span>Import to db</span> */}
+        {/* </button> */}
       </div>
 
       <div className="h-full flex space-x-2" ref={ref}>

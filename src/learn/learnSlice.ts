@@ -1,5 +1,4 @@
 import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
-import IncrementalBlock from "../IncrementalBlock";
 import { getPriorityUpdate, PriorityUpdate } from "../algorithm/priority";
 import { AppDispatch, RootState } from "../state/store";
 import { getBlockHierarchyContent } from "../utils/logseq";
@@ -7,9 +6,14 @@ import { nextInterval } from "../algorithm/scheduling";
 import { addDays, todayMidnight } from "../utils/datetime";
 import { convertBlockToIb } from "../logseq/command";
 import { logseq as PL } from "../../package.json";
-import { QueueItem } from "../types";
+import { BetaParams, IncrementalBlock, QueueItem, Timestamp } from "../types";
 import { parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
 import { buildIbQueryWhereBlock } from "../main/mainSlice";
+import Beta from "../algorithm/beta";
+import { doneIb, ibFromProperties } from "../ib";
+import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
+
+export enum Popover { none, priority }
 
 export enum RepAction { 
   finish, // Rep finished, update priority and schedule
@@ -22,9 +26,11 @@ export enum RepAction {
 export interface CurrentIBData {
   item: QueueItem,
   ib: IncrementalBlock,
-  start: number,
+  block: BlockEntity,
+  start: Timestamp,
   contents: Record<string, string>,
   newContents: Record<string, string>,
+  newPriority: BetaParams,
   priorityUpdate?: PriorityUpdate,
   manualPriority?: number,
   manualInterval?: number,
@@ -32,7 +38,7 @@ export interface CurrentIBData {
 
 interface LearnState {
   learning: boolean,
-  learnStart?: number,
+  learnStart?: Timestamp,
   // Whether or not anki cards should be part of queue
   anki: boolean,
   queue: QueueItem[],
@@ -42,7 +48,8 @@ interface LearnState {
   // should only be installed once.
   blockListenerActive: boolean,
   // Whether or not to auto ib when learning
-  autoIb: boolean
+  autoIb: boolean,
+  popover: Popover
 }
 
 const initialState: LearnState = {
@@ -52,7 +59,8 @@ const initialState: LearnState = {
   busy: false,
   current: null,
   blockListenerActive: false,
-  autoIb: logseq.settings?.learnAutoIb as boolean ?? false
+  autoIb: logseq.settings?.learnAutoIb as boolean ?? false,
+  popover: Popover.none
 }
 
 const learnSlice = createSlice({
@@ -76,11 +84,27 @@ const learnSlice = createSlice({
       state.learning = false;
       state.learnStart = undefined;
     },
-    manualIntervention(state, action: PayloadAction<{ priority?: number | null, interval?: number | null }>) {
+    manuallyPrioritized(state, action: PayloadAction<number | null>) {
       if (!state.current) return;
-      const intervention = action.payload;
-      if (intervention.priority !== undefined) state.current.manualPriority = intervention.priority ?? undefined;
-      if (intervention.interval !== undefined) state.current.manualInterval = intervention.interval ?? undefined;
+      const priority = action.payload;
+      state.current.manualPriority = priority ?? undefined;
+      if (priority) {
+        // Calculate updated params based on manual priority
+        const newBeta = Beta.fromParams(state.current.ib.betaParams);
+        newBeta.mean = priority;
+        state.current.newPriority = newBeta.params;
+      } else {
+        // Calculate updated params based on priority update
+        if (state.current.priorityUpdate) {
+          const newBeta = Beta.fromParams(state.current.ib.betaParams);
+          newBeta.applyPriorityUpdate(state.current.priorityUpdate);
+          state.current.newPriority = newBeta.params;
+        }
+      }
+    },
+    manuallyScheduled(state, action: PayloadAction<number | null>) {
+      if (!state.current) return;
+      state.current.manualInterval = action.payload ?? undefined;
     },
     queueItemRemoved(state, action: PayloadAction<string>) {
       const uuid = action.payload;
@@ -99,6 +123,9 @@ const learnSlice = createSlice({
           break;
         }
       }  
+    },
+    popoverVisible(state, action: PayloadAction<Popover>) {
+      state.popover = action.payload;
     }
   },
   extraReducers: builder => {
@@ -126,12 +153,12 @@ const learnSlice = createSlice({
   }
 });
 
-export const { manualIntervention, queueItemAdded, queueItemRemoved } = learnSlice.actions;
+export const { manuallyPrioritized, manuallyScheduled, queueItemAdded, queueItemRemoved, popoverVisible } = learnSlice.actions;
 
 
 /*
-Some visual feedback is given to show that learning mode is on.
-*/
+ * Some visual feedback is given to show that learning mode is on.
+ */
 async function reflectLearningChangedInGui(learning: boolean, dueIbUuid?: string) {
   // Toolbar button color
   const color = learning ? 'hotpink' : 'dimgrey';
@@ -290,13 +317,23 @@ export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: Root
     
     if (nextItem) {
       // Get the next ib and its metadata.
+      const block = await logseq.Editor.getBlock(nextItem.uuid, {includeChildren: false});
+      if (!block) {
+        //@ts-ignore
+        dispatch(stopLearning());
+        logseq.UI.showMsg('Block not found', 'error');
+        return;
+      }
       const contents = await getBlockHierarchyContent(nextItem.uuid, 3);
+      const ib = ibFromProperties(block.uuid, block.properties ?? {});
       nextIbData = {
         item: nextItem,
-        ib: await IncrementalBlock.fromUuid(nextItem.uuid, { propsOnly: false }),
+        block,
+        ib,
         start: (new Date()).getTime(),
         contents: contents,
-        newContents: contents
+        newContents: contents,
+        newPriority: {...ib.betaParams}
       };
     }
     return nextIbData;
@@ -314,9 +351,14 @@ export const getPriorityUpdates = createAsyncThunk<CurrentIBData | null, void, {
   async (_, { getState, dispatch }) => {
     const { learn } = getState();
     if (!learn.current) return null;
-    const current = {...learn.current};
+    const current: CurrentIBData = {...learn.current};
     current.newContents = await getBlockHierarchyContent(current.ib.uuid, 3);
     current.priorityUpdate = getPriorityUpdate(current);
+    if (!current.manualPriority) {
+      const newBeta = Beta.fromParams(current.ib.betaParams);
+      newBeta.applyPriorityUpdate(current.priorityUpdate);
+      current.newPriority = newBeta.params;
+    }
     return current;
   },
   {
@@ -388,16 +430,8 @@ export const finishRep = (opts?: {}) => {
       }
       */
       
-      // Update priority 
-      const newBeta = current.ib.beta!.copy();
-      if (current.manualPriority) {
-        newBeta.mean = current.manualPriority;
-      } else {
-        await dispatch(getPriorityUpdates());
-        const state = getState();
-        current = state.learn.current!;
-        newBeta.applyPriorityUpdate(current.priorityUpdate!);
-      }
+      // Update priority
+      let newBeta = Beta.fromParams(current.newPriority);
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-a', newBeta.a);
       await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-b', newBeta.b);
 
@@ -409,7 +443,7 @@ export const finishRep = (opts?: {}) => {
         await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-due', newDue.getTime());
 
         // Others
-        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.reps! + 1);
+        await logseq.Editor.upsertBlockProperty(current.ib.uuid, 'ib-reps', current.ib.scheduling!.reps + 1);
       } 
     }
     await dispatch(nextRep());
@@ -435,7 +469,7 @@ export const laterRep = ({ next=true }: { next?: boolean }) => {
     const state = getState();
     if (state.learn.queue.length > 1) {
       const current = state.learn.current!;
-      let priority = current.ib.beta!.sample({});
+      let priority = Beta.fromProps(current.ib.betaParams)!.sample({});
       if (priority > state.learn.queue[1].priority) {
         priority = Math.max(0., state.learn.queue[1].priority - 0.01);
       }
@@ -453,9 +487,7 @@ export const doneRep = (opts?: {}) => {
     const { learn } = getState();
     let current = learn.current;
     if (current) {
-      // Get newest content
-      const ib = await IncrementalBlock.fromUuid(current.ib.uuid, { propsOnly: false });
-      await ib.done();
+      await doneIb(current.ib);
     }
     await dispatch(nextRep());
   }

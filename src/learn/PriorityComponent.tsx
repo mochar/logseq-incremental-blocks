@@ -1,49 +1,47 @@
-import React from "react";
+import React, { useState } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { getPriorityUpdates, manualIntervention } from "./learnSlice";
+import { manuallyPrioritized, Popover, popoverVisible } from "./learnSlice";
 import * as theme from "../utils/theme";
-import BetaGraph from "../widgets/BetaGraph";
+import Beta from "../algorithm/beta";
+import PrioritySlider from "../widgets/PrioritySlider";
 
 export default function PriorityComponent() {
   const dispatch = useAppDispatch();
   const currentIbData = useAppSelector(state => state.learn.current);
-  let pollTimer: NodeJS.Timeout;
   
-  React.useEffect(() => {
-    // On a timer, get new priority updates. This is because
-    // time spent on an ib increases priority.
-    pollTimer = setInterval(() => dispatch(getPriorityUpdates()), 2000);
-    return () => clearInterval(pollTimer);
-  }, []);
-
   function updateManualPriority(meanPiority: number | null) {
-    dispatch(manualIntervention({ priority: meanPiority }))
+    dispatch(manuallyPrioritized(meanPiority));
   }
 
   if (!currentIbData) return <></>;
 
   const currentIb = currentIbData.ib;
-
-  // Manual priority overrides algorithm-decided priority.
-  const prioritizeManually = Boolean(currentIbData?.manualPriority);
-  let newBeta = currentIb.beta!.copy();
-  let updatesHtml = <div></div>;
-  if (prioritizeManually) {
-    newBeta = newBeta.copy();
-    newBeta.mean = currentIbData!.manualPriority!;
-  } else if (currentIbData?.priorityUpdate) {
-    const priorityUpdate = currentIbData.priorityUpdate;
-    newBeta.applyPriorityUpdate(priorityUpdate);
-    updatesHtml = <div>
-      <span>Time: {priorityUpdate.bTime} ({priorityUpdate.scoreTime})</span>
-      <span>Content: {priorityUpdate.aContent} ({priorityUpdate.scoreContent})</span>
-    </div>
-  }
+  const curBeta = Beta.fromParams(currentIb.betaParams);
+  const newBeta = Beta.fromParams(currentIbData.newPriority);
 
   return (
-    <div className={`${theme.BORDER}`}>
-      <BetaGraph beta={currentIb.beta!} width={60} height={30}></BetaGraph>
-      {/* <BetaGraph beta={newBeta!} width={120} height={60}></BetaGraph> */}
-    </div>
+    <>
+      <div
+        className="flex border px-1"
+        style={{ borderWidth: '0px 1px 0px 1px' }}
+        onMouseEnter={() => dispatch(popoverVisible(Popover.priority))}
+        onMouseLeave={() => dispatch(popoverVisible(Popover.none))}
+      >
+        <div className="self-center flex">
+          <PrioritySlider
+            beta={newBeta}
+            onMeanChange={updateManualPriority}
+          ></PrioritySlider>
+          {currentIbData.manualPriority &&
+            <button
+              className={`${theme.BORDER} ${theme.BG.hover} text-neutral-600`}
+              onClick={() => updateManualPriority(null)}
+            >
+              <span>⮌</span>
+            </button>
+          }
+        </div>
+      </div>
+    </>
   );
 }

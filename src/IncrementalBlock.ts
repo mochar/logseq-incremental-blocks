@@ -15,7 +15,7 @@ class IncrementalBlock {
   readonly multiplier: number;
   readonly interval: number | null;
   readonly reps: number | null;
-
+  
   constructor(uuid: string, props: Record<string, any>, block?: BlockEntity) {
     this.uuid = uuid;
     this.properties = props;
