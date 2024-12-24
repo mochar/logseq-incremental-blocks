@@ -21,14 +21,19 @@ export default function QueuePopover() {
   }, []);
   
   return (
-    <div className="p-1">
+    <div className="p-1 space-y-1">
       <span>Da queue</span>
+      {qibs.length > 0 &&
+        <div className="border">
+          <IbItem qib={qibs[0]} />          
+        </div>
+      }
       <Virtuoso
         style={{ height: '380px', overflowX: 'clip' }}
-        data={qibs}
+        data={qibs.slice(1)}
         increaseViewportBy={200}
         endReached={loadMore}
-        itemContent={(i) => <IbItem qib={qibs[i]} />}
+        itemContent={(i, qib) => <IbItem qib={qib} />}
       ></Virtuoso>
     </div>
   );

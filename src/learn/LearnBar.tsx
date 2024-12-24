@@ -51,7 +51,7 @@ export default function LearnBar() {
   return (
     <div
       className="flex flex-col space-y-1"
-      //onMouseLeave={() => dispatch(popoverVisible(Popover.none))}
+      onMouseLeave={() => dispatch(popoverVisible(Popover.none))}
     >
       <div
         className={`w-fit ${selfPos} border border-2 bg-background rounded transition ease-out delay-75 ${popover != Popover.none ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
