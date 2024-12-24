@@ -8,9 +8,11 @@ import SchedulePopover from "./SchedulePopover";
 import ActionsPopover from "./ActionsPopover";
 import QueuePopover from "./QueuePopover";
 import SettingsComponent from "./SettingsComponent";
+import * as theme from "../utils/theme";
 
 export default function LearnBar() {
   const dispatch = useAppDispatch();
+  const currentIbData = useAppSelector(state => state.learn.current);
   const popover = useAppSelector(state => state.learn.popover);
   let pollTimer: NodeJS.Timeout;
   
@@ -77,6 +79,11 @@ export default function LearnBar() {
            Next
         </button>
 
+        <span className={`text-xs ${theme.TXT_MUTED} flex flex-col items-center justify-end`}>
+          <i className="ti ti-repeat"></i>
+          <span>{(currentIbData?.ib.scheduling?.reps ?? 0) + 1}</span>
+        </span>
+        
         <button 
           className="w-fit text-white py-1 px-1 w-1/6 border-b-2 rounded flex hover:bg-secondary"
           onMouseEnter={() => dispatch(popoverVisible(Popover.actions))}
@@ -87,7 +94,7 @@ export default function LearnBar() {
         <PriorityComponent />
 
         <ScheduleComponent />
-
+        
         <SettingsComponent />
         
         <button 
