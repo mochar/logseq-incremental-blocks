@@ -13,7 +13,7 @@ import Beta from "../algorithm/beta";
 import { doneIb, ibFromProperties } from "../ib";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 
-export enum Popover { none, priority, schedule, postpone }
+export enum Popover { none, priority, schedule, actions }
 
 export enum RepAction { 
   finish, // Rep finished, update priority and schedule

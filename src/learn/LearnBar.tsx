@@ -5,7 +5,7 @@ import PriorityComponent from "./PriorityComponent";
 import PriorityPopover from "./PriorityPopover";
 import ScheduleComponent from "./ScheduleComponent";
 import SchedulePopover from "./SchedulePopover";
-import PostponePopover from "./PostponePopover";
+import ActionsPopover from "./ActionsPopover";
 
 export default function LearnBar() {
   const dispatch = useAppDispatch();
@@ -42,12 +42,14 @@ export default function LearnBar() {
   }
 
   let popoverView = <></>;
+  let selfPos = 'self-center';
   if (popover == Popover.priority) {
     popoverView = <PriorityPopover />;
   } else if (popover == Popover.schedule) {
     popoverView = <SchedulePopover />;
-  } else if (popover == Popover.postpone) {
-    popoverView = <PostponePopover />;
+  } else if (popover == Popover.actions) {
+    popoverView = <ActionsPopover />;
+    selfPos = 'self-start';
   }
 
   return (
@@ -56,7 +58,7 @@ export default function LearnBar() {
       onMouseLeave={() => dispatch(popoverVisible(Popover.none))}
     >
       <div
-        className={`w-fit self-center border border-2 rounded transition ease-out delay-75 ${popover != Popover.none ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
+        className={`w-fit ${selfPos} border border-2 rounded transition ease-out delay-75 ${popover != Popover.none ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
       >
         {popoverView}
       </div>
@@ -71,25 +73,19 @@ export default function LearnBar() {
         }}
       >
         <button 
-          className="w-fit text-white py-1 px-1 w-1/6 border-b-2 rounded"
-          style={{
-            backgroundColor: "hsl(var(--primary))"
-          }}
+          className="w-fit text-white py-1 px-1 w-1/6 border-b-2 rounded bg-primary/90"
           onClick={finish}
+          onMouseEnter={() => dispatch(popoverVisible(Popover.none))}
         >
            Next
         </button>
 
         <button 
-          className="w-fit text-white py-1 px-1 w-1/6 border-b-2 rounded"
-          style={{
-            backgroundColor: "hsl(var(--secondary))"
-          }}
-          // TODO: Default postpone interval calculation
-          onClick={() => {}}
-          onMouseEnter={() => dispatch(popoverVisible(Popover.postpone))}
+          className="w-fit text-white py-1 px-1 w-1/6 border-b-2 rounded flex"
+          onMouseEnter={() => dispatch(popoverVisible(Popover.actions))}
         >
-           ⏰
+          {/* <span className="text-lg">⋮</span> */}
+          <i style={{fontSize: 20, color: 'gray'}} className="ti ti-dots-circle-horizontal self-center"></i>
         </button>
         
         <PriorityComponent />
@@ -99,6 +95,7 @@ export default function LearnBar() {
         <button
           className="border rounded"
           onClick={quit}
+          onMouseEnter={() => dispatch(popoverVisible(Popover.none))}
         >
           Quit
         </button>
