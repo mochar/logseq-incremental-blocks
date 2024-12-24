@@ -7,6 +7,7 @@ import ScheduleComponent from "./ScheduleComponent";
 import SchedulePopover from "./SchedulePopover";
 import ActionsPopover from "./ActionsPopover";
 import QueuePopover from "./QueuePopover";
+import SettingsComponent from "./SettingsComponent";
 
 export default function LearnBar() {
   const dispatch = useAppDispatch();
@@ -87,13 +88,15 @@ export default function LearnBar() {
 
         <ScheduleComponent />
 
+        <SettingsComponent />
+        
         <button 
           className="w-fit text-white py-1 px-1 w-1/6 border-b-2 rounded flex hover:bg-secondary"
           onMouseEnter={() => dispatch(popoverVisible(Popover.queue))}
         >
           <i style={{fontSize: 20, color: 'gray'}} className="ti ti-layout-list self-center"></i>
         </button>
-        
+
         <button
           className="border rounded px-1 hover:bg-secondary"
           onClick={quit}
