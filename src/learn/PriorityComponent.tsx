@@ -21,7 +21,7 @@ export default function PriorityComponent() {
 
   return (
     <div
-      className="flex border px-1"
+      className="flex border px-1 hover:bg-secondary"
       style={{ borderWidth: '0px 1px 0px 1px' }}
       onMouseEnter={() => dispatch(popoverVisible(Popover.priority))}
     >

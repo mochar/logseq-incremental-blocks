@@ -46,6 +46,11 @@ export function ibFromProperties(uuid: string, props: Record<string, any>): Incr
   }
 }
 
+export async function ibFromUuid(uuid: string): Promise<IncrementalBlock> {
+  const props = await logseq.Editor.getBlockProperties(uuid);
+  return ibFromProperties(uuid, props);
+}
+
 export async function doneIb(ib: IncrementalBlock) {
   const block = await logseq.Editor.getBlock(ib.uuid, {includeChildren: false});
   if (!block) return;

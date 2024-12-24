@@ -31,11 +31,12 @@ export default function ActionsPopover() {
           </div>
           <div className="grow"></div>
           <button
-            className="border border-b-2 px-1 grow"
+            className="border border-b-2 px-1 grow hover:bg-secondary space-x-1"
             style={{borderBottomWidth: 3}}
             onClick={postpone}
           >
-             Postpone
+            <i className="ti ti-player-skip-forward"></i>
+            <span>Postpone</span>
           </button>
         </div>
       </div>
@@ -44,10 +45,11 @@ export default function ActionsPopover() {
 
       <div>
         <button
-          className="border border-b-2 px-1 w-full"
+          className="border border-b-2 px-1 w-full hover:bg-secondary space-x-1"
           style={{borderBottomWidth: 3}}
           onClick={() => dispatch(doneRep())}
         >
+          <i className="ti ti-circle-check"></i>
           <span>Mark as done</span>
         </button>
       </div>
