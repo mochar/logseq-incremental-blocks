@@ -5,7 +5,7 @@ import Beta from "../algorithm/beta";
 import IncrementalBlock from "../IncrementalBlock";
 import * as theme from "../utils/theme";
 
-import { addDays, formatDate, todayMidnight } from "../utils/datetime";
+import { todayMidnight } from "../utils/datetime";
 import { dateDiffInDays } from "../utils/datetime";
 import { betaFromMean } from "../algorithm/priority";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
@@ -14,6 +14,7 @@ import PrioritySlider from "./PrioritySlider";
 import { useAppDispatch } from "../state/hooks";
 import { queueItemAdded, queueItemRemoved } from "../learn/learnSlice";
 import { queryQueueIbs } from "../logseq/query";
+import ScheduleView from "./ScheduleView";
 
 enum SideView { none, priority, schedule }
 
@@ -254,7 +255,12 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
         className={`transition ease-out delay-75 ${sideView != SideView.none ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2  '}`}
       >
         {sideView == SideView.priority && baseBeta.current && beta && <SidePriorityView currentBeta={baseBeta.current} newBeta={beta} />}
-        {sideView == SideView.schedule && interval != undefined && dueDate != undefined && <SideScheduleView multiplier={multiplier} interval={interval} dueDate={dueDate} />}
+        {sideView == SideView.schedule && interval != undefined && dueDate != undefined && (
+          <div className={`flex flex-col text-xs rounded ${theme.BG} ${theme.BORDER} shadow-md p-1 ml-2`}>
+            <p className="font-medium mb-1">Schedule</p>
+            <ScheduleView multiplier={multiplier} interval={interval} dueDate={dueDate} nDays={3} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -286,60 +292,3 @@ function SidePriorityView({ currentBeta, newBeta } : { currentBeta: Beta, newBet
   );
 }
 
-interface Scheduled {
-  intervalToday: number,
-  intervalPrevious?: number,
-  date: Date
-}
-
-function SideScheduleView({ multiplier, interval, dueDate }: { multiplier: number, interval: number, dueDate: Date }) {
-
-  const schedule = React.useMemo(() : Scheduled[] => {
-    const schedule : Scheduled[] = [];
-
-    // First the interval from now to due date, which may differ from interval.
-    const today = todayMidnight();
-    let diff = dateDiffInDays(today, dueDate);
-    schedule.push({ intervalToday: diff, date: dueDate });
-    if (diff < 0) { // past due date
-      return schedule;
-    }
-
-    // Then the scheduled review dates after the due date
-    const nPred = 4;
-    let _interval = interval;
-    let _due = new Date(dueDate);
-    for (let i = 0; i < nPred; i++) {
-      diff = diff + _interval;
-      _due = addDays(_due, diff);
-      schedule.push({ intervalToday: diff, intervalPrevious: _interval, date: _due });
-      _interval = Math.ceil(_interval * multiplier);
-    }
-    return schedule;
-  }, [multiplier, interval, dueDate]);
-
-  const scheduleWidgets = schedule.map((scheduled) => ScheduledWidget({ scheduled }));
-
-  return (
-  <div className={`flex flex-col text-xs rounded ${theme.BG} ${theme.BORDER} shadow-md p-1 ml-2`}>
-    <p className="font-medium mb-1">Schedule</p>
-    {scheduleWidgets}
-  </div>
-  );
-}
-
-function ScheduledWidget({ scheduled }: { scheduled: Scheduled }) {
-  return (
-  <div className="flex flex-col">
-    { scheduled.intervalPrevious != undefined && 
-    <div className={`${theme.TXT_MUTED} flex items-center justify-center py-1`}>
-      <span style={{ fontSize: '1.25rem' }}>↓</span> 
-      <span>({scheduled.intervalPrevious}d)</span> 
-    </div>}
-    <div className={`flex justify-between px-1 rounded-lg ${theme.BORDER}`}>
-      <span className="mr-1">{formatDate(scheduled.date)}</span>
-      <span className={`${theme.TXT_MUTED}`}>({scheduled.intervalToday}d)</span>
-    </div>
-  </div>
-  );
-}
