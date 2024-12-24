@@ -29,7 +29,7 @@ export default function QueuePopover() {
         </div>
       }
       <Virtuoso
-        style={{ height: '380px', overflowX: 'clip' }}
+        style={{ height: 300, overflowX: 'clip' }}
         data={qibs.slice(1)}
         increaseViewportBy={200}
         endReached={loadMore}

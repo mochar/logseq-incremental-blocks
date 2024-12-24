@@ -75,7 +75,7 @@ export function parseQueueIbs({ result, sortByPriority=true }: IParseQueueIbs) :
     const pathRefs = block['path-refs'];
     const pageTags = tags ? tags['tags'] : [];
     const page = block['page'];
-    const collection = page['journal'] as boolean ? 'journal' : page['properties'] ? page['properties']['collection'] ?? null : null;
+    const collection = page['journal?'] as boolean ? 'journal' : page['properties'] ? page['properties']['collection'] ?? null : null;
     return {
       id: block['id'],
       uuid: block['uuid'],
@@ -106,7 +106,7 @@ export const QUEUE_IB_PULLS = `
   :block/uuid 
   :block/content 
   :block/properties
-  {:block/page [:block/uuid :block/name :block/properties :block/journal]}
+  {:block/page [:block/uuid :block/name :block/properties :block/journal?]}
   {:block/path-refs [:db/id :block/uuid :block/name]}
   {:block/refs [:db/id :block/uuid :block/name]}
 ]) 
