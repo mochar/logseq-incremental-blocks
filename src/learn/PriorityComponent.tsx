@@ -25,7 +25,6 @@ export default function PriorityComponent() {
         className="flex border px-1"
         style={{ borderWidth: '0px 1px 0px 1px' }}
         onMouseEnter={() => dispatch(popoverVisible(Popover.priority))}
-        onMouseLeave={() => dispatch(popoverVisible(Popover.none))}
       >
         <div className="self-center flex">
           <PrioritySlider

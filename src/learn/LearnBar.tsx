@@ -1,10 +1,12 @@
 import React from "react";
-import { useAppDispatch } from "../state/hooks";
-import { doneRep, finishRep, getPriorityUpdates, laterRep, stopLearning } from "./learnSlice";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
+import { doneRep, finishRep, getPriorityUpdates, laterRep, Popover, popoverVisible, stopLearning } from "./learnSlice";
 import PriorityComponent from "./PriorityComponent";
+import PriorityPopover from "./PriorityPopover";
 
 export default function LearnBar() {
   const dispatch = useAppDispatch();
+  const popover = useAppSelector(state => state.learn.popover);
   let pollTimer: NodeJS.Timeout;
   
   React.useEffect(() => {
@@ -36,14 +38,28 @@ export default function LearnBar() {
     dispatch(stopLearning());
   }
 
+  let popoverView = <></>;
+  if (popover == Popover.priority) {
+    popoverView = <PriorityPopover />;
+  }
+
   return (
-    <>
+    <div
+      className="flex flex-col space-y-1"
+      onMouseLeave={() => dispatch(popoverVisible(Popover.none))}
+    >
+      <div
+        className={`w-fit self-center border border-2 rounded transition ease-out delay-75 ${popover != Popover.none ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
+      >
+        {popoverView}
+      </div>
+
       <div
         className="border border-2 rounded-lg shadow-sm p-1 flex space-x-1"
         style={{
           backgroundColor: `var(--ls-primary-background-color, var(--ls-primary-background-color-plugin))`,
           color: `var(--ls-primary-text-color, var(--ls-primary-text-color-plugin))`,
-          height: 40
+          //height: 40
         }}
       >
         <button 
@@ -65,6 +81,6 @@ export default function LearnBar() {
           Quit
         </button>
       </div>
-    </>
+    </div>
   )
 }

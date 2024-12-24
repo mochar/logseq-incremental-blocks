@@ -10,7 +10,6 @@ export default function BarApp() {
   const visible = useAppVisible();
   const dispatch = useAppDispatch();
   const learning = useAppSelector(state => state.learn.learning);
-  const popover = useAppSelector(state => state.learn.popover);
   const [sizeAndPos, setSizeAndPos] = useState({ width: innerWidth*.5, height: 50, left: 0, top: innerHeight-50 });
 
   useEffect(() => {
@@ -40,11 +39,6 @@ export default function BarApp() {
 
   if (!learning) return <></>;
 
-  let popoverView = <></>;
-  if (popover == Popover.priority) {
-    popoverView = <PriorityPopover />;
-  }
-
   return (
     <div
       id="ib-review-bar-content"
@@ -56,14 +50,6 @@ export default function BarApp() {
         transition: 'background-color 0.3s, color 0.3s',
       }}
     >
-      <div
-        className={`border border-2 rounded absolute transition ease-out delay-75 ${popover != Popover.none ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}
-        style={{
-          bottom: '45px'
-        }}
-      >
-        {popoverView}
-      </div>
       <LearnBar />
     </div>
   );
