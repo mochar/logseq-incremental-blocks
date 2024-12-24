@@ -3,6 +3,8 @@ import { useAppDispatch, useAppSelector } from "../state/hooks";
 import { doneRep, finishRep, getPriorityUpdates, laterRep, Popover, popoverVisible, stopLearning } from "./learnSlice";
 import PriorityComponent from "./PriorityComponent";
 import PriorityPopover from "./PriorityPopover";
+import ScheduleComponent from "./ScheduleComponent";
+import SchedulePopover from "./SchedulePopover";
 
 export default function LearnBar() {
   const dispatch = useAppDispatch();
@@ -41,6 +43,8 @@ export default function LearnBar() {
   let popoverView = <></>;
   if (popover == Popover.priority) {
     popoverView = <PriorityPopover />;
+  } else if (popover == Popover.schedule) {
+    popoverView = <SchedulePopover />;
   }
 
   return (
@@ -55,10 +59,11 @@ export default function LearnBar() {
       </div>
 
       <div
-        className="border border-2 rounded-lg shadow-sm p-1 flex space-x-1"
+        className="border border-2 rounded-lg shadow-sm p-1 flex space-x-1 self-center"
         style={{
-          backgroundColor: `var(--ls-primary-background-color, var(--ls-primary-background-color-plugin))`,
+          backgroundColor: `var(--ls-secondary-background-color, var(--ls-secondary-background-color-plugin))`,
           color: `var(--ls-primary-text-color, var(--ls-primary-text-color-plugin))`,
+          width: 'fit-content',
           //height: 40
         }}
       >
@@ -73,6 +78,8 @@ export default function LearnBar() {
         </button>
 
         <PriorityComponent />
+
+        <ScheduleComponent />
 
         <button
           className="border rounded"

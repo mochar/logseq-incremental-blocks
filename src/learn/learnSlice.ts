@@ -13,7 +13,7 @@ import Beta from "../algorithm/beta";
 import { doneIb, ibFromProperties } from "../ib";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
 
-export enum Popover { none, priority }
+export enum Popover { none, priority, schedule }
 
 export enum RepAction { 
   finish, // Rep finished, update priority and schedule
@@ -30,10 +30,11 @@ export interface CurrentIBData {
   start: Timestamp,
   contents: Record<string, string>,
   newContents: Record<string, string>,
-  newPriority: BetaParams,
   priorityUpdate?: PriorityUpdate,
   manualPriority?: number,
   manualInterval?: number,
+  newPriority: BetaParams,
+  newInterval: number
 }
 
 interface LearnState {
@@ -104,7 +105,13 @@ const learnSlice = createSlice({
     },
     manuallyScheduled(state, action: PayloadAction<number | null>) {
       if (!state.current) return;
-      state.current.manualInterval = action.payload ?? undefined;
+      const interval = action.payload;
+      state.current.manualInterval = interval ?? undefined;
+      if (interval) {
+        state.current.newInterval = interval;
+      } else {
+        state.current.newInterval = nextInterval(state.current.ib);
+      }
     },
     queueItemRemoved(state, action: PayloadAction<string>) {
       const uuid = action.payload;
@@ -333,7 +340,8 @@ export const nextIb = createAsyncThunk<CurrentIBData | null, void, { state: Root
         start: (new Date()).getTime(),
         contents: contents,
         newContents: contents,
-        newPriority: {...ib.betaParams}
+        newPriority: {...ib.betaParams},
+        newInterval: nextInterval(ib)
       };
     }
     return nextIbData;

@@ -3,6 +3,7 @@ import "@logseq/libs";
 import React from "react";
 import * as ReactDOM from "react-dom/client";
 import "./index.css";
+import dpStyle from "react-datepicker/dist/react-datepicker.css";
 import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
@@ -103,6 +104,8 @@ function main() {
       margin: 0;
     }
   `);
+
+  logseq.provideStyle(css`${dpStyle}`);
 
   logseq.App.registerUIItem("toolbar", {
     key: openIconName,

@@ -20,27 +20,25 @@ export default function PriorityComponent() {
   const newBeta = Beta.fromParams(currentIbData.newPriority);
 
   return (
-    <>
-      <div
-        className="flex border px-1"
-        style={{ borderWidth: '0px 1px 0px 1px' }}
-        onMouseEnter={() => dispatch(popoverVisible(Popover.priority))}
-      >
-        <div className="self-center flex">
-          <PrioritySlider
-            beta={newBeta}
-            onMeanChange={updateManualPriority}
-          ></PrioritySlider>
-          {currentIbData.manualPriority &&
-            <button
-              className={`${theme.BORDER} ${theme.BG.hover} text-neutral-600`}
-              onClick={() => updateManualPriority(null)}
-            >
-              <span>⮌</span>
-            </button>
-          }
-        </div>
+    <div
+      className="flex border px-1"
+      style={{ borderWidth: '0px 1px 0px 1px' }}
+      onMouseEnter={() => dispatch(popoverVisible(Popover.priority))}
+    >
+      <div className="self-center flex space-x-1">
+        <PrioritySlider
+          beta={newBeta}
+          onMeanChange={updateManualPriority}
+        ></PrioritySlider>
+        {currentIbData.manualPriority &&
+          <button
+            className={`${theme.BORDER} ${theme.BG.hover} text-neutral-600`}
+            onClick={() => updateManualPriority(null)}
+          >
+            <span>⮌</span>
+          </button>
+        }
       </div>
-    </>
+    </div>
   );
 }

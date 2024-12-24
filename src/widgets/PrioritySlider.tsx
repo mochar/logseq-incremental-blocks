@@ -21,7 +21,7 @@ export default function PrioritySlider({ beta, onMeanChange, onVarianceChange=()
 
   return (
     <div>
-      <div className="flex items-center">
+      <div className="flex items-center space-x-1">
         <input 
           className="priority-slider"
           type="range" 
