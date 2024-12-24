@@ -5,6 +5,7 @@ import PriorityComponent from "./PriorityComponent";
 import PriorityPopover from "./PriorityPopover";
 import ScheduleComponent from "./ScheduleComponent";
 import SchedulePopover from "./SchedulePopover";
+import PostponePopover from "./PostponePopover";
 
 export default function LearnBar() {
   const dispatch = useAppDispatch();
@@ -45,6 +46,8 @@ export default function LearnBar() {
     popoverView = <PriorityPopover />;
   } else if (popover == Popover.schedule) {
     popoverView = <SchedulePopover />;
+  } else if (popover == Popover.postpone) {
+    popoverView = <PostponePopover />;
   }
 
   return (
@@ -77,6 +80,18 @@ export default function LearnBar() {
            Next
         </button>
 
+        <button 
+          className="w-fit text-white py-1 px-1 w-1/6 border-b-2 rounded"
+          style={{
+            backgroundColor: "hsl(var(--secondary))"
+          }}
+          // TODO: Default postpone interval calculation
+          onClick={() => {}}
+          onMouseEnter={() => dispatch(popoverVisible(Popover.postpone))}
+        >
+           ⏰
+        </button>
+        
         <PriorityComponent />
 
         <ScheduleComponent />
