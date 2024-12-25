@@ -32,7 +32,7 @@ export default function PrioritySlider({ beta, onMeanChange, onVarianceChange=()
           onChange={(e) => setMean(parseFloat(e.target.value)/precisionFactor)}
           onMouseUp={() => onMeanChange(mean)}
         ></input>
-        <span className="w-14">{(mean*100).toFixed(2)}%</span>
+        <span className="w-16">{(mean*100).toFixed(2)}%</span>
       </div>
       {varianceSlider && <div className="flex items-center">
         <input 
@@ -45,7 +45,7 @@ export default function PrioritySlider({ beta, onMeanChange, onVarianceChange=()
           onChange={(e) => setVariance(parseFloat(e.target.value)/precisionFactor)}
           onMouseUp={() => onVarianceChange(variance)}
         ></input>
-        <p className="w-14">{(variance*100).toFixed(2)}%</p>
+        <span className="w-16">{(variance*100).toFixed(2)}%</span>
       </div>}
     </div>
   );

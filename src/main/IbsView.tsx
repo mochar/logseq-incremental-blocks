@@ -40,13 +40,13 @@ export default function IbsView() : JSX.Element {
                 onClick={() => dispatch(toggleCollections([i]))}
               >
                 <button
-                  className="px-2 text-neutral-500 items-center font-medium"
+                  className="px-2 text-neutral-500 items-center font-medium w-7"
                 >
                   <span>{opened ? "v" : ">"}</span>
                 </button>
-                <p className="">
+                <span className="m-1">
                   {collection.name} ({collection.pageIds.length} pages, {collection.count} ibs)
-                </p>
+                </span>
               </div>
             );
           }}

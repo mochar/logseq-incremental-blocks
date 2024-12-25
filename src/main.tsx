@@ -3,7 +3,7 @@ import "@logseq/libs";
 import React from "react";
 import * as ReactDOM from "react-dom/client";
 import "./index.css";
-import dpStyle from "react-datepicker/dist/react-datepicker.css";
+import dpStyle from "react-datepicker/dist/react-datepicker.css?inline";
 import settings from './logseq/settings';
 
 import { logseq as PL } from "../package.json";
@@ -16,6 +16,7 @@ import { store } from "./state/store";
 import { setupNav, injectStore as injectStoreNav } from "./logseq/nav";
 import PopoverApp from "./PopoverApp";
 import MainApp from "./MainApp";
+import BarApp from "./BarApp";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -26,6 +27,25 @@ injectStoreMedx(store);
 injectStoreMacro(store);
 injectStoreNav(store);
 
+
+function attemptReactRender(id: string, App: () => React.JSX.Element) {
+  const el = parent!.document.getElementById(id);
+  if (el) {
+    if (el.classList.contains('reacted')) return;
+    const rootBar = ReactDOM.createRoot(el);
+    rootBar.render(
+      <React.StrictMode>
+        <Provider store={store}>
+          <App />
+        </Provider>
+      </React.StrictMode>
+    );
+    el.classList.add('reacted');
+  } else {
+    setTimeout(() => attemptReactRender(id, App), 1000);
+  }
+}
+
 function main() {
   console.info(`#${pluginId}: MAIN`);
 
@@ -33,7 +53,8 @@ function main() {
   rootMain.render(
     <React.StrictMode>
       <Provider store={store}>
-        <MainApp />
+        {/* <MainApp /> */}
+        <div></div>
       </Provider>
     </React.StrictMode>
   );
@@ -55,6 +76,18 @@ function main() {
     </div>
     `
   });
+  attemptReactRender('ib-review-bar', BarApp);
+
+  logseq.provideUI({
+    key: 'ib-main-window',
+    path: '#main-content-container',
+    template: `
+    <div id="ib-main-window" style="position: fixed; width: 100%; left: 0; top: 0; z-index: 2">
+    leather?
+    </div>
+    `
+  });
+  attemptReactRender('ib-main-window', MainApp);
 
   function createModel() {
     return {
@@ -63,7 +96,7 @@ function main() {
 
   logseq.provideModel(createModel());
   logseq.setMainUIInlineStyle({
-    zIndex: 2,//11,
+    zIndex: 0,//11,
   });
 
   const openIconName = "ib-plugin-open";

@@ -54,16 +54,17 @@ export default function MainWindow() {
     <div
       id="ib-main"
       style={{ minHeight: '30rem' }}
-      className={`flex flex-col p-2 h-full ${theme.TXT}`}
+      className="flex flex-col p-2 h-full space-y-3"
     >
       <div className="flex">
         <button
-          className={`bg-blue-500 hover:bg-blue-400 text-white py-1 px-6 border-b-2 border-blue-700 hover:border-blue-500 rounded`}
+          className="bg-primary/90 hover:bg-primary py-1 px-6 border-b-2 border-primary-700 hover:border-primary-500 rounded text-primary-foreground"
           onClick={startReview}
           disabled={busy}
         >
            Review ({totalIbs})
         </button>
+
         {/* <button className="border ml-auto" onClick={importToDb} disabled={busy}> */}
         {/*   <span>Import to db</span> */}
         {/* </button> */}
@@ -100,7 +101,7 @@ function RefsView() {
         {selected.map(ref => (
           <li key={ref.id}>
             <button
-              className="text-left w-full"
+              className="text-left w-full hover:bg-secondary"
               onClick={() => dispatch(toggleRef(ref))}
             >
               {ref.name}
@@ -108,21 +109,21 @@ function RefsView() {
           </li>
         ))}
       </ul>
-      <hr />
+      <hr className="m-0" />
     </>
   );
   
   return (
     <div className="h-full">
       <p>Tags</p>
-      <hr />
+      <hr className="m-0" />
       {selected.length > 0 && selectedView}
       <div ref={ref}>
-        <ul className="overflow-y-scroll" style={{ height, minHeight: 100 }}>
+        <ul className="overflow-y-scroll m-0" style={{ height, minHeight: 100 }}>
           {unselected.map(ref => (
             <li key={ref.id}>
               <button
-                className="text-left w-full"
+                className="text-left w-full hover:bg-secondary"
                 onClick={() => dispatch(toggleRef(ref))}
               >
                 {ref.name}

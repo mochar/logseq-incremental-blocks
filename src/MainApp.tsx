@@ -13,9 +13,6 @@ import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import useMainSizeAndPosition from "./hooks/useMainSizeAndPos";
 import { updateThemeStyle } from "./logseq/theme";
 import { refreshCollections } from "./main/mainSlice";
-import * as ReactDOM from "react-dom/client";
-import { Provider, useStore } from "react-redux";
-import BarApp from "./BarApp";
 
 export default function MainApp() {
   const visible = useAppVisible();
@@ -24,7 +21,6 @@ export default function MainApp() {
   const currentIbData = useAppSelector(state => state.learn.current);
   const sizeAndPos = useMainSizeAndPosition();
   const dispatch = useAppDispatch();
-  const store = useStore();
 
   const state = useAppSelector(state => state);
   console.log(state);
@@ -78,25 +74,6 @@ export default function MainApp() {
       }
     });
 
-    function attemptReactRenderReviewBar() {
-      const el = parent!.document.getElementById("ib-review-bar");
-      if (el && !el.classList.contains('reacted')) {
-        const rootBar = ReactDOM.createRoot(el);
-        rootBar.render(
-          <React.StrictMode>
-            <Provider store={store}>
-              <BarApp />
-            </Provider>
-          </React.StrictMode>
-        );
-        el.classList.add('reacted');
-        console.log('Attached review bar component');
-      } else {
-        setTimeout(attemptReactRenderReviewBar, 1000);
-      }
-    }
-    attemptReactRenderReviewBar();
-
     logseq.App.onCurrentGraphChanged((e) => dispatch(refreshCollections()));
     dispatch(refreshCollections());
 
@@ -113,7 +90,7 @@ export default function MainApp() {
     //dispatch(loadMedia());
   }, []);
 
-  if (!visible || view.main == null) return null;
+  if (view.main == null) return <></>;
 
   let viewComponent: JSX.Element = <></>;
   switch (view.main?.view) {
@@ -127,15 +104,16 @@ export default function MainApp() {
   
   return (
     <main
+      className="bg-[color:var(--ls-primary-background-color)]"
       style={{
         width: sizeAndPos.width,
         height: sizeAndPos.height,
         left: sizeAndPos.left,
         top: sizeAndPos.top,
         position: 'relative',
-        backgroundColor: `var(--ls-primary-background-color, var(--ls-primary-background-color-plugin))`,
-        color: `var(--ls-primary-text-color, var(--ls-primary-text-color-plugin))`,
-        transition: 'background-color 0.3s, color 0.3s',
+        //backgroundColor: `var(--ls-primary-background-color, var(--ls-primary-background-color-plugin))`,
+        //color: `var(--ls-primary-text-color, var(--ls-primary-text-color-plugin))`,
+        //transition: 'background-color 0.3s, color 0.3s',
       }}>
       {viewComponent}
     </main>
