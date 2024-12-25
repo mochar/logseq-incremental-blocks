@@ -7,8 +7,8 @@ import { addDays, todayMidnight } from "../utils/datetime";
 import { convertBlockToIb } from "../logseq/command";
 import { logseq as PL } from "../../package.json";
 import { BetaParams, IncrementalBlock, QueueItem, Timestamp } from "../types";
-import { parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
-import { buildIbQueryWhereBlock } from "../main/mainSlice";
+import { buildIbQueryWhereBlock, parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
+import { buildIbQueryWhereBlockFromState } from "../main/mainSlice";
 import Beta from "../algorithm/beta";
 import { doneIb, ibFromProperties } from "../ib";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
@@ -192,14 +192,18 @@ export const stopLearning = () => {
   }
 }
 
-export const startLearning = () => {
+export const startLearning = (type: 'due' | 'subset') => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     let state = getState();
     const blockListenerActive = state.learn.blockListenerActive;
     
     //await dispatch(getCurrentReviewCard());
 
-    // Get queue priorities
+    // Build queue
+    let whereBlock = buildIbQueryWhereBlock({dueDate: new Date(todayMidnight())});
+    if (type == 'subset') {
+      whereBlock = buildIbQueryWhereBlockFromState(state.main);
+    }
     const query = `[
       :find
         ${QUEUE_IB_PULLS}
@@ -208,7 +212,7 @@ export const startLearning = () => {
         [?b :block/page ?bp]
         [(get ?prop :ib-a) _]
         [(get ?prop :ib-b) _]
-        ${buildIbQueryWhereBlock(state.main)}
+        ${whereBlock}
         ]`;
     // Returns array of two-tuples: Page data object, and page ib count number
     const ret = await logseq.DB.datascriptQuery(query);

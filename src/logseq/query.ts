@@ -322,3 +322,75 @@ export async function queryBlockRefs({ uuid, withPriority=false }: IQueryBlockRe
   const refs = [...new Set([...pageRefs, ...directRefs, ...pathRefs])];
   return { blockUuid: uuid, pageRefs, directRefs, pathRefs, refs };
 }
+
+interface IIbQueryWhere {
+  dueDate?: Date,
+  refs?: Ref[],
+}
+export function buildIbQueryWhereBlock({ dueDate, refs }: IIbQueryWhere) : string {
+  // Query collections, their pages, and their size
+  // Handle due filter clause
+  let dueWhere = '';
+  if (dueDate) {
+    const includeOutdated = true;
+    dueWhere = `
+    [(get ?prop :ib-due) ?due]
+    [(<= ?due ${toEndOfDay(dueDate).getTime()})]
+  `;
+    if (!includeOutdated) {
+      dueWhere = `
+      ${dueWhere}
+      [(>= ?due ${toStartOfDay(dueDate).getTime()})]
+    `;
+    }
+  }
+
+  // Handle refs. Not sure if this works, but also not necessary as ref filtering
+  // in the queue happens after retrieving all due ibs.
+  let refsWhere = '';
+  if (refs && refs.length > 0) {
+    const refString = refs.map((r) => `"${r.name}"`).join(', ');
+    refsWhere = `
+      [?page :block/name ?pagename] 
+      [(contains? #{${refString}} ?pagename)] 
+      (or [?b :block/refs ?page] [?bp :block/tags ?page])
+    `;
+  }
+
+  return `
+    ${dueWhere}
+    ${refsWhere}
+  `;
+}
+
+export async function queryIbRefs() : Promise<Ref[]> {
+  const query = `[
+    :find
+      (pull ?ref [
+       :db/id :block/uuid :block/name
+      ])
+    :where
+      [?b :block/properties ?prop]
+      [?b :block/page ?bp]
+      [(get ?prop :ib-a) _]
+      [(get ?prop :ib-b) _]
+      [?b :block/refs ?ref]
+      [?ref :block/name _]
+    ]`;
+  const ret = await logseq.DB.datascriptQuery(query);
+  return ret.map((r: any) => r[0] as Ref);
+}
+
+export async function queryTotalDue(dueDate: Date) : Promise<number> {
+  const query = `[
+    :find
+      (count ?b)
+    :where
+      [?b :block/properties ?prop]
+      [(get ?prop :ib-a) _]
+      [(get ?prop :ib-b) _]
+      ${buildIbQueryWhereBlock({ dueDate })}
+  ]`;
+  const ret = await logseq.DB.datascriptQuery(query);
+  return ret[0][0];
+}

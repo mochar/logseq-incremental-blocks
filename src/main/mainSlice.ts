@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
-import { toEndOfDay, toStartOfDay } from "../utils/datetime";
-import { parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
+import { buildIbQueryWhereBlock, parseQueueIbs, queryIbRefs, queryTotalDue, QUEUE_IB_PULLS } from "../logseq/query";
 import { QueueIb, Ref } from "../types";
+import { todayMidnight } from "../utils/datetime";
 
 interface Collection {
   name: string,
@@ -17,18 +17,18 @@ interface CollectionIbs {
 
 interface MainState {
   busy: boolean,
+  totalDue?: number,
   // Null means no filter on due date
   dueDate: number | null,
   collections: Collection[],
   refs: Ref[],
   selectedRefs: Ref[],
-  // collection index -> ibs in that collection
-  // redux doesnt like nonseriazlbale Map, but js
+  // collection index -> ibs in that collection.
+  // Doubles as a "selectedCollections" object.
+  // Redux doesnt like nonseriazlbale Map, but js
   // objects cannot contain numerical keys. so we
   // just convert indices to strings and back LOL
   loadedIbs: { [key: string]: QueueIb[] },
-  // TODO: currently viewing collection index
-  // to jump to when coming back to page
 }
 
 const initialState: MainState = {
@@ -69,59 +69,62 @@ const mainSlice = createSlice({
     },
     dueDateSelected(state, action: PayloadAction<number | null>) {
       state.dueDate = action.payload;
+    },
+    totalDueLoaded(state, action: PayloadAction<number>) {
+      state.totalDue = action.payload;
     }
   },
 });
 
 export const { gotBusy } = mainSlice.actions;
 
-export function buildIbQueryWhereBlock(state: MainState) : string {
-  // Query collections, their pages, and their size
-  // Handle due filter clause
-  let dueWhere = '';
-  if (state.dueDate) {
-    const dueDate = new Date(state.dueDate);
-    const includeOutdated = true;
-    dueWhere = `
-    [(get ?prop :ib-due) ?due]
-    [(<= ?due ${toEndOfDay(dueDate).getTime()})]
-  `;
-    if (!includeOutdated) {
-      dueWhere = `
-      ${dueWhere}
-      [(>= ?due ${toStartOfDay(dueDate).getTime()})]
-    `;
-    }
-  }
-
-  // Handle refs. Not sure if this works, but also not necessary as ref filtering
-  // in the queue happens after retrieving all due ibs.
-  let refsWhere = '';
-  if (state.selectedRefs.length > 0) {
-    const refString = state.selectedRefs.map((r) => `"${r.name}"`).join(', ');
-    refsWhere = `
-      [?page :block/name ?pagename] 
-      [(contains? #{${refString}} ?pagename)] 
-      (or [?b :block/refs ?page] [?bp :block/tags ?page])
-    `;
-  }
-
-  return `
-    ${dueWhere}
-    ${refsWhere}
-  `;
+export function buildIbQueryWhereBlockFromState(state: MainState) : string {
+  const dueDate = state.dueDate ? new Date(state.dueDate) : undefined;
+  const refs = state.selectedRefs;
+  return buildIbQueryWhereBlock({ dueDate, refs });
 }
 
-export const refreshCollections = () => {
+/*
+ * Update all:
+ * - Total due today.
+ * - All ib tags.
+ * - Filtered collections.
+ */
+export const refreshAll = () => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {
     const state = getState();
     if (state.main.busy) return;
 
     dispatch(gotBusy(true));
 
-    const whereBlock = buildIbQueryWhereBlock(state.main);
+    // Total due
+    const totalDue = await queryTotalDue(todayMidnight());
+    dispatch(mainSlice.actions.totalDueLoaded(totalDue));
+    
+    // All refs/tags
+    const refs = await queryIbRefs();
+    dispatch(mainSlice.actions.refsLoaded(refs));
+ 
+    // Filtered collections
+    dispatch(refreshCollections(false));
+    
+    dispatch(gotBusy(false));
+  }
+}
 
-    // Query
+/*
+ * Refresh collections/pages based on current filters.
+ */
+export const refreshCollections = (busyAware = true) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
+
+    if (busyAware) {
+      if (state.main.busy) return;
+      dispatch(gotBusy(true));
+    }
+
+    // Query pages that contain requested ibs
     const query = `[
     :find
       (pull ?bp [
@@ -137,12 +140,12 @@ export const refreshCollections = () => {
       [?b :block/page ?bp]
       [(get ?prop :ib-a) _]
       [(get ?prop :ib-b) _]
-      ${whereBlock}
+      ${buildIbQueryWhereBlockFromState(state.main)}
       ]`;
     // Returns array of two-tuples: Page data object, and page ib count number
     const ret = await logseq.DB.datascriptQuery(query);
 
-    // Collapse to collections
+    // Collapse pages to collections
     const collectionMap: { [ key: string ]: { pageIds: Set<string>, count: number } } = {};
     for (const result of ret) {
       const [page, count] = result;
@@ -164,33 +167,8 @@ export const refreshCollections = () => {
     
     dispatch(mainSlice.actions.collectionsLoaded(collections));
 
-    // Get tags
-    const refs = await refreshRefs(state.main);
-    dispatch(mainSlice.actions.refsLoaded(refs));
-
-    dispatch(gotBusy(false));
+    if (busyAware) dispatch(gotBusy(false));
   }
-}
-
-/*
- */
-async function refreshRefs(state: MainState) : Promise<Ref[]> {
-  const query = `[
-    :find
-      (pull ?ref [
-       :db/id :block/uuid :block/name
-      ])
-    :where
-      [?b :block/properties ?prop]
-      [?b :block/page ?bp]
-      [(get ?prop :ib-a) _]
-      [(get ?prop :ib-b) _]
-      ${buildIbQueryWhereBlock(state)}
-      [?b :block/refs ?ref]
-      [?ref :block/name _]
-    ]`;
-  const ret = await logseq.DB.datascriptQuery(query);
-  return ret.map((r: any) => r[0] as Ref);
 }
 
 async function loadCollectionsIbs(state: MainState, collectionIndices: number[]) : Promise<CollectionIbs[]> {
@@ -209,7 +187,7 @@ async function loadCollectionsIbs(state: MainState, collectionIndices: number[])
       [(get ?prop :ib-b) _]
       [?b :block/page ?bp]
       [(contains? #{${pageIdsString}} ?bp)] 
-      ${buildIbQueryWhereBlock(state)}
+      ${buildIbQueryWhereBlockFromState(state)}
       ]`;
   // Returns array of two-tuples: Page data object, and page ib count number
   const ret = await logseq.DB.datascriptQuery(query);

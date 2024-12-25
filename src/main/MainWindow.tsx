@@ -1,20 +1,20 @@
 import React, { useMemo, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
-import { gotBusy, refreshCollections, selectDueDate, toggleRef } from "./mainSlice";
+import { gotBusy, refreshAll, refreshCollections, selectDueDate, toggleRef } from "./mainSlice";
 import IbsView from "./IbsView";
 import DatePicker from "react-datepicker";
 import { todayMidnight } from "../utils/datetime";
 import useCalculateHeight from "../hooks/useCalculateHeight";
 import { startLearning } from "../learn/learnSlice";
-import { queryDueIbs, queryIncrementalBlocks } from "../logseq/query";
+import { queryIncrementalBlocks } from "../logseq/query";
 import { db } from "../db";
-import { IncrementalBlock } from "../types";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const busy = useAppSelector((state) => state.main.busy);
+  const totalDue = useAppSelector(state => state.main.totalDue);
   const collections = useAppSelector(state => state.main.collections);
   const totalIbs = useMemo(() => collections.reduce((s, c) => s + c.count, 0), [collections]);
   
@@ -23,11 +23,7 @@ export default function MainWindow() {
   }, []);
 
   async function refresh() {
-    await dispatch(refreshCollections());
-  }
-
-  async function startReview() {
-    dispatch(startLearning());
+    await dispatch(refreshAll());
   }
 
   async function importToDb() {
@@ -56,18 +52,33 @@ export default function MainWindow() {
       style={{ minHeight: '30rem' }}
       className="flex flex-col p-2 h-full space-y-3"
     >
-      <div className="flex">
+      <div className="flex space-x-1">
         <button
-          className="bg-primary/90 hover:bg-primary py-1 px-6 border-b-2 border-primary-700 hover:border-primary-500 rounded text-primary-foreground"
-          onClick={startReview}
+          className="bg-primary/90 hover:bg-primary py-1 px-6 border-b-2 border-primary-700 hover:border-primary-500 rounded text-primary-foreground border"
+          onClick={() => dispatch(startLearning('due'))}
           disabled={busy}
         >
-           Review ({totalIbs})
+          <span>Review { totalDue && <span>({totalDue})</span> }</span>
         </button>
 
-        {/* <button className="border ml-auto" onClick={importToDb} disabled={busy}> */}
-        {/*   <span>Import to db</span> */}
-        {/* </button> */}
+        <button
+          className="hover:bg-secondary py-1 px-2 border-b-2 border-secondary-700 hover:border-secondary-500 rounded border"
+          onClick={() => dispatch(startLearning('subset'))}
+          disabled={busy}
+        >
+          <span>Subset review ({ totalIbs })</span>
+        </button>
+
+        
+        <div className="flex-1"></div>
+        
+        <button
+          className="hover:bg-secondary border px-1 rounded"
+          onClick={refresh}
+          disabled={busy}
+        >
+          <i className={`ti ti-refresh`}></i>          
+        </button>
       </div>
 
       <div className="h-full flex space-x-2" ref={ref}>
