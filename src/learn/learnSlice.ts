@@ -8,7 +8,6 @@ import { convertBlockToIb } from "../logseq/command";
 import { logseq as PL } from "../../package.json";
 import { BetaParams, IncrementalBlock, QueueItem, Timestamp } from "../types";
 import { buildIbQueryWhereBlock, parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
-import { buildIbQueryWhereBlockFromState } from "../main/mainSlice";
 import Beta from "../algorithm/beta";
 import { doneIb, ibFromProperties } from "../ib";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
@@ -200,9 +199,9 @@ export const startLearning = (type: 'due' | 'subset') => {
     //await dispatch(getCurrentReviewCard());
 
     // Build queue
-    let whereBlock = buildIbQueryWhereBlock({dueDate: new Date(todayMidnight())});
+    let whereBlock = buildIbQueryWhereBlock({dueDate: todayMidnight()});
     if (type == 'subset') {
-      whereBlock = buildIbQueryWhereBlockFromState(state.main);
+      whereBlock = buildIbQueryWhereBlock(state.main.filters);
     }
     const query = `[
       :find

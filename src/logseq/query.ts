@@ -1,8 +1,8 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import { counter, toCamelCase } from "../utils/utils";
-import { toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
+import { addDays, toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
 import Beta from "../algorithm/beta";
-import { IncrementalBlock, QueueIb, Ref } from "../types";
+import { IbFilters, IncrementalBlock, QueueIb, Ref } from "../types";
 import { ibFromProperties } from "../ib";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
@@ -323,33 +323,41 @@ export async function queryBlockRefs({ uuid, withPriority=false }: IQueryBlockRe
   return { blockUuid: uuid, pageRefs, directRefs, pathRefs, refs };
 }
 
-interface IIbQueryWhere {
-  dueDate?: Date,
-  refs?: Ref[],
-}
-export function buildIbQueryWhereBlock({ dueDate, refs }: IIbQueryWhere) : string {
+export function buildIbQueryWhereBlock(filters: Partial<IbFilters>) : string {
   // Query collections, their pages, and their size
   // Handle due filter clause
   let dueWhere = '';
-  if (dueDate) {
-    const includeOutdated = true;
-    dueWhere = `
-    [(get ?prop :ib-due) ?due]
-    [(<= ?due ${toEndOfDay(dueDate).getTime()})]
-  `;
-    if (!includeOutdated) {
-      dueWhere = `
-      ${dueWhere}
-      [(>= ?due ${toStartOfDay(dueDate).getTime()})]
-    `;
+  if (filters.dueDate) {
+    let dueDate = new Date(filters.dueDate);
+    const eq = filters.dueDateEq ?? '≤';
+
+    if (['≤', '<', '='].includes(eq)) {
+      if (eq == '<') dueDate = addDays(dueDate, -1);
+      dueWhere = `[(<= ?due ${toEndOfDay(dueDate).getTime()})]`;
+    } else {
+      if (eq == '>') dueDate = addDays(dueDate, 1);
+      dueWhere = `[(>= ?due ${toStartOfDay(dueDate).getTime()})]`;
     }
+
+    // If we want the exact day
+    if (eq == '=') {
+      dueWhere = `
+        ${dueWhere}
+        [(>= ?due ${toStartOfDay(dueDate).getTime()})]
+      `;
+    }
+
+    dueWhere = `
+      [(get ?prop :ib-due) ?due]
+      ${dueWhere}
+    `;
   }
 
   // Handle refs. Not sure if this works, but also not necessary as ref filtering
   // in the queue happens after retrieving all due ibs.
   let refsWhere = '';
-  if (refs && refs.length > 0) {
-    const refString = refs.map((r) => `"${r.name}"`).join(', ');
+  if (filters.refs && filters.refs.length > 0) {
+    const refString = filters.refs.map((r) => `"${r.name}"`).join(', ');
     refsWhere = `
       [?page :block/name ?pagename] 
       [(contains? #{${refString}} ?pagename)] 
@@ -389,7 +397,7 @@ export async function queryTotalDue(dueDate: Date) : Promise<number> {
       [?b :block/properties ?prop]
       [(get ?prop :ib-a) _]
       [(get ?prop :ib-b) _]
-      ${buildIbQueryWhereBlock({ dueDate })}
+      ${buildIbQueryWhereBlock({ dueDate: dueDate.getTime() })}
   ]`;
   const ret = await logseq.DB.datascriptQuery(query);
   return ret[0][0];

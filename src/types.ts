@@ -52,10 +52,17 @@ export interface IncrementalBlock {
 
 export declare type Timestamp = number;
 
-// Used previously for filtering, handy for later
-export const typeFilters = ['all', 'cards', 'blocks'] as const;
-export declare type TypeFilter = typeof typeFilters[number];
+// Filtering
+export const equalities = ['>', '≥', '<', '≤', '='] as const;
+export declare type Equality = typeof equalities[number];
 
-export const refFilterModes = ['off', 'inclusion', 'exclusion'] as const;
-export declare type RefFilterMode = typeof refFilterModes[number];
+export const filterModes = ['and', 'or', 'not'] as const;
+export declare type FilterMode = typeof filterModes[number];
 
+// Null means no filter
+export interface IbFilters {
+  dueDate: number | null,
+  dueDateEq: Equality,
+  refs: Ref[] | null,
+  refsMode: FilterMode
+}
