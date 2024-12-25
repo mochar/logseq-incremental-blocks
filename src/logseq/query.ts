@@ -353,15 +353,21 @@ export function buildIbQueryWhereBlock(filters: Partial<IbFilters>) : string {
     `;
   }
 
-  // Handle refs. Not sure if this works, but also not necessary as ref filtering
-  // in the queue happens after retrieving all due ibs.
+  // Handle refs
   let refsWhere = '';
   if (filters.refs && filters.refs.length > 0) {
-    const refString = filters.refs.map((r) => `"${r.name}"`).join(', ');
+    const refString = filters.refs.map((r) => `${r.id}`).join(', ');
+    let filterString = '';
+    if (filters.refsMode == 'and') {
+      filterString = filters.refs.map(r => `[?b :block/path-refs ${r.id}]`).join('\n');
+    } else if (filters.refsMode == 'not') {
+      filterString = filters.refs.map(r => `(not [?b :block/path-refs ${r.id}])`).join('\n');
+    } else if (filters.refsMode == 'or') {
+      filterString = `[(contains? #{${refString}} ?refs)]`;
+    }
     refsWhere = `
-      [?page :block/name ?pagename] 
-      [(contains? #{${refString}} ?pagename)] 
-      (or [?b :block/refs ?page] [?bp :block/tags ?page])
+    [?b :block/path-refs ?refs]
+    ${filterString}
     `;
   }
 

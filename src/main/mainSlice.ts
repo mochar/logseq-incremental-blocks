@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
 import { buildIbQueryWhereBlock, parseQueueIbs, queryIbRefs, queryTotalDue, QUEUE_IB_PULLS } from "../logseq/query";
-import { Equality, IbFilters, QueueIb, Ref } from "../types";
+import { Equality, FilterMode, filterModes, IbFilters, QueueIb, Ref } from "../types";
 import { todayMidnight } from "../utils/datetime";
 
 interface Collection {
@@ -56,8 +56,9 @@ const mainSlice = createSlice({
     refsLoaded(state, action: PayloadAction<Ref[]>) {
       state.refs = action.payload;
     },
-    refsSelected(state, action: PayloadAction<Ref[]>) {
-      state.filters.refs = action.payload;
+    refsSelected(state, action: PayloadAction<{ refs?: Ref[] | null, mode?: FilterMode }>) {
+      if (action.payload.refs !== undefined) state.filters.refs = action.payload.refs;
+      if (action.payload.mode) state.filters.refsMode = action.payload.mode;
     },
     collectionsOpened(state, action: PayloadAction<CollectionIbs[]>) {
       for (const collection of action.payload) {
@@ -69,9 +70,9 @@ const mainSlice = createSlice({
         delete state.loadedIbs[index.toString()];
       }
     },
-    dueDateSelected(state, action: PayloadAction<{ date: number | null, eq: Equality }>) {
-      state.filters.dueDate = action.payload.date;
-      state.filters.dueDateEq = action.payload.eq;
+    dueDateSelected(state, action: PayloadAction<{ date?: number | null, eq?: Equality }>) {
+      if (action.payload.date !== undefined) state.filters.dueDate = action.payload.date;
+      if (action.payload.eq) state.filters.dueDateEq = action.payload.eq;
     },
     totalDueLoaded(state, action: PayloadAction<number>) {
       state.totalDue = action.payload;
@@ -141,6 +142,8 @@ export const refreshCollections = (busyAware = true) => {
       ]`;
     // Returns array of two-tuples: Page data object, and page ib count number
     const ret = await logseq.DB.datascriptQuery(query);
+    console.log(query);
+    console.log(ret);
 
     // Collapse pages to collections
     const collectionMap: { [ key: string ]: { pageIds: Set<string>, count: number } } = {};
@@ -259,7 +262,7 @@ export const selectDueDate = ({ date, eq }: { date?: Date | null, eq?: Equality 
     if (state.main.busy) return;
     dispatch(mainSlice.actions.dueDateSelected({
       date: date === undefined ? state.main.filters.dueDate : (date?.getTime() ?? null),
-      eq: eq ?? state.main.filters.dueDateEq
+      eq
     }));
     await dispatch(refreshCollections());
   }
@@ -273,8 +276,21 @@ export const toggleRef = (ref: Ref) => {
     const refs = index == -1
       ? [...selected, ref]
       : selected.toSpliced(index, 1);
-    dispatch(mainSlice.actions.refsSelected(refs));
+    dispatch(mainSlice.actions.refsSelected({ refs }));
     await dispatch(refreshCollections());
+  }
+}
+
+export const toggleRefMode = (mode?: FilterMode) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
+    if (!mode) {
+      // Cycle
+      const i = filterModes.indexOf(state.main.filters.refsMode);
+      mode = filterModes[i == filterModes.length-1 ? 0 : i+1];
+    }
+    dispatch(mainSlice.actions.refsSelected({ mode }));
+    await dispatch(refreshCollections());    
   }
 }
 

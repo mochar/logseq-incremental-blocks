@@ -1,15 +1,12 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { gotBusy, refreshAll, selectDueDate, toggleRef } from "./mainSlice";
+import { gotBusy, refreshAll } from "./mainSlice";
 import IbsView from "./IbsView";
-import DatePicker from "react-datepicker";
-import { addDays, dateDiffInDays, todayMidnight } from "../utils/datetime";
-import useCalculateHeight from "../hooks/useCalculateHeight";
 import { startLearning } from "../learn/learnSlice";
 import { queryIncrementalBlocks } from "../logseq/query";
 import { db } from "../db";
-import Select from "../widgets/Select";
-import { equalities, Equality } from "../types";
+import DueDateView from "./DueDateView";
+import RefsView from "./RefsView";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -84,133 +81,13 @@ export default function MainWindow() {
 
       <div className="h-full flex space-x-2" ref={ref}>
         <div className="flex flex-col px-2.5 space-y-4" style={{flex: "2 1 0%"}}>
-          <DueDateView />
-
-          
-          
+          <DueDateView />          
           <RefsView />
         </div>
         <div className="w-full h-full" style={{flex: "4 1 0%"}}>
           <IbsView />
         </div>
       </div>
-    </div>
-  );
-}
-
-function RefsView() {
-  const dispatch = useAppDispatch();
-  const ref = useRef<HTMLDivElement>(null);
-  const height = useCalculateHeight(ref.current);
-  const busy = useAppSelector(state => state.main.busy);
-  const all = useAppSelector(state => state.main.refs);
-  const selected = useAppSelector(state => state.main.filters.refs ?? []);
-  const unselected = useMemo(() => {
-    const selectedIds = selected.map(r => r.id);
-    return all.filter(r => !selectedIds.includes(r.id));
-  }, [all, selected]);
-
-  const selectedView = (
-    <>
-      <ul>
-        {selected.map(ref => (
-          <li key={ref.id}>
-            <button
-              className="text-left w-full hover:bg-secondary"
-              onClick={() => dispatch(toggleRef(ref))}
-            >
-              {ref.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <hr className="m-0" />
-    </>
-  );
-  
-  return (
-    <div className="h-full">
-      <p>Tags</p>
-      <hr className="m-0" />
-      {selected.length > 0 && selectedView}
-      <div ref={ref}>
-        <ul className="overflow-y-scroll m-0" style={{ height, minHeight: 100 }}>
-          {unselected.map(ref => (
-            <li key={ref.id}>
-              <button
-                className="text-left w-full hover:bg-secondary"
-                onClick={() => dispatch(toggleRef(ref))}
-              >
-                {ref.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
-
-function DueDateView() {
-  const dispatch = useAppDispatch();
-  const date = useAppSelector(state => state.main.filters.dueDate);
-  const equality = useAppSelector(state => state.main.filters.dueDateEq);
-  const busy = useAppSelector(state => state.main.busy);
-  const days = useMemo(
-    () => date ? dateDiffInDays(todayMidnight(), new Date(date)) : 1,
-    [date]);
-
-  async function dateSelected(date: Date | null) {
-    if (busy) return;
-    dispatch(selectDueDate({date}));
-  }
-
-  function daysSelected(val: number | null) {
-    if (val != null && Number.isNaN(val)) return;
-    const date = addDays(todayMidnight(), val!);
-    dateSelected(date);
-  }
-
-  return (
-    <div className="w-full">
-      <label className="flex space-x-1 items-center" style={{width: 'max-content'}}>
-        <input
-          type="checkbox"
-          checked={date != null}
-          onChange={() => dateSelected(date ? null : todayMidnight())}
-          disabled={busy}
-        />
-        <span>Due</span>
-      </label>
-      {date && (
-        <div className="flex space-x-1">
-          <Select
-            options={equalities}
-            isSelected={s => (s as Equality) == equality}
-            selected={s => dispatch(selectDueDate({eq: s as Equality}))}
-          />
-          <DatePicker
-            className="p-0 border border-[color:var(--ls-border-color)] w-full"
-            selected={date}
-            onChange={dateSelected}
-            minDate={busy ? date ?? undefined : todayMidnight()}
-            maxDate={busy ? date ?? undefined : undefined}
-            monthsShown={1}
-            disabled={busy}
-            dateFormat="dd/MM/yyyy"
-          />
-          <div className="flex">
-            <input
-              className="border bg-transparent text-right p-0 w-10 border-[color:var(--ls-border-color)]"
-              type="number" 
-              value={days}
-              onChange={(e) => daysSelected(parseFloat(e.target.value))}
-              step="1"
-            />
-            <span>d</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
