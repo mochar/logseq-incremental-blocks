@@ -61,8 +61,10 @@ export declare type FilterMode = typeof filterModes[number];
 
 // Null means no filter
 export interface IbFilters {
-  dueDate: number | null,
+  dueDate: Timestamp | null,
   dueDateEq: Equality,
   refs: Ref[] | null,
-  refsMode: FilterMode
+  refsMode: FilterMode,
+  interval: number | null,
+  intervalEq: Equality
 }

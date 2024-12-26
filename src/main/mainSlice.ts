@@ -35,7 +35,9 @@ const initialState: MainState = {
     dueDate: null,
     dueDateEq: '≤',
     refs: null,
-    refsMode: 'or'
+    refsMode: 'or',
+    interval: null,
+    intervalEq: '>'
   },
   collections: [],
   loadedIbs: {},
@@ -73,6 +75,10 @@ const mainSlice = createSlice({
     dueDateSelected(state, action: PayloadAction<{ date?: number | null, eq?: Equality }>) {
       if (action.payload.date !== undefined) state.filters.dueDate = action.payload.date;
       if (action.payload.eq) state.filters.dueDateEq = action.payload.eq;
+    },
+    intervalSelected(state, action: PayloadAction<{ interval?: number | null, eq?: Equality }>) {
+      if (action.payload.interval !== undefined) state.filters.interval = action.payload.interval;
+      if (action.payload.eq) state.filters.intervalEq = action.payload.eq;
     },
     totalDueLoaded(state, action: PayloadAction<number>) {
       state.totalDue = action.payload;
@@ -142,8 +148,6 @@ export const refreshCollections = (busyAware = true) => {
       ]`;
     // Returns array of two-tuples: Page data object, and page ib count number
     const ret = await logseq.DB.datascriptQuery(query);
-    console.log(query);
-    console.log(ret);
 
     // Collapse pages to collections
     const collectionMap: { [ key: string ]: { pageIds: Set<string>, count: number } } = {};
@@ -267,6 +271,16 @@ export const selectDueDate = ({ date, eq }: { date?: Date | null, eq?: Equality 
     await dispatch(refreshCollections());
   }
 }
+
+export const selectInterval = ({ interval, eq }: { interval?: number | null, eq?: Equality }) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
+    if (state.main.busy) return;
+    dispatch(mainSlice.actions.intervalSelected({ interval, eq }));
+    await dispatch(refreshCollections());
+  }
+}
+
 
 export const toggleRef = (ref: Ref) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {

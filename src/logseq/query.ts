@@ -2,7 +2,7 @@ import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import { counter, toCamelCase } from "../utils/utils";
 import { addDays, toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
 import Beta from "../algorithm/beta";
-import { IbFilters, IncrementalBlock, QueueIb, Ref } from "../types";
+import { Equality, IbFilters, IncrementalBlock, QueueIb, Ref } from "../types";
 import { ibFromProperties } from "../ib";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
@@ -323,6 +323,12 @@ export async function queryBlockRefs({ uuid, withPriority=false }: IQueryBlockRe
   return { blockUuid: uuid, pageRefs, directRefs, pathRefs, refs };
 }
 
+function eqToQueryEq(eq: Equality) {
+  if (eq == '≤') return '<=';Beta
+  if (eq == '≥') return '>=';
+  return eq;
+}
+
 export function buildIbQueryWhereBlock(filters: Partial<IbFilters>) : string {
   // Query collections, their pages, and their size
   // Handle due filter clause
@@ -353,6 +359,15 @@ export function buildIbQueryWhereBlock(filters: Partial<IbFilters>) : string {
     `;
   }
 
+  // Interval
+  let intervalWhere = '';
+  if (filters.interval && filters.intervalEq) {
+    intervalWhere = `
+    [(get ?prop :ib-interval) ?interval]
+    [(${eqToQueryEq(filters.intervalEq)} ?interval ${filters.interval})]
+    `;
+  }
+
   // Handle refs
   let refsWhere = '';
   if (filters.refs && filters.refs.length > 0) {
@@ -374,6 +389,7 @@ export function buildIbQueryWhereBlock(filters: Partial<IbFilters>) : string {
   return `
     ${dueWhere}
     ${refsWhere}
+    ${intervalWhere}
   `;
 }
 

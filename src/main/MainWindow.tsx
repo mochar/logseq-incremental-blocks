@@ -1,12 +1,14 @@
 import React, { useMemo, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { gotBusy, refreshAll } from "./mainSlice";
+import { gotBusy, refreshAll, selectInterval } from "./mainSlice";
 import IbsView from "./IbsView";
 import { startLearning } from "../learn/learnSlice";
 import { queryIncrementalBlocks } from "../logseq/query";
 import { db } from "../db";
 import DueDateView from "./DueDateView";
 import RefsView from "./RefsView";
+import Select from "../widgets/Select";
+import { equalities, Equality } from "../types";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -81,13 +83,59 @@ export default function MainWindow() {
 
       <div className="h-full flex space-x-2" ref={ref}>
         <div className="flex flex-col px-2.5 space-y-4" style={{flex: "2 1 0%"}}>
-          <DueDateView />          
+          <DueDateView />
+          <IntervalView />
           <RefsView />
         </div>
         <div className="w-full h-full" style={{flex: "4 1 0%"}}>
           <IbsView />
         </div>
       </div>
+    </div>
+  );
+}
+
+function IntervalView() {
+  const dispatch = useAppDispatch();
+  const busy = useAppSelector(state => state.main.busy);
+  const interval = useAppSelector(state => state.main.filters.interval);
+  const equality = useAppSelector(state => state.main.filters.intervalEq);
+
+  function intervalSelected(val: number | null) {
+    if (val != null && (Number.isNaN(val) || val < 0)) return;
+    dispatch(selectInterval({ interval: val }));
+  }
+
+  return (
+    <div className="w-full">
+      <label className="flex space-x-1 items-center" style={{width: 'max-content'}}>
+        <input
+          type="checkbox"
+          checked={interval != null}
+          onChange={() => dispatch(selectInterval({ interval: interval ? null : 1 }))}
+          disabled={busy}
+        />
+        <span>Interval</span>
+      </label>
+      {interval && (
+        <div className="flex space-x-1">
+          <Select
+            options={equalities}
+            isSelected={s => (s as Equality) == equality}
+            selected={s => dispatch(selectInterval({eq: s as Equality}))}
+          />
+          <div className="flex">
+            <input
+              className="border bg-transparent text-right p-0 w-20 border-[color:var(--ls-border-color)]"
+              type="number" 
+              value={interval}
+              onChange={(e) => intervalSelected(parseFloat(e.target.value))}
+              step="1"
+            />
+            <span>d</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
