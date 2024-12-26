@@ -56,6 +56,14 @@ export declare type Timestamp = number;
 export const equalities = ['>', '≥', '<', '≤', '='] as const;
 export declare type Equality = typeof equalities[number];
 
+export const eqToFun = new Map<Equality, (a: number, b: number) => boolean>([
+  ['=', (a, b) => a == b],
+  ['>', (a, b) => a > b],
+  ['≥', (a, b) => a >= b],
+  ['<', (a, b) => a < b],
+  ['≤', (a, b) => a <= b]
+]);
+
 export const filterModes = ['and', 'or', 'not'] as const;
 export declare type FilterMode = typeof filterModes[number];
 

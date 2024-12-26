@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { addDays, dateDiffInDays, todayMidnight } from "../utils/datetime";
+import { addDays, dateDiffInDays, todayMidnight, toEndOfDay, toStartOfDay } from "../utils/datetime";
 import { selectDueDate } from "./mainSlice";
 import React from "react";
 import Select from "../widgets/Select";
-import { equalities, Equality } from "../types";
+import { eqToFun, equalities, Equality } from "../types";
 import DatePicker from "react-datepicker";
 import { buildIbQueryWhereBlock } from "../logseq/query";
 import { ResponsiveLine } from '@nivo/line';
@@ -53,7 +53,7 @@ export default function DueDateView() {
               className="p-0 border border-[color:var(--ls-border-color)] w-full"
               selected={date}
               onChange={dateSelected}
-              minDate={busy ? date ?? undefined : todayMidnight()}
+              //minDate={busy ? date ?? undefined : todayMidnight()}
               maxDate={busy ? date ?? undefined : undefined}
               monthsShown={1}
               disabled={busy}
@@ -80,13 +80,13 @@ function Chart() {
   // Depend on collections to redo chart on refresh
   const collections = useAppSelector(state => state.main.collections);
   const filters = useAppSelector(state => state.main.filters);
-  const [data, setData] = useState<any>();
+  const [allData, setAllData] = useState<any>([]);
 
   useEffect(() => {
-    build()
-  }, [collections])
+    getAllData()
+  }, [collections, filters.dueDate, filters.dueDateEq])
 
-  async function build() {
+  async function getAllData() {
     const subFilters = {...filters};
     subFilters.dueDate = null;
     const query = `[
@@ -101,34 +101,81 @@ function Chart() {
     ]`;
     const ret = await logseq.DB.datascriptQuery(query);
     const counts = (ret as number[][]).reduce((d, r) => {
-      const diff = dateDiffInDays(todayMidnight(), new Date(r[0]));
-      d.set(diff, d.get(diff) ?? 1);
+      const date = toStartOfDay(new Date(r[0])).getTime();
+      d.set(date, (d.get(date) ?? 0) + 1);
       return d;
     }, new Map<number, number>());
-    for (const dist of Array.from(counts.keys())) {
-      if (!counts.get(dist-1)) counts.set(dist-1, 0);
-      if (!counts.get(dist+1)) counts.set(dist+1, 0);
+    const dates = [...counts.keys().toArray()];
+    for (const date of dates) {
+      const today = new Date(date);
+      const yesterday = addDays(today, -1).getTime();
+      const tomorrow = addDays(today, 1).getTime();
+      if (!dates.includes(yesterday)) counts.set(yesterday, 0);
+      if (!dates.includes(tomorrow)) counts.set(tomorrow, 0);
+    }
+    const dataValues = Array.from(counts.keys())
+      .toSorted((a, b) => a - b)
+      .map(date => { return { x: new Date(date), y: counts.get(date) }});
+    setAllData(dataValues);
+  }
+
+  const data = useMemo(() => {
+    if (!allData || !filters.dueDate) return null;
+    const selected = [];
+    const remaining = [];
+    for (const d of allData) {
+      const eqFun = eqToFun.get(filters.dueDateEq)!;
+      if (eqFun(d.x.getTime(), filters.dueDate)) {
+        selected.push(d);
+      } else {
+        remaining.push(d);
+      }
     }
     const data = [
       {
-        id: 'counts',
-        data: Array.from(counts.keys()).
-          toSorted((a, b) => a-b).
-          map(dist => { return { x: dist, y: counts.get(dist) }})
+        id: 'selected',
+        data: selected
+      },
+      {
+        id: 'remaining',
+        data: remaining
       }
     ];
-    console.log(data);
-    setData(data);
-  }
+    return data;
+  }, [allData, filters.dueDate, filters.dueDateEq]);
 
-  if (!data) return <></>;
+  if (!data || data.length == 0) return <></>;
 
   return (
     <div className="w-full my-1" style={{ height: 100 }}>
       <ResponsiveLine
+        // Don't animate others plot gets messed up
+        animate={false}
         data={data}
-        xScale={{ type: 'linear' }}
+        colors={[
+          'rgb(97, 205, 187)',
+          'rgb(244, 117, 96)'
+        ]}
+        xScale={{
+          type: 'time',
+          //format: '%Y-%m-%d',
+          precision: 'day',
+          useUTC: false,
+          //nice: true
+        }}
+        //xFormat="time:%Y-%m-%d"
         yScale={{ type: 'linear' }}
+        markers={[
+          {
+            axis: 'x',
+            value: new Date(filters.dueDate!),
+            lineStyle: {
+              strokeWidth: 1,
+              strokeDasharray: '5, 3',
+              stroke: '#00000090'
+            },
+          }
+        ]}
         curve="step"
         enableArea={true}
         enablePoints={false}
@@ -137,10 +184,11 @@ function Chart() {
         pointSize={5}
         enableGridY={false}
         enableGridX={false}
-        axisBottom={{ tickSize: 2 }}
+        axisBottom={{ tickSize: 2, tickRotation: 30, format: '%b %d' }}
         axisLeft={null}
-        enableSlices={'x'}
+        //enableSlices={'x'}
         margin={{ top: 5, right: 5, bottom: 20, left: 5 }}
+        theme={{ text: {fontSize: 7} }}
       />
     </div>
   );
