@@ -22,12 +22,14 @@ export default function IbItem({ qib, nChars }: { qib: QueueIb, nChars?: number 
       onClick={() => logseq.App.pushState('page', { name: qib.uuid })}
     >
       <span 
-        className="w-12 text-xs text-center font-medium m-1 py-0.5 rounded dark:text-gray-600"
-        style={{ backgroundColor: bgColor }}
+        className="text-xs text-center font-medium m-1 py-0.5 rounded dark:text-gray-600"
+        style={{ backgroundColor: bgColor, width: '3.3rem' }}
       >
         {(qib.priority*100).toFixed(2)}%
       </span>
-      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis'}}>{content}</span>
+      <span
+        style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', width: 'inherit' }}
+      >{content}</span>
     </div>
   );
 }

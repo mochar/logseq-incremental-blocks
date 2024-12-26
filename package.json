@@ -13,6 +13,8 @@
   "dependencies": {
     "@kitaitimakoto/media-fragment": "^0.0.1",
     "@logseq/libs": "^0.0.17",
+    "@nivo/core": "^0.88.0",
+    "@nivo/line": "^0.88.0",
     "@reduxjs/toolkit": "^2.2.7",
     "jstat": "^1.9.6",
     "react": "^18.2.0",

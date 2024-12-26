@@ -27,9 +27,9 @@ export default function IbsView() : JSX.Element {
           <span>Toggle all</span>
         </a>
       </div>
-      <div ref={ref} className="border rounded-sm h-full">
+      <div ref={ref} className="border rounded-sm h-fit">
         <GroupedVirtuoso
-          style={{ height, overflowX: 'clip' }}
+          style={{ height: height-10, overflowX: 'clip' }}
           groupCounts={openedCollectionCounts}
           groupContent={i => {
             const collection = collections[i];

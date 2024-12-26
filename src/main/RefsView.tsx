@@ -48,7 +48,7 @@ export default function RefsView() {
       <hr className="m-0" />
       {selected.length > 0 && selectedView}
       <div ref={ref}>
-        <ul className="overflow-y-scroll m-0" style={{ height, minHeight: 100 }}>
+        <ul className="overflow-y-scroll m-0" style={{ height: height-10, minHeight: 100 }}>
           {unselected.map(ref => (
             <li key={ref.id}>
               <button
