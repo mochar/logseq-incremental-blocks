@@ -28,7 +28,9 @@ export default function MainApp() {
   useEffect(() => {
     logseq.provideModel({
       toggleMain() {
-        // dispatch(toggleMainView({ view: MainView.main }));
+        if (view.main?.view != MainView.main) {
+          dispatch(toggleMainView({ view: MainView.main }));
+        }
       },
       async toggleMedxPopover(e: any) {
         const medFrag = MediaFragment.parse(e.dataset.macroArgs.split(','));
