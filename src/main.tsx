@@ -30,7 +30,10 @@ injectStoreMedx(store);
 injectStoreMacro(store);
 injectStoreNav(store);
 
-
+/*
+ * Some logseq elements not yet created when main is run, so repeadetly
+ * try until found.
+ */
 function attemptReactRender(id: string, App: () => React.JSX.Element) {
   const el = parent!.document.getElementById(id);
   if (el) {

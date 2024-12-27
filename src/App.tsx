@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import * as ReactDOM from "react-dom/client";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
 import { useAppVisible } from "./logseq/events";
 import { MainView, toggleMainView } from "./state/viewSlice";
@@ -10,6 +11,8 @@ import { refreshCollections } from "./main/mainSlice";
 import { updateThemeStyle } from "./logseq/theme";
 import { isDark } from "./utils/logseq";
 import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
+import { Provider, useStore } from "react-redux";
+import EditorApp from "./EditorApp";
 
 export default function App() {
   const visible = useAppVisible();
@@ -17,6 +20,7 @@ export default function App() {
   const learning = useAppSelector(state => state.learn.learning);
   const currentIbData = useAppSelector(state => state.learn.current);
   const dispatch = useAppDispatch();
+  const store = useStore();
 
   const state = useAppSelector(state => state);
   console.log(state);
@@ -35,7 +39,8 @@ export default function App() {
         if (medFrag && slotId && blockUuid) {
           const medxData = await dispatch(selectMedia({ medFrag, slotId, blockUuid }));
           if (medxData) {
-            dispatch(toggleMainView({ view: MainView.medx }));
+            //dispatch(toggleMainView({ view: MainView.medx }));
+            renderMedx(medxData);
           }
         } else {
           logseq.UI.showMsg('Invalid media args', 'warning');
@@ -87,6 +92,25 @@ export default function App() {
   }, []);
 
   function renderMedx(medxData: MedxData) {
+    const el = parent!.document.getElementById('app-single-container');
+    if (!el) {
+      logseq.UI.showMsg('Cannot find element', 'error');
+      return;
+    }
+    
+    parent!.document.body.classList.add('is-pdf-active')
+    const root = ReactDOM.createRoot(el);
+    function unmount() {
+      root.unmount();
+      parent!.document.body.classList.remove('is-pdf-active'); 
+    }
+    root.render(
+      <React.StrictMode>
+        <Provider store={store}>
+          <EditorApp unmount={unmount} />
+        </Provider>
+      </React.StrictMode>
+    );
   }
 
   return (<></>);
