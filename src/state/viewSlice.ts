@@ -31,7 +31,7 @@ interface ViewState {
 const initialState: ViewState = {
   main: null,
   popover: null,
-  modal: { view: ModalView.ibActions }
+  modal: null
 }
 
 const viewSlice = createSlice({

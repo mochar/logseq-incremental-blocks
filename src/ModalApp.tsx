@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useAppVisible } from "./logseq/events";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
-import useMainSizeAndPosition from "./hooks/useMainSizeAndPos";
 import { ModalView, setModalView } from "./state/viewSlice";
+import Postpone from "./main/Postpone";
 
 export default function BarApp() {
   const dispatch = useAppDispatch();
@@ -15,11 +14,11 @@ export default function BarApp() {
     dispatch(setModalView(null));
   }
   
-  if (!view) return <></>;
+  if (view == null) return <></>;
 
   let content = <span>Is that leather?</span>;
-  if (view == ModalView.ibActions) {
-    
+  if (view.view == ModalView.ibActions) {
+    content = <Postpone />
   }
   
   return (

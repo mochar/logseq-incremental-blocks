@@ -1,8 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
 import { buildIbQueryWhereBlock, parseQueueIbs, queryIbRefs, queryTotalDue, QUEUE_IB_PULLS } from "../logseq/query";
-import { Equality, FilterMode, filterModes, IbFilters, QueueIb, Ref } from "../types";
-import { todayMidnight } from "../utils/datetime";
+import { Equality, FilterMode, filterModes, IbFilters, QueueIb, Ref, Timestamp } from "../types";
+import { todayMidnight, addDays } from "../utils/datetime";
+import { ibFromProperties } from "../ib";
 
 interface Collection {
   name: string,
@@ -27,6 +28,10 @@ interface MainState {
   // objects cannot contain numerical keys. so we
   // just convert indices to strings and back LOL
   loadedIbs: { [key: string]: QueueIb[] },
+  // When an action is performed to change ib props,
+  // certain UI elements need to be updated. To make
+  // them aware, they can listen to this value.
+  lastActionDate: Timestamp
 }
 
 const initialState: MainState = {
@@ -41,7 +46,8 @@ const initialState: MainState = {
   },
   collections: [],
   loadedIbs: {},
-  refs: []
+  refs: [],
+  lastActionDate: new Date().getTime()
 }
 
 const mainSlice = createSlice({
@@ -82,6 +88,9 @@ const mainSlice = createSlice({
     },
     totalDueLoaded(state, action: PayloadAction<number>) {
       state.totalDue = action.payload;
+    },
+    actionPerformed(state) {
+      state.lastActionDate = new Date().getTime();
     }
   },
 });
@@ -305,6 +314,47 @@ export const toggleRefMode = (mode?: FilterMode) => {
     }
     dispatch(mainSlice.actions.refsSelected({ mode }));
     await dispatch(refreshCollections());    
+  }
+}
+
+export const postponeSelected = (start: number, end: number) => {
+  return async (dispatch: AppDispatch, getState: () => RootState) => {
+    const state = getState();
+    if (state.main.busy || start == undefined || end == undefined) return;
+    dispatch(gotBusy(true));
+
+    try {
+      const query = `[
+      :find
+        (pull ?b [
+          :db/id
+          :block/uuid 
+          :block/properties
+        ]) 
+      :where
+        [?b :block/properties ?prop]
+        [(get ?prop :ib-a) _]
+        [(get ?prop :ib-b) _]
+        [(get ?prop :ib-due) _]
+        ${buildIbQueryWhereBlock(state.main.filters)}
+       ]`;
+      const ret = await logseq.DB.datascriptQuery(query);
+      await Promise.all(ret.map(async (r) => {
+        const ib = ibFromProperties(r[0]['uuid'], r[0]['properties']);
+        if (!ib.scheduling) return;
+        const interval = start + Math.random() * (end - start);
+        if (Number.isNaN(interval)) return;
+        const date = addDays(todayMidnight(), interval);
+        await logseq.Editor.upsertBlockProperty(ib.uuid, 'ib-due', date.getTime());
+      }));
+    } catch (e) {
+      console.error(e);
+      logseq.UI.showMsg('Something went wrong (see console)', 'error');
+    } finally {
+      dispatch(mainSlice.actions.actionPerformed());
+      dispatch(gotBusy(false));
+      await dispatch(refreshAll());
+    }
   }
 }
 

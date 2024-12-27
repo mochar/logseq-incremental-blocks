@@ -422,5 +422,6 @@ export async function queryTotalDue(dueDate: Date) : Promise<number> {
       ${buildIbQueryWhereBlock({ dueDate: dueDate.getTime() })}
   ]`;
   const ret = await logseq.DB.datascriptQuery(query);
-  return ret[0][0];
+  const total = ret.length > 0 ? ret[0][0] : 0;
+  return total;
 }

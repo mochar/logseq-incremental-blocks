@@ -80,11 +80,12 @@ function Chart() {
   // Depend on collections to redo chart on refresh
   const collections = useAppSelector(state => state.main.collections);
   const filters = useAppSelector(state => state.main.filters);
+  const lastActionDate = useAppSelector(state => state.main.lastActionDate);
   const [allData, setAllData] = useState<any>([]);
 
   useEffect(() => {
     getAllData()
-  }, [collections, filters.dueDate, filters.dueDateEq])
+  }, [collections, filters.dueDate, filters.dueDateEq, lastActionDate])
 
   async function getAllData() {
     const subFilters = {...filters};
@@ -162,7 +163,7 @@ function Chart() {
           //format: '%Y-%m-%d',
           precision: 'day',
           useUTC: false,
-          //nice: true
+          //nice: true,
         }}
         //xFormat="time:%Y-%m-%d"
         yScale={{ type: 'linear' }}
@@ -175,6 +176,10 @@ function Chart() {
               strokeDasharray: '5, 3',
               stroke: '#00000090'
             },
+            // Need this otherwise i get some errors
+            legendOffsetX: 0,
+            legendOffsetY: 0,
+            legendOrientation: "horizontal"
           }
         ]}
         curve="step"

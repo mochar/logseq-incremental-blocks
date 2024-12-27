@@ -57,7 +57,7 @@ export default function IbsView() : JSX.Element {
             const collectionIbs = loadedIbs[iCollection.toString()];
             if (!collectionIbs) return <span>Something went wrong</span>;
             const ib = collectionIbs[indexWithinCollection];
-            return <IbItem qib={ib} />
+            return <IbItem qib={ib} action="openSidebar" />
           }}
         ></GroupedVirtuoso>
       </div>

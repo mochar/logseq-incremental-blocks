@@ -7,9 +7,8 @@ import { queryIncrementalBlocks } from "../logseq/query";
 import { db } from "../db";
 import DueDateView from "./DueDateView";
 import RefsView from "./RefsView";
-import Select from "../widgets/Select";
-import { equalities, Equality } from "../types";
 import { ModalView, setModalView } from "../state/viewSlice";
+import IntervalView from "./IntervalView";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -17,7 +16,6 @@ export default function MainWindow() {
   const busy = useAppSelector((state) => state.main.busy);
   const totalDue = useAppSelector(state => state.main.totalDue);
   const collections = useAppSelector(state => state.main.collections);
-  const totalIbs = useMemo(() => collections.reduce((s, c) => s + c.count, 0), [collections]);
   
   React.useEffect(() => {
     refresh();
@@ -53,31 +51,17 @@ export default function MainWindow() {
       style={{ minHeight: '30rem' }}
       className="flex flex-col p-2 h-full space-y-3"
     >
-      <div className="flex space-x-1">
+      <div className="flex space-x-1 items-center">
         <button
           className="bg-primary/90 hover:bg-primary py-1 px-6 border-b-2 border-primary-700 hover:border-primary-500 rounded text-primary-foreground border"
           onClick={() => dispatch(startLearning('due'))}
           disabled={busy}
         >
-          <span>Review { totalDue && <span>({totalDue})</span> }</span>
+          <span>Review { totalDue && totalDue > 0 && <span>({totalDue})</span> }</span>
         </button>
 
-        <button
-          className="hover:bg-secondary py-1 px-2 border-b-2 border-secondary-700 hover:border-secondary-500 rounded border"
-          onClick={() => dispatch(startLearning('subset'))}
-          disabled={busy}
-        >
-          <span>Subset review ({ totalIbs })</span>
-        </button>
-        
-        <button
-          className="hover:bg-secondary py-1 px-1 border-secondary-700 hover:border-secondary-500 rounded border"
-          onClick={() => dispatch(setModalView({ view: ModalView.ibActions }))}
-          disabled={busy}
-        >
-          <span>Mass postpone</span>
-        </button>
-        
+        <SelectionActions />
+       
         <div className="flex-1"></div>
         
         <button
@@ -103,47 +87,34 @@ export default function MainWindow() {
   );
 }
 
-function IntervalView() {
+function SelectionActions() {
   const dispatch = useAppDispatch();
-  const busy = useAppSelector(state => state.main.busy);
-  const interval = useAppSelector(state => state.main.filters.interval);
-  const equality = useAppSelector(state => state.main.filters.intervalEq);
+  const busy = useAppSelector((state) => state.main.busy);
+  const collections = useAppSelector(state => state.main.collections);
+  const totalIbs = useMemo(() => collections.reduce((s, c) => s + c.count, 0), [collections]);
 
-  function intervalSelected(val: number | null) {
-    if (val != null && (Number.isNaN(val) || val < 0)) return;
-    dispatch(selectInterval({ interval: val }));
-  }
+  if (totalIbs == 0) return <></>;
 
-  return (
-    <div className="w-full">
-      <label className="flex space-x-1 items-center" style={{width: 'max-content'}}>
-        <input
-          type="checkbox"
-          checked={interval != null}
-          onChange={() => dispatch(selectInterval({ interval: interval ? null : 1 }))}
-          disabled={busy}
-        />
-        <span>Interval</span>
-      </label>
-      {interval && (
-        <div className="flex space-x-1">
-          <Select
-            options={equalities}
-            isSelected={s => (s as Equality) == equality}
-            selected={s => dispatch(selectInterval({eq: s as Equality}))}
-          />
-          <div className="flex">
-            <input
-              className="border bg-transparent text-right p-0 w-20 border-[color:var(--ls-border-color)]"
-              type="number" 
-              value={interval}
-              onChange={(e) => intervalSelected(parseFloat(e.target.value))}
-              step="1"
-            />
-            <span>d</span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+ return (
+    <>
+      <div className="w-1 border h-full m-2"></div>
+      <span>Subset selection: {totalIbs}</span>
+            
+      <button
+        className="hover:bg-secondary py-1 px-2 border-b-2 border-secondary-700 hover:border-secondary-500 rounded border"
+        onClick={() => dispatch(startLearning('subset'))}
+        disabled={busy}
+      >
+        <span>Review</span>
+      </button>
+        
+      <button
+        className="hover:bg-secondary py-1 px-1 border-secondary-700 hover:border-secondary-500 rounded border"
+        onClick={() => dispatch(setModalView({ view: ModalView.ibActions }))}
+        disabled={busy}
+      >
+        <span>Postpone</span>
+      </button>
+    </>
+ );
 }
