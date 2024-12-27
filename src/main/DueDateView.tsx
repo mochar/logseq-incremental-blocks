@@ -153,8 +153,9 @@ function Chart() {
         animate={false}
         data={data}
         colors={[
-          'rgb(97, 205, 187)',
-          'rgb(244, 117, 96)'
+          'rgb(97, 205, 77)',
+          'rgb(150, 150, 150)'
+          //'rgb(244, 117, 96)'
         ]}
         xScale={{
           type: 'time',

@@ -5,6 +5,7 @@ import { updateVisiblity } from '../utils/logseq';
 
 export enum MainView { main, medx }
 export enum PopoverView { learn, ib, insert }
+export enum ModalView { ibActions }
 
 export interface BlockViewData {
   block: BlockEntity
@@ -17,18 +18,20 @@ export interface SlotViewData extends BlockViewData {
 export type IbViewData = SlotViewData;
 
 interface ViewData {
-  view: MainView | PopoverView,
+  view: MainView | PopoverView | ModalView,
   data?: SlotViewData | BlockViewData
 }
 
 interface ViewState {
   main: ViewData | null,
-  popover: ViewData | null
+  popover: ViewData | null,
+  modal: ViewData | null
 }
 
 const initialState: ViewState = {
   main: null,
-  popover: null
+  popover: null,
+  modal: { view: ModalView.ibActions }
 }
 
 const viewSlice = createSlice({
@@ -40,11 +43,14 @@ const viewSlice = createSlice({
     },
     setPopoverView: (state, action: PayloadAction<ViewData | null>) => {
       state.popover = action.payload;
-    }
+    },
+    setModalView: (state, action: PayloadAction<ViewData | null>) => {
+      state.modal = action.payload;
+    },
   }
 });
 
-export const { setMainView, setPopoverView } = viewSlice.actions;
+export const { setMainView, setPopoverView, setModalView } = viewSlice.actions;
 
 export interface ViewRequest {
   view: MainView | PopoverView | null,
@@ -52,6 +58,8 @@ export interface ViewRequest {
   slotId?: string,
   medArgs?: string
 }
+
+// TODO: Now that switching to provideUI, can prob get rid of show/hideMainUI logic
 
 export const togglePopoverView = (request: ViewRequest) => {
   return async (dispatch: AppDispatch, getState: () => RootState) => {

@@ -17,6 +17,8 @@ import { setupNav, injectStore as injectStoreNav } from "./logseq/nav";
 import PopoverApp from "./PopoverApp";
 import MainApp from "./MainApp";
 import BarApp from "./BarApp";
+import ModalApp from "./ModalApp";
+import { ModalView, setModalView } from "./state/viewSlice";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -49,16 +51,6 @@ function attemptReactRender(id: string, App: () => React.JSX.Element) {
 function main() {
   console.info(`#${pluginId}: MAIN`);
 
-  const rootMain = ReactDOM.createRoot(document.getElementById("app-main")!);
-  rootMain.render(
-    <React.StrictMode>
-      <Provider store={store}>
-        {/* <MainApp /> */}
-        <div></div>
-      </Provider>
-    </React.StrictMode>
-  );
-  
   const rootPopover = ReactDOM.createRoot(document.getElementById("app-popover")!);
   rootPopover.render(
     <React.StrictMode>
@@ -68,6 +60,7 @@ function main() {
     </React.StrictMode>
   );
 
+  // UI for sticky bar at bottom used for the review bar
   logseq.provideUI({
     key: 'ib-review-bar',
     path: '#main-content-container',
@@ -78,16 +71,32 @@ function main() {
   });
   attemptReactRender('ib-review-bar', BarApp);
 
+  // UI that covers the full main middle screen
   logseq.provideUI({
     key: 'ib-main-window',
     path: '#main-content-container',
     template: `
     <div id="ib-main-window" style="position: fixed; width: 100%; left: 0; top: 0; z-index: 2">
-    leather?
+    is that leather?
     </div>
     `
   });
   attemptReactRender('ib-main-window', MainApp);
+
+  // UI used for modals
+  logseq.provideUI({
+    key: 'ib-modal',
+    path: 'main',
+    template: `
+    <div id="ib-modal" style="position: absolute; z-index: 99">
+    </div>
+    `
+    //template: `
+    //<div id="ib-modal" style="position: fixed; width: 100%; left: 0; top: 0; z-index: 99">
+    //</div>
+    //`
+  });
+  attemptReactRender('ib-modal', ModalApp);
 
   function createModel() {
     return {
@@ -184,7 +193,9 @@ function main() {
 
   document.addEventListener('keydown', function (e) {
     if (e.key == 'Escape') {
-      logseq.hideMainUI()
+      console.log('escape');
+      logseq.hideMainUI();
+      store.dispatch(setModalView(null));
     }
   }, false);
 }

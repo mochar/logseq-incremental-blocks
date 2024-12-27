@@ -9,6 +9,7 @@ import DueDateView from "./DueDateView";
 import RefsView from "./RefsView";
 import Select from "../widgets/Select";
 import { equalities, Equality } from "../types";
+import { ModalView, setModalView } from "../state/viewSlice";
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -68,7 +69,14 @@ export default function MainWindow() {
         >
           <span>Subset review ({ totalIbs })</span>
         </button>
-
+        
+        <button
+          className="hover:bg-secondary py-1 px-1 border-secondary-700 hover:border-secondary-500 rounded border"
+          onClick={() => dispatch(setModalView({ view: ModalView.ibActions }))}
+          disabled={busy}
+        >
+          <span>Mass postpone</span>
+        </button>
         
         <div className="flex-1"></div>
         
