@@ -18,7 +18,8 @@ import PopoverApp from "./PopoverApp";
 import MainApp from "./MainApp";
 import BarApp from "./BarApp";
 import ModalApp from "./ModalApp";
-import { ModalView, setModalView } from "./state/viewSlice";
+import { setModalView } from "./state/viewSlice";
+import App from "./App";
 
 // @ts-expect-error
 const css = (t, ...args) => String.raw(t, ...args);
@@ -51,6 +52,16 @@ function attemptReactRender(id: string, App: () => React.JSX.Element) {
 function main() {
   console.info(`#${pluginId}: MAIN`);
 
+  const rootApp = ReactDOM.createRoot(document.getElementById("app-main")!);
+  rootApp.render(
+    <React.StrictMode>
+      <Provider store={store}>
+        <App />
+      </Provider>
+    </React.StrictMode>
+  );
+
+  // TODO: Replace with provideUI instead
   const rootPopover = ReactDOM.createRoot(document.getElementById("app-popover")!);
   rootPopover.render(
     <React.StrictMode>
