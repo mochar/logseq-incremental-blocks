@@ -16,7 +16,7 @@ export default function ExtractsView() {
     const ib = IncrementalBlock.fromBlock(extract.block);
     dispatch(fragmentSelected({
       range: [extract.medFrag.start ?? 0, extract.medFrag.end ?? duration],
-      beta: ib.beta ?? undefined,
+      betaParams: ib.beta?.params ?? undefined,
       interval: ib.interval ?? undefined
     }));
   }

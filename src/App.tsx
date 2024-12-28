@@ -2,8 +2,7 @@ import React, { useEffect } from "react";
 import * as ReactDOM from "react-dom/client";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
 import { useAppVisible } from "./logseq/events";
-import { MainView, toggleMainView } from "./state/viewSlice";
-import MediaFragment from "./medx/MediaFragment";
+import { EditorView, MainView, setEditorView, toggleMainView } from "./state/viewSlice";
 import { MedxData, selectMedia } from "./medx/medxSlice";
 import { finishRep } from "./learn/learnSlice";
 import { renderMediaEmbed } from "./medx/macro";
@@ -13,6 +12,7 @@ import { isDark } from "./utils/logseq";
 import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import { Provider, useStore } from "react-redux";
 import EditorApp from "./EditorApp";
+import { parseFragment } from "./medx/MediaFragment";
 
 export default function App() {
   const visible = useAppVisible();
@@ -33,13 +33,13 @@ export default function App() {
         }
       },
       async toggleMedxPopover(e: any) {
-        const medFrag = MediaFragment.parse(e.dataset.macroArgs.split(','));
+        const medFrag = parseFragment(e.dataset.macroArgs.split(','));
         const slotId = e.dataset.slotId;
         const blockUuid = e.dataset.blockUuid;
         if (medFrag && slotId && blockUuid) {
           const medxData = await dispatch(selectMedia({ medFrag, slotId, blockUuid }));
           if (medxData) {
-            //dispatch(toggleMainView({ view: MainView.medx }));
+            dispatch(setEditorView({ view: EditorView.medx  }));
             renderMedx(medxData);
           }
         } else {
@@ -61,7 +61,7 @@ export default function App() {
           logseq.UI.showMsg('Media not found in page');
           return;
         }
-        const args = MediaFragment.parse(macroArgs.split(','));
+        const args = parseFragment(macroArgs.split(','));
         if (!args) {
           logseq.UI.showMsg('Invalid media args');
           return;

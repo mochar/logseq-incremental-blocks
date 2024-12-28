@@ -3,13 +3,13 @@ import { createRoot } from 'react-dom/client';
 import React from "react";
 import { secondsToString } from "../utils/datetime";
 import { isDark } from "../utils/logseq";
-import MediaFragment from './MediaFragment';
+import { MediaFragment, parseFragment } from './MediaFragment';
 
 //@ts-ignore
 export async function renderMedxMacro({ slot, payload }) {
-  const args = MediaFragment.parse(payload.arguments);
+  const args = parseFragment(payload.arguments);
   if (args == null) return;
-  const isRef = args.flag.endsWith('_ref') && (args.start || args.end);
+  const isRef = args.flag!.endsWith('_ref') && (args.start || args.end);
   const dark = await isDark();
   const txtColor = dark ? "text-gray-300" : "text-gray-600";
   const bgColor = dark ? "bg-gray-700" : "bg-gray-100/10";

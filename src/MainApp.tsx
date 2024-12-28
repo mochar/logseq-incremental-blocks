@@ -2,7 +2,6 @@ import React from "react";
 import { useAppSelector } from "./state/hooks";
 import { MainView } from "./state/viewSlice";
 import MainWindow from "./main/MainWindow";
-import MedxWindow from "./medx/MedxWindow";
 import useMainSizeAndPosition from "./hooks/useMainSizeAndPos";
 
 export default function MainApp() {
@@ -15,9 +14,6 @@ export default function MainApp() {
   switch (view.main?.view) {
     case MainView.main:
       viewComponent = <MainWindow />;
-      break;
-    case MainView.medx:
-      viewComponent = <MedxWindow />;
       break;
   }
   

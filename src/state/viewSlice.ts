@@ -3,9 +3,10 @@ import { AppDispatch, RootState } from './store';
 import { BlockEntity } from '@logseq/libs/dist/LSPlugin.user';
 import { updateVisiblity } from '../utils/logseq';
 
-export enum MainView { main, medx }
+export enum MainView { main }
 export enum PopoverView { learn, ib, insert }
 export enum ModalView { ibActions }
+export enum EditorView { medx }
 
 export interface BlockViewData {
   block: BlockEntity
@@ -18,20 +19,22 @@ export interface SlotViewData extends BlockViewData {
 export type IbViewData = SlotViewData;
 
 interface ViewData {
-  view: MainView | PopoverView | ModalView,
+  view: MainView | PopoverView | ModalView | EditorView,
   data?: SlotViewData | BlockViewData
 }
 
 interface ViewState {
   main: ViewData | null,
   popover: ViewData | null,
-  modal: ViewData | null
+  modal: ViewData | null,
+  editor: ViewData | null
 }
 
 const initialState: ViewState = {
   main: null,
   popover: null,
-  modal: null
+  modal: null,
+  editor: null
 }
 
 const viewSlice = createSlice({
@@ -47,10 +50,13 @@ const viewSlice = createSlice({
     setModalView: (state, action: PayloadAction<ViewData | null>) => {
       state.modal = action.payload;
     },
+    setEditorView: (state, action: PayloadAction<ViewData | null>) => {
+      state.editor = action.payload;
+    },
   }
 });
 
-export const { setMainView, setPopoverView, setModalView } = viewSlice.actions;
+export const { setMainView, setPopoverView, setModalView, setEditorView } = viewSlice.actions;
 
 export interface ViewRequest {
   view: MainView | PopoverView | null,
@@ -104,8 +110,6 @@ export const toggleMainView = (request: ViewRequest) => {
     } else if (request.view == MainView.main) {
       dispatch(setMainView({ view: MainView.main }));
       if (state.view.popover) dispatch(setPopoverView(null));
-    } else if (request.view == MainView.medx) {
-      dispatch(setMainView({ view: MainView.medx }));
     }
     updateVisiblity(getState());
   }

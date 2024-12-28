@@ -2,12 +2,12 @@ import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { AppDispatch, RootState } from "../state/store";
 import { getSubtitles, getVideoDetails, VideoDetails } from 'youtube-caption-extractor';
 import Beta from "../algorithm/beta";
-import MediaFragment from "./MediaFragment";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import IncrementalBlock from "../IncrementalBlock";
 import { betaFromMean } from "../algorithm/priority";
 import { BetaParams } from "../types";
+import { MediaFragment, parseFragment, renderFragment } from "./MediaFragment";
 
 export interface MediaAttrs {
   loop: boolean,
@@ -31,7 +31,7 @@ export interface MedxData {
   medFrag: MediaFragment,
   slotId: string,
   block: BlockEntity,
-  beta: Beta,
+  betaParams: BetaParams,
   interval: number,
 }
 
@@ -83,7 +83,7 @@ function parseExtracts(block: BlockEntity) : MedxExtract[] {
       const matches = childBlock.content.match(/\{\{renderer\s*:medx[^\}]+\}\}/);
       if (matches == null || matches.length == 0) continue;
       const args = matches[0].replace('{{renderer ', '').replace('}}', '');
-      const medFrag = MediaFragment.parse(args.split(', '));
+      const medFrag = parseFragment(args.split(', '));
       if (medFrag == null) continue;
       extracts.push({ block: childBlock, medFrag });
     }
@@ -97,8 +97,8 @@ const medxSlice = createSlice({
   initialState,
   reducers: {
     reset(state) {
-      const beta = state.active?.beta ?? new Beta(1, 1);
-      state.betaParams = beta.params;
+      state.betaParams = state.active?.betaParams ?? {a:1, b:1};
+      const beta = Beta.fromParams(state.betaParams);
       state.interval = initialIntervalFromMean(beta.mean);
       state.note = '';
       state.selectedSubRange = null;
@@ -116,7 +116,7 @@ const medxSlice = createSlice({
       state.active.block = block;
       const ib = IncrementalBlock.fromBlock(block);
       if (ib.beta) {
-        state.active.beta = ib.beta;
+        state.active.betaParams = ib.beta.params;
         state.betaParams = ib.beta.params;
         state.interval = initialIntervalFromMean(ib.beta.mean);
       }
@@ -151,6 +151,7 @@ const medxSlice = createSlice({
       state.follow = action.payload;
     },
     selectionChanged(state, action: PayloadAction<number[]>) {
+      console.log('selection changed', action.payload);
       state.selectRange = action.payload;
       if (state.regionRange[0] > state.selectRange[0]) {
         state.regionRange[0] = state.selectRange[0];
@@ -168,11 +169,11 @@ const medxSlice = createSlice({
     languageSelected(state, action: PayloadAction<string>) {
       state.language = action.payload;
     },
-    fragmentSelected(state, action: PayloadAction<{ range: number[], note?: string, beta?: Beta, interval?: number }>) {
+    fragmentSelected(state, action: PayloadAction<{ range: number[], note?: string, betaParams?: BetaParams, interval?: number }>) {
       state.selectRange = action.payload.range;
       state.note = action.payload.note ?? '';
       if (state.active) {
-        state.active.beta = action.payload.beta ?? state.active.beta;
+        state.active.betaParams = action.payload.betaParams ?? state.active.betaParams;
         state.active.interval = action.payload.interval ?? state.active.interval;
       }
     },
@@ -239,7 +240,7 @@ export const selectMedia = (selection: ISelectMedia | null) => {
       medxData = {
         ...selection,
         block,
-        beta: ib.beta ?? new Beta(1, 1),
+        betaParams: ib.beta ? ib.beta.params : {a:1, b:1},
         interval: initialIntervalFromMean(.5)
       }
     } else {
@@ -282,7 +283,7 @@ interface ExtractData {
 function genExtractData(medx: MedxState, extract?: Extract) : ExtractData {
   const data = medx.active!;
   const range = extract ? [extract.start, extract.end] : medx.selectRange;
-  const medFrag = new MediaFragment({
+  const medFrag: MediaFragment = {
     flag: ':medx_ref',
     url: data.medFrag.url,
     format: data.medFrag.format,
@@ -291,10 +292,10 @@ function genExtractData(medx: MedxState, extract?: Extract) : ExtractData {
     loop: medx.mediaAttrs.loop,
     start: range[0],
     end: range[1]
-  });
-    
+  };
+
   const note = extract ? extract.text ?? '' : medx.note;
-  const content = `${note}\n${medFrag.render()} \n{{renderer :ib}}`;
+  const content = `${note}\n${renderFragment(medFrag)} \n{{renderer :ib}}`;
   const due = new Date();
   due.setDate(due.getDate() + medx.interval);
   const properties = {

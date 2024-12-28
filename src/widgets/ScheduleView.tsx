@@ -49,7 +49,7 @@ export default function ScheduleView({ multiplier, interval, dueDate, nDays }: I
 
 function ScheduledWidget({ scheduled }: { scheduled: Scheduled }) {
   return (
-  <div className="flex flex-col">
+    <div key={scheduled.intervalToday} className="flex flex-col">
     { scheduled.intervalPrevious != undefined && 
     <div className={`${theme.TXT_MUTED} flex items-center justify-center py-1`}>
       <span style={{ fontSize: '1.25rem' }}>↓</span> 

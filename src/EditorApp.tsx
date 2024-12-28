@@ -1,7 +1,18 @@
 import React, { useRef } from "react";
+import { useAppDispatch, useAppSelector } from "./state/hooks";
+import { EditorView } from "./state/viewSlice";
+import MedxWindow from "./medx/MedxWindow";
 
 export default function EditorApp({ unmount }: { unmount: Function }) {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  const view = useAppSelector(state => state.view.editor);
+  
+  if (view == null) return <></>;
+
+  let content = <span>Is that leather?</span>;
+  if (view.view == EditorView.medx) {
+    content = <MedxWindow />;
+  }
   
   return (
     <div ref={ref} className="extensions__pdf-container">
@@ -9,7 +20,7 @@ export default function EditorApp({ unmount }: { unmount: Function }) {
         <div className="extensions__pdf-viewer overflow-x-auto">
           <div id="ib-editor" className="bg-secondary h-full">
             <button onClick={() => unmount()}>Close</button>
-            <span>is that leather?</span>          
+            {content}
           </div>
         </div>
       </div>
@@ -21,7 +32,7 @@ export default function EditorApp({ unmount }: { unmount: Function }) {
   );
 }
 
-function Resizer({ container }: { container: React.RefObject<HTMLElement> }) {
+function Resizer({ container }: { container: React.RefObject<HTMLDivElement> }) {
   const docEl = parent!.document.documentElement;
   const ref = useRef<HTMLElement>(null);
 

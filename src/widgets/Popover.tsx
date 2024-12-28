@@ -171,85 +171,85 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
         className={`flex rounded ${theme.BG} ${theme.BORDER} shadow-md py-1`}
         onSubmit={(e) => e.preventDefault()}
       >
-      <fieldset disabled={busy}>
-      <div className="flex flex-col divide-y px-1.5">
-        <div 
-          className="" 
-          onMouseEnter={() => setSideView(SideView.priority)}
-        >
-          <p className="font-semibold text-gray-90">Priority</p>
-          {beta && <PrioritySlider
-            beta={beta}
-            varianceSlider={ib.priorityOnly}
-            onMeanChange={(mean) => updatePriority({ mean })}
-            onVarianceChange={(variance) => updatePriority({ variance })}
-          ></PrioritySlider>}
-        </div>
-
-        {ib.priorityOnly && false && 
-        <button
-          className="bg-white text-xs hover:bg-gray-100 text-gray-800 py-1 px-4 mb-1 border border-gray-400 rounded shadow"
-          onMouseEnter={() => setSideView(SideView.none)}
-          onClick={addScheduling}
-        >
-          Schedule ib
-        </button>}
-
-        {!ib.priorityOnly && 
-        <div 
-          className="py-1 dark:border-gray-600"
-          onMouseEnter={() => setSideView(SideView.schedule)}
-        >
-          <p className="font-semibold text-gray-90">Schedule</p>
-          <p>Due</p>
-          <DatePicker
-            className={`${theme.BG} ${theme.BORDER}`}
-            selected={dueDate}
-            onChange={(date) => updateDueDate(date)}
-            minDate={new Date()}
-            monthsShown={1}
-            dateFormat="dd/MM/yyyy"
-          />
-          <div className="flex">
-            <div>
-              <p>Multiplier</p>
-              <input 
-                className={`w-16 ${theme.BG} ${theme.BORDER}`}
-                type="number" 
-                value={multiplier}
-                onChange={(e) => updateMultiplier(parseFloat(e.target.value))}
-                min="1" 
-                max="5" 
-                step="0.1"
-              ></input>
+        <fieldset disabled={busy}>
+          <div className="flex flex-col divide-y px-1.5">
+            <div 
+              className="" 
+              onMouseEnter={() => setSideView(SideView.priority)}
+            >
+              <p className="font-semibold text-gray-90">Priority</p>
+              {beta && <PrioritySlider
+                         beta={beta}
+                         varianceSlider={ib.priorityOnly}
+                         onMeanChange={(mean) => updatePriority({ mean })}
+                         onVarianceChange={(variance) => updatePriority({ variance })}
+              ></PrioritySlider>}
             </div>
-            <div className="ml-2">
-              <p>Interval</p>
-              <input 
-                className={`w-16 ${theme.BG} ${theme.BORDER}`}
-                type="number" 
-                value={interval}
-                onChange={(e) => updateInterval(parseFloat(e.target.value))}
-                min="1" 
-                step="1"
-              ></input>
+
+            {ib.priorityOnly && false && 
+              <button
+                className="bg-white text-xs hover:bg-gray-100 text-gray-800 py-1 px-4 mb-1 border border-gray-400 rounded shadow"
+                onMouseEnter={() => setSideView(SideView.none)}
+                onClick={addScheduling}
+              >
+                 Schedule ib
+              </button>}
+
+            {!ib.priorityOnly && 
+              <div 
+                className="py-1 dark:border-gray-600"
+                onMouseEnter={() => setSideView(SideView.schedule)}
+              >
+                <p className="font-semibold text-gray-90">Schedule</p>
+                <p>Due</p>
+                <DatePicker
+                  className={`${theme.BG} ${theme.BORDER}`}
+                  selected={dueDate}
+                  onChange={(date) => updateDueDate(date)}
+                  minDate={new Date()}
+                  monthsShown={1}
+                  dateFormat="dd/MM/yyyy"
+                />
+                <div className="flex">
+                  <div>
+                    <p>Multiplier</p>
+                    <input 
+                      className={`w-16 ${theme.BG} ${theme.BORDER}`}
+                      type="number" 
+                      value={multiplier}
+                      onChange={(e) => updateMultiplier(parseFloat(e.target.value))}
+                      min="1" 
+                      max="5" 
+                      step="0.1"
+                    ></input>
+                  </div>
+                  <div className="ml-2">
+                    <p>Interval</p>
+                    <input 
+                      className={`w-16 ${theme.BG} ${theme.BORDER}`}
+                      type="number" 
+                      value={interval}
+                      onChange={(e) => updateInterval(parseFloat(e.target.value))}
+                      min="1" 
+                      step="1"
+                    ></input>
+                  </div>
+                </div>
+              </div>}
+
+            <div 
+              className="pt-1 dark:border-gray-600"
+              onMouseEnter={() => setSideView(SideView.none)}
+            >
+              <button
+                className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 rounded`}
+                onClick={done}
+              >
+                <span>Done</span>
+              </button>
             </div>
-          </div>
-        </div>}
 
-        <div 
-          className="pt-1 dark:border-gray-600"
-          onMouseEnter={() => setSideView(SideView.none)}
-        >
-          <button
-            className={`${theme.BG.hover} ${theme.BORDER} py-1 px-1 rounded`}
-            onClick={done}
-          >
-            <span>Done</span>
-          </button>
-        </div>
-
-      </div></fieldset></form>
+          </div></fieldset></form>
 
       <div 
         className={`transition ease-out delay-75 ${sideView != SideView.none ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-2  '}`}

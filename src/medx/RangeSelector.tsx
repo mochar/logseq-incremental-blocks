@@ -5,7 +5,7 @@ import { secondsToString } from "../utils/datetime";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import * as theme from "../utils/theme";
 import { regionChanged, selectionChanged, toggleFollow } from "./medxSlice";
-import { CuteButton, CuteToggle } from "../widgets/Buttons";
+import { CuteToggle } from "../widgets/Buttons";
 
 export default function RangeSelector() {
   const duration = useAppSelector(state => state.medx.duration!);
@@ -143,9 +143,10 @@ export default function RangeSelector() {
           top: "-25px",
           color: "#fff",
           fontSize: "14px",
-          padding: "2px 4px",
+          padding: "0px 2px",
           borderRadius: "2px",
           backgroundColor: "#00000066",
+          width: 'max-content'
         }}
       >
         {secondsToString(selectRange[index])}
@@ -189,7 +190,7 @@ export default function RangeSelector() {
     
       <div className="my-2 mt-6 flex items-center">
         <TimeText seconds={regionRange[0]}></TimeText>
-        <div className="flex-grow mx-2">
+        <div className="mx-2" style={{ flexGrow: 1 }}>
           <Range
             label="Select your value"
             step={0.1}

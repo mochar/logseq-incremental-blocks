@@ -22,7 +22,7 @@ export default function JumpView() {
       ? 'text-blue-600  border-blue-600 active dark:text-blue-500 dark:border-blue-500'
       : 'border-transparen hover:text-gray-600 hover:border-gray-300 dark:hover:text-gray-300t';
     return (
-      <li className="me-2">
+      <li key={t.key} className="me-2">
         <a
           href="#"
           onClick={() => setTab(t.key)}

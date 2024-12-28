@@ -1,9 +1,8 @@
 import React from "react";
-import * as theme from "../utils/theme";
-import ExtractionView from "./ExtractionView";
-import JumpView from "./jump/JumpView";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
 import { reloadBlock } from "./medxSlice";
+import ExtractionView from "./ExtractionView";
+import PlayerView from "./PlayerView";
 
 export default function MedxWindow() {
   const ref = React.useRef<HTMLDivElement>(null);
@@ -23,17 +22,11 @@ export default function MedxWindow() {
   <div 
     ref={ref} 
     id="ib-medx" 
-    className={`fixed flex h-full justify-between space-x-2 p-2 text-sm ${theme.TXT}`}
+    className="flex flex-col p-2 text-sm"
   >
-    <div className="w-full">
-      <ExtractionView data={medxData} />
-    </div>
-
-    <div
-      className={`w-64 min-w-64`}
-    >
-      <JumpView/>
-    </div>
+    <PlayerView data={medxData} />
+    <hr className="my-2 dark:border-gray-800"></hr>
+    <ExtractionView />
   </div>
   );
 }

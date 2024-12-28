@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { useDebounce } from "../utils/utils";
 import { useAppDispatch } from "../state/hooks";
 import { togglePopoverView } from "../state/viewSlice";
-import MediaFragment from "./MediaFragment";
+import { MediaFragment, renderFragment } from "./MediaFragment";
 
 // https://stackoverflow.com/a/27728417/2374668
 function parseYoutubeId(url: string) : string | null {
@@ -58,15 +58,15 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
   async function insert() {
     const url_ = format == 'youtube' ? (parseYoutubeId(url) ?? url) : url;
     console.log(url_, format);
-    const args = new MediaFragment({
+    const args: MediaFragment = {
       url: url_,
       //@ts-ignore
       format, 
       volume: 1,
       rate: 1,
       loop: false
-    });
-    await logseq.Editor.insertAtEditingCursor(args.render());
+    };
+    await logseq.Editor.insertAtEditingCursor(renderFragment(args));
     dispatch(togglePopoverView({ view: null }));
   }
 

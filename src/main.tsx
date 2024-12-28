@@ -21,8 +21,7 @@ import ModalApp from "./ModalApp";
 import { setModalView } from "./state/viewSlice";
 import App from "./App";
 
-// @ts-expect-error
-const css = (t, ...args) => String.raw(t, ...args);
+const css = (t: any, ...args: any[]) => String.raw(t, ...args);
 
 const pluginId = PL.id;
 

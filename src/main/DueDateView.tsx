@@ -51,10 +51,8 @@ export default function DueDateView() {
             />
             <DatePicker
               className="p-0 border border-[color:var(--ls-border-color)] w-full"
-              selected={date}
+              selected={new Date(date)}
               onChange={dateSelected}
-              //minDate={busy ? date ?? undefined : todayMidnight()}
-              maxDate={busy ? date ?? undefined : undefined}
               monthsShown={1}
               disabled={busy}
               dateFormat="dd/MM/yyyy"
@@ -106,7 +104,7 @@ function Chart() {
       d.set(date, (d.get(date) ?? 0) + 1);
       return d;
     }, new Map<number, number>());
-    const dates = [...counts.keys().toArray()];
+    const dates = Array.from(counts.keys());
     for (const date of dates) {
       const today = new Date(date);
       const yesterday = addDays(today, -1).getTime();
@@ -177,6 +175,7 @@ function Chart() {
               stroke: '#00000090'
             },
             // Need this otherwise i get some errors
+            //@ts-ignore
             legendOffsetX: 0,
             legendOffsetY: 0,
             legendOrientation: "horizontal"

@@ -217,12 +217,12 @@ async function loadCollectionsIbs(state: MainState, collectionIndices: number[])
     }
   }
   const collectionNames = state.collections.map(c => c.name);
-  const collectionIbs = collectionMap.keys().map(cn => {
+  const collectionIbs = [...collectionMap.keys()].map(cn => {
     return {
       index: collectionNames.indexOf(cn),
       ibs: collectionMap.get(cn)!
     }
-  }).toArray();
+  });
 
   return collectionIbs;
 }
@@ -263,7 +263,7 @@ export const toggleAllCollections = () => {
     if (nLoaded === 0 || nLoaded === nTotal) {
       await dispatch(toggleCollections([...Array(nTotal).keys()]));
     } else {
-      const toToggle = Array(nTotal).keys().filter(i => !loadedIndices.includes(i)).toArray();
+      const toToggle = [...Array(nTotal).keys()].filter((i: number) => !loadedIndices.includes(i));
       await dispatch(toggleCollections(toToggle));
     }
   }
@@ -296,9 +296,12 @@ export const toggleRef = (ref: Ref) => {
     const state = getState();
     const selected = state.main.filters.refs ?? [];
     const index = selected.findIndex(r => r.id == ref.id);
-    const refs = index == -1
-      ? [...selected, ref]
-      : selected.toSpliced(index, 1);
+    let refs = [...selected];
+    if (index === -1) {
+      refs.push(ref);
+    } else {
+      refs.splice(index, 1);      
+    }
     dispatch(mainSlice.actions.refsSelected({ refs }));
     await dispatch(refreshCollections());
   }
@@ -339,7 +342,7 @@ export const postponeSelected = (start: number, end: number) => {
         ${buildIbQueryWhereBlock(state.main.filters)}
        ]`;
       const ret = await logseq.DB.datascriptQuery(query);
-      await Promise.all(ret.map(async (r) => {
+      await Promise.all(ret.map(async (r: any) => {
         const ib = ibFromProperties(r[0]['uuid'], r[0]['properties']);
         if (!ib.scheduling) return;
         const interval = start + Math.random() * (end - start);
