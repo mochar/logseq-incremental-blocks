@@ -7,8 +7,9 @@ import { queryIncrementalBlocks } from "../logseq/query";
 import { db } from "../db";
 import DueDateView from "./DueDateView";
 import RefsView from "./RefsView";
-import { ModalView, setModalView } from "../state/viewSlice";
+import { EditorView, ModalView, setEditorView, setModalView } from "../state/viewSlice";
 import IntervalView from "./IntervalView";
+
 
 export default function MainWindow() {
   const ref = useRef<HTMLDivElement>(null);
@@ -45,6 +46,10 @@ export default function MainWindow() {
     }
   }
 
+  async function test() {
+    dispatch(setEditorView({ view: EditorView.web }));
+  }
+
   return (
     <div
       id="ib-main"
@@ -59,6 +64,8 @@ export default function MainWindow() {
         >
           <span>Review { totalDue && totalDue > 0 && <span>({totalDue})</span> }</span>
         </button>
+
+        <button onClick={test}>Test</button>
 
         <SelectionActions />
        

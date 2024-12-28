@@ -10,7 +10,7 @@ import { toDashCase } from "./utils/utils";
  */
 export function ibFromProperties(uuid: string, props: Record<string, any>): IncrementalBlock {
   let scheduling: Scheduling | undefined;
-  let due = parseFloat(props['ib-due']);
+  let due = parseFloat(props['ibDue']);
   if (!isNaN(due)) {
     // Set the time to midnight.
     // Should already be the case, but sometimes users are
@@ -19,17 +19,17 @@ export function ibFromProperties(uuid: string, props: Record<string, any>): Incr
     date.setHours(0, 0, 0, 0);
     due = date.getTime();
 
-    let multiplier = parseFloat(props['ib-multiplier']);
+    let multiplier = parseFloat(props['ibMultiplier']);
     if (!(typeof multiplier === 'number' && multiplier >= 1)) {
       multiplier = logseq.settings?.defaultMultiplier as number ?? 2.;
     }
 
-    let interval = parseFloat(props['ib-interval']);
+    let interval = parseFloat(props['ibInterval']);
     if (!(typeof interval === 'number' && interval >= 0)) {
       interval = 1;
     }
 
-    let reps = parseFloat(props['ib-reps']);
+    let reps = parseFloat(props['ibReps']);
     if (!(typeof reps === 'number' && reps >= 0 && Number.isInteger(reps))) {
       reps = 0;
     }

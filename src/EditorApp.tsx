@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
 import { EditorView } from "./state/viewSlice";
 import MedxWindow from "./medx/MedxWindow";
+import WebxWindow from "./webx/WebxWindow";
 
 export default function EditorApp({ unmount }: { unmount: Function }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -12,6 +13,8 @@ export default function EditorApp({ unmount }: { unmount: Function }) {
   let content = <span>Is that leather?</span>;
   if (view.view == EditorView.medx) {
     content = <MedxWindow />;
+  } else if (view.view == EditorView.web) {
+    content = <WebxWindow />;
   }
   
   return (

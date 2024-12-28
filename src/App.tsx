@@ -13,6 +13,7 @@ import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import { Provider, useStore } from "react-redux";
 import EditorApp from "./EditorApp";
 import { parseFragment } from "./medx/MediaFragment";
+import { addListener } from "@reduxjs/toolkit";
 
 export default function App() {
   const visible = useAppVisible();
@@ -40,7 +41,7 @@ export default function App() {
           const medxData = await dispatch(selectMedia({ medFrag, slotId, blockUuid }));
           if (medxData) {
             dispatch(setEditorView({ view: EditorView.medx  }));
-            renderMedx(medxData);
+            openEditorView(medxData);
           }
         } else {
           logseq.UI.showMsg('Invalid media args', 'warning');
@@ -89,9 +90,20 @@ export default function App() {
 
     logseq.onSettingsChanged((a, b) =>
       dispatch(handleSettingsChanged({ old: b, new: a })));
+
+    const unsub = dispatch(addListener({
+      actionCreator: setEditorView,
+      effect: (action, listenerApi) => {
+        console.log(action.payload);
+        if (action.payload) {
+          openEditorView();
+        }
+      }
+    }));
+    return unsub;
   }, []);
 
-  function renderMedx(medxData: MedxData) {
+  function openEditorView() {
     const el = parent!.document.getElementById('app-single-container');
     if (!el) {
       logseq.UI.showMsg('Cannot find element', 'error');

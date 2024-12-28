@@ -199,7 +199,7 @@ export const startLearning = (type: 'due' | 'subset') => {
     //await dispatch(getCurrentReviewCard());
 
     // Build queue
-    let whereBlock = buildIbQueryWhereBlock({dueDate: todayMidnight()});
+    let whereBlock = buildIbQueryWhereBlock({dueDate: todayMidnight().getTime()});
     if (type == 'subset') {
       whereBlock = buildIbQueryWhereBlock(state.main.filters);
     }
@@ -211,6 +211,7 @@ export const startLearning = (type: 'due' | 'subset') => {
         [?b :block/page ?bp]
         [(get ?prop :ib-a) _]
         [(get ?prop :ib-b) _]
+        [(get ?prop :ib-due) _]
         ${whereBlock}
         ]`;
     // Returns array of two-tuples: Page data object, and page ib count number
