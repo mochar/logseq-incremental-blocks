@@ -70,6 +70,14 @@ export default function MainWindow() {
         <SelectionActions />
        
         <div className="flex-1"></div>
+
+        <button
+          className="hover:bg-secondary border px-1 rounded"
+          onClick={() => dispatch(setModalView({ view: ModalView.import }))}
+          disabled={busy}
+        >
+          <i className={`ti ti-download`}></i>          
+        </button>
         
         <button
           className="hover:bg-secondary border px-1 rounded"

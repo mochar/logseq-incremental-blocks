@@ -5,7 +5,7 @@ import { updateVisiblity } from '../utils/logseq';
 
 export enum MainView { main }
 export enum PopoverView { learn, ib, insert }
-export enum ModalView { ibActions }
+export enum ModalView { ibActions, import }
 export enum EditorView { medx, web }
 
 export interface BlockViewData {

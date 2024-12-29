@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
 import { ModalView, setModalView } from "./state/viewSlice";
 import Postpone from "./main/Postpone";
+import Import from "./import/Import";
 
-export default function BarApp() {
+export default function ModalApp() {
   const dispatch = useAppDispatch();
   const view = useAppSelector(state => state.view.modal);
 
@@ -19,6 +20,8 @@ export default function BarApp() {
   let content = <span>Is that leather?</span>;
   if (view.view == ModalView.ibActions) {
     content = <Postpone />
+  } else if (view.view == ModalView.import) {
+    content = <Import />
   }
   
   return (

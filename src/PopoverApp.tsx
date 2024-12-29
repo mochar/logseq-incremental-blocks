@@ -2,8 +2,7 @@ import React, { useEffect } from "react";
 import IbPopover from "./widgets/Popover";
 import { useAppVisible } from "./logseq/events";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
-import { IbViewData, InsertViewData, PopoverView, setPopoverView, togglePopoverView } from "./state/viewSlice";
-import InsertPopover from "./medx/InsertPopover";
+import { IbViewData, PopoverView, setPopoverView, togglePopoverView } from "./state/viewSlice";
 
 export default function PopoverApp() {
   const visible = useAppVisible();
@@ -44,11 +43,6 @@ export default function PopoverApp() {
     case PopoverView.ib:
       const ibData = view.popover.data! as IbViewData;
       viewComponent = <IbPopover block={ibData.block} slot={ibData.slotId} />;
-      break;
-    case PopoverView.insert:
-      const insertData = view.popover.data! as InsertViewData;
-      viewComponent = <InsertPopover block={insertData.block} />
-      classesIfCentered = 'backdrop-brightness-90 items-center justify-center';
       break;
   }
 

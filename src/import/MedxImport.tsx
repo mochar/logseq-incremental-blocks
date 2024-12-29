@@ -1,9 +1,8 @@
-import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import React, { useMemo } from "react";
 import { useDebounce } from "../utils/utils";
 import { useAppDispatch } from "../state/hooks";
 import { togglePopoverView } from "../state/viewSlice";
-import { MediaFragment, renderFragment } from "./MediaFragment";
+import { MediaFragment, renderFragment } from "../medx/MediaFragment";
 
 // https://stackoverflow.com/a/27728417/2374668
 function parseYoutubeId(url: string) : string | null {
@@ -13,7 +12,7 @@ function parseYoutubeId(url: string) : string | null {
   return null;
 }
 
-export default function InsertPopover({ block }: { block: BlockEntity }) {
+export default function MedxImport() {
   const ref = React.useRef<HTMLDivElement>(null);
   const dispatch = useAppDispatch();
   const [format, setFormat] = React.useState<string>('audio');
@@ -74,14 +73,13 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
   <div
     ref={ref} 
     id="ib-insert" 
-    className="fixed flex flex-col rounded-lg border bg-white shadow-md p-2"
-    style={{ minWidth: 640 }}
+    className="flex flex-col"
   >
     <label>
-      Path or URL
       <input 
         className="border w-full" 
-        type="text" 
+        type="text"
+        placeholder="Path or URL"
         value={url}
         onChange={e => urlChanged(e.target.value)} 
         onDrop={onDrop}
@@ -89,7 +87,7 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
     </label>
 
     <div className="flex items-baseline justify-between">
-      <p>
+      <p className="space-x-2">
         <label>
           <input type="radio" name="format" value="audio" checked={format == 'audio'} onChange={formatSelected} />
           Audio
@@ -105,10 +103,10 @@ export default function InsertPopover({ block }: { block: BlockEntity }) {
       </p>
 
       <button 
-        className="w-fit mt-2 bg-blue-500 hover:bg-blue-400 text-white py-1 px-1 w-1/6 border-b-2 border-blue-700 hover:border-blue-500 rounded" 
+        className="bg-primary/90 hover:bg-primary py-1 px-2 border-b-2 border-primary-700 hover:border-primary-500 rounded text-primary-foreground border ml-8" 
         onClick={insert}
       >
-        Insert
+        Import
       </button>
     </div>
 
