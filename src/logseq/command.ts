@@ -46,7 +46,7 @@ async function generateNewIbProps({ uuid, priorityOnly=false, block } : IGenProp
     priorityOnly = !(ib.dueDate && ib.interval);
   }
   
-  const props: Record<string, any> = {};
+  const props: Record<string, any> = { id: uuid };
   if (priorityOnly == false) {
     props['ib-multiplier'] = ib.multiplier;
     props['ib-reps'] = ib.reps ?? 0;
