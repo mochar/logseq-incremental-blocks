@@ -9,6 +9,7 @@ import DueDateView from "./DueDateView";
 import RefsView from "./RefsView";
 import { EditorView, ModalView, setEditorView, setModalView } from "../state/viewSlice";
 import IntervalView from "./IntervalView";
+import { readFile } from "../import/Import";
 
 
 export default function MainWindow() {
@@ -47,7 +48,7 @@ export default function MainWindow() {
   }
 
   async function test() {
-    dispatch(setEditorView({ view: EditorView.web }));
+    dispatch(setEditorView({ view: EditorView.web }));    
   }
 
   return (

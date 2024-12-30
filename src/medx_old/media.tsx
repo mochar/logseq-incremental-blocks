@@ -3,15 +3,24 @@ import { secondsToString } from "../utils/datetime";
 import React from "react";
 
 export interface MediaFragment {
-  flag?: ':medx' | ':medx_ref',
+  start: number,
+  end: number,
+  volume?: number,
+  rate?: number,
+  loop?: boolean
+}
+
+export const mediaTypes = ['audio', 'video', 'youtube'];
+export declare type MediaType = typeof mediaTypes[number];
+
+export interface MediaSource extends Partial<MediaFragment> {
   url: string,
-  format: 'audio' | 'video' | 'youtube',
-  start?: number | undefined,
-  end?: number | undefined,
-  urlTimed?: string | undefined,
-  volume: number,
-  rate: number,
-  loop: boolean
+  type: MediaType,
+}
+
+export interface Media {
+  pageUuid: string,
+  source: MediaSource
 }
 
 export function parseFragment(args: any[]) : MediaFragment | null {
@@ -67,3 +76,33 @@ export function createFragmentElement(frag: MediaFragment) : JSX.Element {
   }
   return <></>;
 }
+
+function parsePotentialFloat(value: any) : number | undefined {
+  const float = parseFloat(value);
+  if (Number.isNaN(float)) return undefined;
+  return float;
+}
+
+export function parseFragmentProperties(properties: Record<string, any>) : MediaFragment | null {
+  // Start and end point are required
+  if (!(properties.has('start') && properties.has('end'))) return null;
+  const td = new TemporalDimension(`${properties['start']},${properties['end']}`);
+  const start = parseFloat(td.s.toString());
+  const end = parseFloat(td.e.toString());
+  if (Number.isNaN(start) || Number.isNaN(end)) return null;
+  const volume = parsePotentialFloat(properties['volume']);
+  const rate = parsePotentialFloat(properties['rate']);
+  // Not sure if always read as boolean type or string
+  const loop = properties['loop'].toString() == 'true'
+    ? true : (properties['loop'].toString() == 'false' ? false : undefined)
+  return { start, end, volume, rate, loop };
+}
+
+export function parseSourceProperties(properties: Record<string, any>) : MediaSource | null {
+  const url = properties['url'];
+  const type = properties['media'];
+  if (!(url && mediaTypes.includes(type))) return null;
+  const fragment = parseFragmentProperties(properties);
+  return { url, type, ...fragment };
+}
+

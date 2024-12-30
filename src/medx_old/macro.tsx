@@ -3,24 +3,28 @@ import { createRoot } from 'react-dom/client';
 import React from "react";
 import { secondsToString } from "../utils/datetime";
 import { isDark } from "../utils/logseq";
-import { MediaFragment, parseFragment, parseFragmentProperties } from './media';
+import { MediaFragment, parseFragment } from './MediaFragment';
 
 //@ts-ignore
 export async function renderMedxMacro({ slot, payload }) {
+  const args = parseFragment(payload.arguments);
+  if (args == null) return;
+  const isRef = args.flag!.endsWith('_ref') && (args.start || args.end);
   const dark = await isDark();
   const txtColor = dark ? "text-gray-300" : "text-gray-600";
   const bgColor = dark ? "bg-gray-700" : "bg-gray-100/10";
 
   let refHtml = '';
-  if (false) {
+  if (isRef) {
     refHtml = `
     <button
       class="flex ${bgColor}"
-      data-on-click="selectFragment"
+      data-on-click="playRange"
       data-slot-id="${slot}"
-      data-block-uuid="${payload.uuid}"
+      data-media-url="${args.url}"
+      data-macro-args="${payload.arguments}"
     >
-      <span>[${secondsToString(fragment.start ?? 0)}-${fragment.end ? secondsToString(fragment.end) : 'end'}]</span>
+      <span>[${secondsToString(args.start ?? 0)}-${args.end ? secondsToString(args.end) : 'end'}]</span>
     </button>
 
     <button
@@ -35,17 +39,18 @@ export async function renderMedxMacro({ slot, payload }) {
 
   const html = `
   <div class="text-sm flex items-center ${txtColor}">
-    <div class="medx-player flex"></div>
+    <div id="medx-player-${args.url}" class="medx-player flex"></div>
 
     ${refHtml}
     
     <button
       class="rounded-lg border flex items-center h-8 ml-2 ${bgColor}"
-      data-on-click="selectFragment" 
+      data-on-click="toggleMedxPopover" 
       data-block-uuid="${payload.uuid}"
       data-slot-id="${slot}"
+      data-macro-args="${payload.arguments}"
     >
-      <span>Open</span>
+      <span class="ti ti-quote text-base px-1"></span>
     </button>
   </div>
   `;
@@ -57,13 +62,13 @@ export async function renderMedxMacro({ slot, payload }) {
     template: html,
   });
 
-  // if (!isRef) {
-  //   setTimeout(() => {
-  //     const playerDiv = top?.document.querySelector(`#${slot} .medx-player`);
-  //     if (!playerDiv) return;
-  //     return renderMediaEmbed({ playerDiv, args });
-  //   }, 100);
-  // } 
+  if (!isRef) {
+    setTimeout(() => {
+      const playerDiv = top?.document.querySelector(`#${slot} .medx-player`);
+      if (!playerDiv) return;
+      return renderMediaEmbed({ playerDiv, args });
+    }, 100);
+  } 
 }
 
 interface RenderMediaProps {

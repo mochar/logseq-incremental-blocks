@@ -2,26 +2,28 @@ import React from "react";
 import { OnProgressProps } from "react-player/base";
 import ReactPlayer from "react-player/lazy";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { durationRetrieved, playerProgressed, selectionChanged } from "./medxSlice";
+import { durationRetrieved, MedxData, playerProgressed, selectionChanged } from "./medxSlice";
 import RangeSelector from "./RangeSelector";
-import { getTimedUrl } from "./media";
 
-export default function PlayerView() {
+interface IExtractionView {
+  data: MedxData
+}
+
+export default function PlayerView({ data }: IExtractionView) {
+  const medFrag = data.medFrag;
   const player = React.useRef<ReactPlayer | null>(null);
   const dispatch = useAppDispatch();
-  const media = useAppSelector(state => state.medx.media)!;
-  const source = media.source;
   const follow = useAppSelector(state => state.medx.follow);
   const range = useAppSelector(state => state.medx.selectRange);
   const duration = useAppSelector(state => state.medx.duration);
   const mediaAttrs = useAppSelector(state => state.medx.mediaAttrs);
   const [playing, setPlaying] = React.useState<boolean>(false);
-  const playerUrl = source.type == 'youtube' ? `https://www.youtube.com/watch?v=${source.url}` : getTimedUrl(source);
+  const playerUrl = medFrag.format == 'youtube' ? `https://www.youtube.com/watch?v=${medFrag.url}` : medFrag.urlTimed;
 
   const playerConfig = {
     file: {
-      forceVideo: source.type == 'video',
-      forceAudio: source.type == 'audio',
+      forceVideo: medFrag.format == 'video',
+      forceAudio: medFrag.format == 'audio',
     }
   }
 
@@ -54,7 +56,7 @@ export default function PlayerView() {
         <ReactPlayer
           ref={(p) => player.current = p}
           width={'640px'}
-          height={source.type == 'audio' ? '2rem' : '360px'}
+          height={medFrag.format == 'audio' ? '2rem' : '360px'}
           url={playerUrl}
           playing={playing}
           loop={mediaAttrs.loop}
@@ -76,4 +78,5 @@ export default function PlayerView() {
     </div>
   );
 }
+
 

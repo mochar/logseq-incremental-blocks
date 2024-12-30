@@ -4,10 +4,7 @@ import { IncrementalBlock, Scheduling } from "./types";
 import { removeIbPropsFromContent } from "./utils/logseq";
 import { toDashCase } from "./utils/utils";
 
-/*
- * Although no longer store data in properties, used by db importer
- * when converting from older version.
- */
+// TODO: validation props
 export function ibFromProperties(uuid: string, props: Record<string, any>): IncrementalBlock {
   let scheduling: Scheduling | undefined;
   let due = parseFloat(props['ibDue']);

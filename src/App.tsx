@@ -1,9 +1,8 @@
 import React, { useEffect } from "react";
 import * as ReactDOM from "react-dom/client";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
-import { useAppVisible } from "./logseq/events";
 import { EditorView, MainView, setEditorView, toggleMainView } from "./state/viewSlice";
-import { MedxData, selectMedia } from "./medx/medxSlice";
+import { selectFragmentBlock, selectMedia } from "./medx/medxSlice";
 import { finishRep } from "./learn/learnSlice";
 import { renderMediaEmbed } from "./medx/macro";
 import { refreshCollections } from "./main/mainSlice";
@@ -12,11 +11,10 @@ import { isDark } from "./utils/logseq";
 import { handleSettingsChanged, themeModeChanged } from "./state/appSlice";
 import { Provider, useStore } from "react-redux";
 import EditorApp from "./EditorApp";
-import { parseFragment } from "./medx/MediaFragment";
 import { addListener } from "@reduxjs/toolkit";
+import { parseFragment } from "./medx/media";
 
 export default function App() {
-  const visible = useAppVisible();
   const view = useAppSelector(state => state.view);
   const learning = useAppSelector(state => state.learn.learning);
   const currentIbData = useAppSelector(state => state.learn.current);
@@ -33,26 +31,28 @@ export default function App() {
           dispatch(toggleMainView({ view: MainView.main }));
         }
       },
-      async toggleMedxPopover(e: any) {
-        const medFrag = parseFragment(e.dataset.macroArgs.split(','));
-        const slotId = e.dataset.slotId;
-        const blockUuid = e.dataset.blockUuid;
-        if (medFrag && slotId && blockUuid) {
-          const medxData = await dispatch(selectMedia({ medFrag, slotId, blockUuid }));
-          if (medxData) {
-            dispatch(setEditorView({ view: EditorView.medx  }));
-            openEditorView(medxData);
-          }
-        } else {
-          logseq.UI.showMsg('Invalid media args', 'warning');
-        }
-      },
       async nextRep() {
         if (!learning) return;
         await dispatch(finishRep());
         const openIb = logseq.settings?.learnAutoOpen as boolean ?? true;
         if (currentIbData && openIb) {
           logseq.App.pushState('page', { name: currentIbData.ib.uuid });
+        }
+      },
+      async selectFragment(e: any) {
+        const block = await logseq.Editor.getBlock(e.dataset.blockUuid);
+        if (!block) {
+          logseq.UI.showMsg('Block not found', 'error');
+          return;
+        }
+        const isSource = block.page.id == block.parent.id;
+        if (isSource) {
+          dispatch(selectMedia(block.page.id));
+        } else {
+          dispatch(selectFragmentBlock(e.dataset));
+        }
+        if (view.editor == null || view.editor.view != EditorView.medx) {
+          dispatch(setEditorView({ view: EditorView.medx }));
         }
       },
       playRange(e: any) {

@@ -18,7 +18,7 @@ export function CuteToggle({ title, tooltip, state, onChange }: ICuteToggle) {
     {state != undefined &&
       <span 
         style={{ width: '8px', height: '8px', }}
-        className={`mr-1 inline-flex rounded-full ${state ? 'bg-lime-500' : 'bg-gray-300'}`}
+        className={`mr-1 inline-flex rounded-full ${state ? 'bg-green-500' : 'bg-gray-300'}`}
       ></span>
     }
     <span className="text-gray-700 dark:text-gray-400">{title}</span>
