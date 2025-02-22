@@ -4,8 +4,13 @@ import { IncrementalBlock, Scheduling } from "./types";
 import { removeIbPropsFromContent } from "./utils/logseq";
 import { toDashCase } from "./utils/utils";
 
-// TODO: validation props
-export function ibFromProperties(uuid: string, props: Record<string, any>): IncrementalBlock {
+/*
+ * Block recognized as ib if at least a and b properties.
+ */
+export function ibFromProperties(uuid: string, props: Record<string, any>): IncrementalBlock | null {
+  const beta = Beta.fromProps(props);
+  if (!beta) return null;
+
   let scheduling: Scheduling | undefined;
   let due = parseFloat(props['ibDue']);
   if (!isNaN(due)) {
@@ -34,17 +39,16 @@ export function ibFromProperties(uuid: string, props: Record<string, any>): Incr
     scheduling = { multiplier, interval, reps, dueDate: due };
   }
 
-  const beta = Beta.fromProps(props);
-
   return {
     uuid,
     scheduling,
-    betaParams: beta?.params ?? {a:1, b:1}
+    betaParams: beta.params ?? {a:1, b:1}
   }
 }
 
-export async function ibFromUuid(uuid: string): Promise<IncrementalBlock> {
+export async function ibFromUuid(uuid: string): Promise<IncrementalBlock | null> {
   const props = await logseq.Editor.getBlockProperties(uuid);
+  if (!props) return null;
   return ibFromProperties(uuid, props);
 }
 
@@ -61,4 +65,3 @@ export async function doneIb(ib: IncrementalBlock) {
   }
   await logseq.Editor.updateBlock(ib.uuid, content);
 }
-

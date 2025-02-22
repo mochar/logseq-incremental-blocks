@@ -16,7 +16,7 @@ export type InsertViewData = BlockViewData;
 export interface SlotViewData extends BlockViewData {
   slotId: string
 }
-export type IbViewData = SlotViewData;
+export type IbViewData = BlockViewData;
 
 interface ViewData {
   view: MainView | PopoverView | ModalView | EditorView,
@@ -75,7 +75,7 @@ export const togglePopoverView = (request: ViewRequest) => {
     } else if (request.view == PopoverView.learn) {
       dispatch(setPopoverView({ view: PopoverView.learn }));
     } else if (request.view == PopoverView.ib) {
-      if (!request.blockUuid || !request.slotId) return;
+      if (!request.blockUuid) return;
       // Don't show when currently learning
       if (state.learn.learning && request.blockUuid == state.learn.current?.ib.uuid) {
         logseq.UI.showMsg('Stop learning to update incremental blocks')
@@ -83,7 +83,7 @@ export const togglePopoverView = (request: ViewRequest) => {
       }
       const block = await logseq.Editor.getBlock(request.blockUuid);
       if (block) {
-        const data: SlotViewData = { block, slotId: request.slotId };
+        const data: BlockViewData = { block };
         dispatch(setPopoverView({ view: PopoverView.ib, data }))
       } else {
         logseq.UI.showMsg('Block not found.')

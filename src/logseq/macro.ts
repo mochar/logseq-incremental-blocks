@@ -18,7 +18,7 @@ export async function handleMacroRendererSlotted({ slot, payload }) {
 }
 
 //@ts-ignore
-async function renderIbMacro({ slot, payload }) {
+export async function renderIbMacro({ slot, payload }) {
   const ib = await IncrementalBlock.fromUuid(payload.uuid);
 
   let priorityHtml = '';
@@ -64,9 +64,9 @@ async function renderIbMacro({ slot, payload }) {
 
   const dark = await isDark();
   logseq.provideUI({
-    key: `ib__${slot}`,
+    //key: `ib__${slot}`,
     slot,
-    reset: true,
+    //reset: true,
     template: `
     <div class="text-xs flex">
       <button

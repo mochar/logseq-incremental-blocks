@@ -20,6 +20,7 @@ import BarApp from "./BarApp";
 import ModalApp from "./ModalApp";
 import { setModalView } from "./state/viewSlice";
 import App from "./App";
+import { setupBlockRendering } from "./logseq/blockrender";
 
 const css = (t: any, ...args: any[]) => String.raw(t, ...args);
 
@@ -211,6 +212,10 @@ function main() {
       store.dispatch(setModalView(null));
     }
   }, false);
+	
+	// For some reason, ibs that have been assigned an id on creation
+	// are not rendered without the small delay.
+	setTimeout(setupBlockRendering, 1000);
 }
 
 logseq.useSettingsSchema(settings).ready(main).catch(console.error);

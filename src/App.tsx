@@ -31,6 +31,9 @@ export default function App() {
           dispatch(toggleMainView({ view: MainView.main }));
         }
       },
+      editBlock(e: any) {
+        logseq.Editor.editBlock(e.dataset.blockUuid);
+      },
       async nextRep() {
         if (!learning) return;
         await dispatch(finishRep());

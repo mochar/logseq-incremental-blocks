@@ -6,6 +6,7 @@ import IncrementalBlock from "../IncrementalBlock";
 import { average } from "../utils/utils";
 import { addContentAndProps, removePropsFromContent } from "../utils/logseq";
 import { queryBlockRefs } from "./query";
+import { renderAndObserveUuid } from "./blockrender";
 
 function blockRefsToBeta(refIbs: IncrementalBlock[]) : Beta | null {
   const as: number[] = [];
@@ -122,10 +123,12 @@ export async function convertBlockToIb({ uuid, block, priorityOnly=false, backTo
 
   // TODO: This doesn't update existing params
   let addition = '';
-  if (!content.includes(RENDERER_MACRO_NAME)) addition = RENDERER_MACRO_NAME;
+  //  if (!content.includes(RENDERER_MACRO_NAME)) addition = RENDERER_MACRO_NAME;
   const newContent = addContentAndProps(content, { addition, props });
   await logseq.Editor.updateBlock(uuid, newContent);
   await logseq.Editor.exitEditingMode();
+
+  renderAndObserveUuid(uuid);
   
   if (backToEditing) {
     setTimeout(() => {
@@ -198,7 +201,8 @@ export async function extractSelectionCommand() {
   if (!block) return;
   const properties = await generateNewIbProps({ uuid: block.uuid, priorityOnly: false, block });
   if (!properties) return;
-  const content = `${selection}\n${RENDERER_MACRO_NAME}`;
+  // const content = `${selection}\n${RENDERER_MACRO_NAME}`;
+  const content = `${selection}`;
   const extractUuid = await logseq.Editor.newBlockUUID()
   const extractBlock = await logseq.Editor.insertBlock(block.uuid, content, { 
     focus: false, customUUID: extractUuid, properties });
@@ -221,9 +225,9 @@ export async function extractClozeCommand(asIb: boolean = true) {
     // Child block will be ib
     properties = await generateNewIbProps({ uuid: block.uuid, priorityOnly: false, block }) || {};
     if (Object.keys(properties).length == 0) return;
-    if (!content.includes(RENDERER_MACRO_NAME)) {
-      content = `${content}\n${RENDERER_MACRO_NAME}`;
-    }
+    // if (!content.includes(RENDERER_MACRO_NAME)) {
+    //   content = `${content}\n${RENDERER_MACRO_NAME}`;
+    // }
   } else {
     // Child block will be cloze card
     content = content.replace(RENDERER_MACRO_NAME, '');

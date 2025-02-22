@@ -36,7 +36,8 @@ class Beta {
     this.setMoments();
   }
 
-  static fromProps(props: Record<string, any>) {
+  static fromProps(props: Record<string, any>) : Beta | null {
+    // TODO validate a and b are within bounds
     const a = parseFloat(props['ibA']);
     if (!Beta.isValidParam(a)) return null;
     const b = parseFloat(props['ibB']);

@@ -15,10 +15,11 @@ import { useAppDispatch } from "../state/hooks";
 import { queueItemAdded, queueItemRemoved } from "../learn/learnSlice";
 import { queryQueueIbs } from "../logseq/query";
 import ScheduleView from "./ScheduleView";
+import { generateBlockRenderKey } from "../logseq/blockrender";
 
 enum SideView { none, priority, schedule }
 
-export default function IbPopover({ block, slot }: { block: BlockEntity, slot: string }) {
+export default function IbPopover({ block }: { block: BlockEntity }) {
   const ref = useRef<HTMLDivElement>(null);
   const [ib, setIb] = React.useState<IncrementalBlock>(IncrementalBlock.fromBlock(block));
   const [visible, setVisible] = React.useState<boolean>(false);
@@ -33,7 +34,8 @@ export default function IbPopover({ block, slot }: { block: BlockEntity, slot: s
   
   useEffect(() => {
     // Set position above bar
-    const div = top?.document.getElementById(slot);
+    const id = `${logseq.baseInfo.id}--${generateBlockRenderKey(block.uuid)}`;
+    const div = top?.document.getElementById(id);
     if (div && ref.current) {
       let height = ref.current.clientHeight;
       if (height == 0) height =  ib.priorityOnly ? 80 : 160;

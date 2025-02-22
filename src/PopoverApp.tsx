@@ -12,11 +12,10 @@ export default function PopoverApp() {
 
   useEffect(() => {
     logseq.provideModel({
-      toggleIbPopover(e: any) {
+      toggleIbPopover(blockUuid: any) {
         dispatch(togglePopoverView({ 
           view: PopoverView.ib,
-          blockUuid: e.dataset.blockUuid,
-          slotId: e.dataset.slotId
+          blockUuid: blockUuid
         }));
       },
     });
@@ -42,7 +41,7 @@ export default function PopoverApp() {
     //   break;
     case PopoverView.ib:
       const ibData = view.popover.data! as IbViewData;
-      viewComponent = <IbPopover block={ibData.block} slot={ibData.slotId} />;
+      viewComponent = <IbPopover block={ibData.block} />;
       break;
   }
 
