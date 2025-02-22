@@ -5,6 +5,7 @@ import { BetaParams } from "../types";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { betaFromMean } from "../algorithm/priority";
 import { assetToPath } from "../utils/logseq";
+import { generateIbPropsFromBlock, generateNewIbProps } from "../ib/create";
 
 interface ImportState {
   busy: boolean,
@@ -48,12 +49,15 @@ export const importHtml = (title: string, html: string) => {
     if (state.import.busy) return;
     dispatch(importSlice.actions.gotBusy(true));
 
+    // Check if page with name already exists
     let page = await logseq.Editor.getPage(title);
     if (page) {
       logseq.UI.showMsg('Page already exists with given title', 'error');
       dispatch(importSlice.actions.gotBusy(false));
       return false;
     }
+
+    // Store file 
     const storage = logseq.Assets.makeSandboxStorage();
     const filename = `${title}.html`;
     if (await storage.hasItem(filename)) {
@@ -61,14 +65,16 @@ export const importHtml = (title: string, html: string) => {
       dispatch(importSlice.actions.gotBusy(false));
       return false;
     }
-
     await storage.setItem(filename, html);
-    await logseq.Editor.createPage(title, { 'webx-title': title }, { redirect: true });
-    
+
+    // Create page
+    const props = await generateNewIbProps();
+    props['doc-title'] = title;
+    page = await logseq.Editor.createPage(title, props, { redirect: true });
+
     dispatch(importSlice.actions.gotBusy(false));
     return true;
   }
 }
 
 export default importSlice.reducer;
-

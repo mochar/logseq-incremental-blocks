@@ -1,4 +1,4 @@
-import { ibFromUuid } from "../ib";
+import { ibFromUuid } from "../ib/read";
 import { IncrementalBlock } from "../types";
 import { generateIbUI } from "./block-ui";
 

@@ -1,8 +1,5 @@
-import Beta from "./algorithm/beta";
-import { RENDERER_MACRO_NAME } from "./globals";
-import { IncrementalBlock, Scheduling } from "./types";
-import { removeIbPropsFromContent } from "./utils/logseq";
-import { toDashCase } from "./utils/utils";
+import Beta from "../algorithm/beta";
+import { IncrementalBlock, Scheduling } from "../types";
 
 /*
  * Block recognized as ib if at least a and b properties.
@@ -50,18 +47,4 @@ export async function ibFromUuid(uuid: string): Promise<IncrementalBlock | null>
   const props = await logseq.Editor.getBlockProperties(uuid);
   if (!props) return null;
   return ibFromProperties(uuid, props);
-}
-
-export async function doneIb(ib: IncrementalBlock) {
-  const block = await logseq.Editor.getBlock(ib.uuid, {includeChildren: false});
-  if (!block) return;
-  // Remove properties by content and using removeBlockProperty, since former only
-  // works when props are visible and latter when props are hidden.
-  const content = removeIbPropsFromContent(block.content).replace(RENDERER_MACRO_NAME, '');
-  for (let prop of Object.keys(block.properties ?? {})) {
-    if (prop.startsWith('ib')) {
-      logseq.Editor.removeBlockProperty(ib.uuid, toDashCase(prop));
-    }
-  }
-  await logseq.Editor.updateBlock(ib.uuid, content);
 }

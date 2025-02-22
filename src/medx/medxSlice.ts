@@ -5,7 +5,7 @@ import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { BlockEntity, EntityID, PageIdentity } from "@logseq/libs/dist/LSPlugin.user";
 import { BetaParams } from "../types";
 import { Media, MediaFragment, parseFragmentProperties, parseSourceProperties } from "./media";
-import { ibFromProperties } from "../ib";
+import { ibFromProperties } from "../ib/read";
 
 export interface MediaAttrs {
   loop: boolean,

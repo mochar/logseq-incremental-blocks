@@ -3,7 +3,7 @@ import { AppDispatch, RootState } from "../state/store";
 import { buildIbQueryWhereBlock, parseQueueIbs, queryIbRefs, queryTotalDue, QUEUE_IB_PULLS } from "../logseq/query";
 import { Equality, FilterMode, filterModes, IbFilters, QueueIb, Ref, Timestamp } from "../types";
 import { todayMidnight, addDays } from "../utils/datetime";
-import { ibFromProperties } from "../ib";
+import { ibFromProperties } from "../ib/read";
 
 interface Collection {
   name: string,

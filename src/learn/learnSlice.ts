@@ -4,13 +4,14 @@ import { AppDispatch, RootState } from "../state/store";
 import { getBlockHierarchyContent } from "../utils/logseq";
 import { nextInterval } from "../algorithm/scheduling";
 import { addDays, todayMidnight } from "../utils/datetime";
-import { convertBlockToIb } from "../logseq/command";
 import { logseq as PL } from "../../package.json";
 import { BetaParams, IncrementalBlock, QueueItem, Timestamp } from "../types";
 import { buildIbQueryWhereBlock, parseQueueIbs, QUEUE_IB_PULLS } from "../logseq/query";
 import Beta from "../algorithm/beta";
-import { doneIb, ibFromProperties } from "../ib";
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin";
+import { convertBlockToIb } from "../ib/create";
+import { ibFromProperties } from "../ib/read";
+import { doneIb } from "../ib/actions";
 
 export enum Popover { none, priority, schedule, actions, queue }
 

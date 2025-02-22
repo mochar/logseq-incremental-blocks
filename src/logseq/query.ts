@@ -3,7 +3,7 @@ import { counter, toCamelCase } from "../utils/utils";
 import { addDays, toEndOfDay, toStartOfDay, todayMidnight } from "../utils/datetime";
 import Beta from "../algorithm/beta";
 import { Equality, IbFilters, IncrementalBlock, QueueIb, Ref } from "../types";
-import { ibFromProperties } from "../ib";
+import { ibFromProperties } from "../ib/read";
 
 export async function queryIncrementalBlocks(where: string = ''): Promise<IncrementalBlock[]> {
   // Identify by ib-due. Put in ?due var. Used downstream.

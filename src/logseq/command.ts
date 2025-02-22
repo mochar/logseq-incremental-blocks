@@ -1,141 +1,7 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
-import Beta from "../algorithm/beta";
-import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { RENDERER_MACRO_NAME } from "../globals";
-import IncrementalBlock from "../IncrementalBlock";
-import { average } from "../utils/utils";
-import { addContentAndProps, removePropsFromContent } from "../utils/logseq";
-import { queryBlockRefs } from "./query";
-import { renderAndObserveUuid } from "./blockrender";
-
-function blockRefsToBeta(refIbs: IncrementalBlock[]) : Beta | null {
-  const as: number[] = [];
-  const bs: number[] = [];
-  for (const refIb of refIbs) {
-    if (refIb.beta) {
-      as.push(refIb.beta.a);
-      bs.push(refIb.beta.b);
-    }
-  }
-  if (as.length > 0) {
-    return new Beta(average(as), average(bs));
-  }
-  return null;
-}
-
-/*
-Generate ib properties from block. If some of them already exist, keep them.
- */
-type PriorityOnly = boolean | 'inherit';
-
-interface IGenProps {
-  uuid: string,
-  priorityOnly?: PriorityOnly,
-  block?: BlockEntity | null
-}
-
-async function generateNewIbProps({ uuid, priorityOnly=false, block } : IGenProps) : Promise<Record<string, any> | null> {
-  if (!block) block = await logseq.Editor.getBlock(uuid);
-  if (!block) return null;
-
-  // Parse the existing ib related properties
-  const ib = IncrementalBlock.fromBlock(block);
-
-  // If priorityOnly flag is boolean, then respect it. Otherwise, determine
-  // from existing ib properties (if they exist) if it has scheduling.
-  if (priorityOnly == 'inherit') {
-    priorityOnly = !(ib.dueDate && ib.interval);
-  }
-  
-  const props: Record<string, any> = { id: uuid };
-  if (priorityOnly == false) {
-    props['ib-multiplier'] = ib.multiplier;
-    props['ib-reps'] = ib.reps ?? 0;
-  }
-  let beta = ib.beta;
-  if (!beta) {
-    // Try to calculate initial beta by inheriting from refs
-    const refs = await queryBlockRefs({ uuid });
-    if (refs && refs.refs.length > 0) {
-      const refPages = await Promise.all(
-        refs.refs.map(r => logseq.Editor.getPage(r.uuid)));
-      const refIbs = refPages
-        .filter(p => p?.properties)
-        .map(p => IncrementalBlock.fromPage(p!));
-      if (refIbs.length > 0) {
-        beta = blockRefsToBeta(refIbs);
-      }
-    } 
-    // If none, use default priority 
-    if (!beta) {
-      beta = new Beta(1, 1);
-      beta.mean = logseq.settings?.defaultPriority as number ?? 0.5;
-    }
-  }
-  props['ib-a'] = beta.a;
-  props['ib-b'] = beta.b;
-
-  if (priorityOnly == false) {
-    const interval = initialIntervalFromMean(beta.mean);
-    const due = new Date();
-    due.setDate(due.getDate() + interval);
-    props['ib-due'] = due.getTime();
-    props['ib-interval'] = interval;
-  }
-  return props;
-}
-
-/*
-*/
-interface BlockToIb {
-  uuid: string,
-  priorityOnly?: PriorityOnly,
-  block?: BlockEntity | null,
-  backToEditing?: boolean
-}
-
-export async function convertBlockToIb({ uuid, block, priorityOnly=false, backToEditing=false }: BlockToIb) {
-  let content: string = '';
-  let isEditing = false;
-  const cursorPos = await logseq.Editor.getEditingCursorPosition();
-
-  if (!block) {
-    // If editing, get content
-    content = await logseq.Editor.getEditingBlockContent();
-    if (content) isEditing = true;
-    block = await logseq.Editor.getBlock(uuid);
-  }
-
-  if (!block) {
-    logseq.UI.showMsg('Block not found', 'error');
-    return;
-  }
-
-  if (!content) content = block.content;
-
-  const props = await generateNewIbProps({ uuid, priorityOnly, block });
-  if (!props) {
-    logseq.UI.showMsg('Failed to generate ib properties', 'error');
-    return;
-  }
-
-  // await logseq.Editor.updateBlock(uuid, content, { properties: props });
-
-  // TODO: This doesn't update existing params
-  let addition = '';
-  //  if (!content.includes(RENDERER_MACRO_NAME)) addition = RENDERER_MACRO_NAME;
-  const newContent = addContentAndProps(content, { addition, props });
-  await logseq.Editor.updateBlock(uuid, newContent);
-  await logseq.Editor.exitEditingMode();
-
-  renderAndObserveUuid(uuid);
-  
-  if (backToEditing) {
-    setTimeout(() => {
-      logseq.Editor.editBlock(uuid, { pos: cursorPos?.pos ?? 0 });
-    }, 100);
-  } 
-}
+import { removePropsFromContent } from "../utils/logseq";
+import { convertBlockToIb, generateIbPropsFromBlock } from "../ib/create";
 
 export async function onCreateIbCommand({ uuid }: { uuid: string }) {
   await convertBlockToIb({ uuid });
@@ -199,7 +65,7 @@ export async function extractSelectionCommand() {
   if (!selection) return;
   const block = await logseq.Editor.getCurrentBlock();
   if (!block) return;
-  const properties = await generateNewIbProps({ uuid: block.uuid, priorityOnly: false, block });
+  const properties = await generateIbPropsFromBlock({ uuid: block.uuid, priorityOnly: false, block });
   if (!properties) return;
   // const content = `${selection}\n${RENDERER_MACRO_NAME}`;
   const content = `${selection}`;
@@ -223,7 +89,7 @@ export async function extractClozeCommand(asIb: boolean = true) {
   content = content.replace(selection, ` {{cloze ${selection}}} `);
   if (asIb) {
     // Child block will be ib
-    properties = await generateNewIbProps({ uuid: block.uuid, priorityOnly: false, block }) || {};
+    properties = await generateIbPropsFromBlock({ uuid: block.uuid, priorityOnly: false, block }) || {};
     if (Object.keys(properties).length == 0) return;
     // if (!content.includes(RENDERER_MACRO_NAME)) {
     //   content = `${content}\n${RENDERER_MACRO_NAME}`;
