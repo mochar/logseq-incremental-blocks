@@ -16,10 +16,10 @@ export default function PopoverApp() {
       sanitize(s: string) {
         logseq.UI.showMsg(sanitize(s));
       },
-      toggleIbPopover(blockUuid: any) {
+      toggleIbPopover(e: any) {
         dispatch(togglePopoverView({ 
           view: PopoverView.ib,
-          blockUuid: blockUuid
+          blockUuid: e.dataset.blockUuid
         }));
       },
     });

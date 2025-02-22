@@ -1,5 +1,5 @@
 import Beta from "../algorithm/beta";
-import { IncrementalBlock, Scheduling } from "../types";
+import { Doc, ExtractData, IncrementalBlock, Scheduling } from "../types";
 
 /*
  * Block recognized as ib if at least a and b properties.
@@ -36,10 +36,19 @@ export function ibFromProperties(uuid: string, props: Record<string, any>): Incr
     scheduling = { multiplier, interval, reps, dueDate: due };
   }
 
+  let extractData: ExtractData | undefined;
+  const docname = props['ibDocname'];
+  if (docname) {
+    extractData = { docname };
+  }
+  // TODO medx
+  // TODO pdf
+
   return {
     uuid,
+    betaParams: beta.params ?? {a:1, b:1},
     scheduling,
-    betaParams: beta.params ?? {a:1, b:1}
+    extractData,
   }
 }
 

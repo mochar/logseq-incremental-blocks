@@ -34,6 +34,10 @@ export default function App() {
       editBlock(e: any) {
         logseq.Editor.editBlock(e.dataset.blockUuid);
       },
+      openDoc(e: any) {
+        
+        dispatch(setEditorView({ view: EditorView.doc }));    
+      },
       async nextRep() {
         if (!learning) return;
         await dispatch(finishRep());

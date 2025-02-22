@@ -7,42 +7,67 @@ const sepDiv = `<div
   style="background: #00000015; width: 2px"
 ></div>`;
 
-
-export function generateIbUI(ib: IncrementalBlock) : string {
-	const beta = Beta.fromParams(ib.betaParams);
-	
-	const mean = (beta.mean * 100).toFixed(2);
-	const std = (beta.std() * 100).toFixed(1);
+export function generateIbUI(ib: IncrementalBlock): string {
+ 
+  // Priority 
+  const beta = Beta.fromParams(ib.betaParams);
+  const mean = (beta.mean * 100).toFixed(2);
+  const std = (beta.std() * 100).toFixed(1);
   const dueDays = ib.scheduling && dateDiffInDays(
-		todayMidnight(), new Date(ib.scheduling.dueDate));
-	let priorityHtml = `${sepDiv}<div class="flex px-1"><span>${mean}%`;
-	if (ib.sample && (dueDays ?? 1) <= 0) {
-		priorityHtml += `<span class="muted"> [${(ib.sample * 100).toFixed(2)}%]</span>`;
-	}
-	priorityHtml += '</span></div>';
+    todayMidnight(), new Date(ib.scheduling.dueDate));
+  let priorityHtml = `${sepDiv}<div class="flex px-1"><span>${mean}%`;
+  if (ib.sample && (dueDays ?? 1) <= 0) {
+    priorityHtml += `<span class="muted"> [${(ib.sample * 100).toFixed(2)}%]</span>`;
+  }
+  priorityHtml += '</span></div>';
 
-	let scheduleHtml = '';
+  // Scheduling
+  let scheduleHtml = '';
   if (dueDays) {
     scheduleHtml = `
-		${sepDiv}
+    ${sepDiv}
     <div class="flex px-1">
       <span>${dueDays}d</span>
     </div>
     `;
   }
 
-  let html = `
+  // Document extract
+  let extractHtml = '';
+  if (!ib.extractData) {
+  } else if ('docname' in ib.extractData) {
+    const docname = ib.extractData.docname;
+    extractHtml = `    
+    ${sepDiv}
     <button
-	    class="flex items-center rounded py-0.5 bg-base-4 hover:bg-secondary/70"
+      class="flex items-center rounded py-0.5 bg-base-4 hover:bg-secondary/70"
       style="font-size: .85rem"
-	  >
-      <div class="flex font-semibold px-1">
-        <span>IB</span>
+      data-block-uuid="${ib.uuid}"
+      data-docname="${docname}"
+      data-on-click="openDoc"
+    >
+      <div class="flex px-1">
+        <span>View extract</span>
       </div>
-
-			${priorityHtml}
-			${scheduleHtml}
     </button>
+    `;    
+  }
+  
+  const id = logseq.baseInfo.id;
+  let html = `
+  <button
+    class="flex items-center rounded py-0.5 bg-base-4 hover:bg-secondary/70"
+    style="font-size: .85rem"
+    data-block-uuid="${ib.uuid}"
+    data-on-click="toggleIbPopover"
+  >
+    <div class="flex font-semibold px-1">
+      <span>IB</span>
+    </div>
+    ${priorityHtml}
+    ${scheduleHtml}
+  </button>
+  ${extractHtml}
   `;
-	return html;
+  return html;
 }

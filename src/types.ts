@@ -43,11 +43,26 @@ export interface Scheduling {
   dueDate: number;
 }
 
+export interface MedData {
+  start: number,
+  end: number,
+  volume?: number,
+  rate?: number,
+  loop?: boolean
+}
+
+export interface DocData {
+  docname: string;
+}
+
+export type ExtractData = DocData | MedData;
+
 export interface IncrementalBlock {
   uuid: string,
   betaParams: BetaParams,
   sample?: number,
   scheduling?: Scheduling,
+  extractData?: ExtractData
 }
 
 export declare type Timestamp = number;

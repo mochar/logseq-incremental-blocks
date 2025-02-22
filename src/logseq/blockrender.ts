@@ -14,10 +14,9 @@ export function generateBlockRenderKey(uuid: string) : string {
 }
 
 function renderIb(ib: IncrementalBlock) {
-  const id = logseq.baseInfo.id;
   logseq.provideUI({
     key: generateBlockRenderKey(ib.uuid),
-    path: `.ls-block[blockid="${ib.uuid}"]`,// .block-content-wrapper`,
+    path: `.ls-block[blockid="${ib.uuid}"]`,
     style: {
       width: 'fit-content',
       height: 'fit-content',
@@ -25,7 +24,6 @@ function renderIb(ib: IncrementalBlock) {
     },
     attrs: {
       class: 'flex',
-      onclick: `logseq.api.invoke_external_plugin_cmd('${id}', 'models', 'toggleIbPopover', ['${ib.uuid}'])`
     },
     template: generateIbUI(ib),
   });

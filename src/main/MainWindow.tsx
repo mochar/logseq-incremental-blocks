@@ -47,7 +47,7 @@ export default function MainWindow() {
   }
 
   async function test() {
-    dispatch(setEditorView({ view: EditorView.web }));    
+    dispatch(setEditorView({ view: EditorView.doc }));    
   }
 
   return (

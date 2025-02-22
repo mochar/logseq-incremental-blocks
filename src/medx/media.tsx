@@ -1,14 +1,7 @@
 import { TemporalDimension } from "@kitaitimakoto/media-fragment";
 import { secondsToString } from "../utils/datetime";
 import React from "react";
-
-export interface MediaFragment {
-  start: number,
-  end: number,
-  volume?: number,
-  rate?: number,
-  loop?: boolean
-}
+import { MediaFragment } from "../types";
 
 export const mediaTypes = ['audio', 'video', 'youtube'];
 export declare type MediaType = typeof mediaTypes[number];

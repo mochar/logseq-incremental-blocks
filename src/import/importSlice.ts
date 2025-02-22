@@ -76,7 +76,7 @@ export const importHtml = (title: string, html: string) => {
 
     // Create page
     const props = await generateNewIbProps();
-    props['doc-title'] = title;
+    props['ib-docname'] = title;
     page = await logseq.Editor.createPage(title, props, { redirect: true });
 
     dispatch(importSlice.actions.gotBusy(false));
