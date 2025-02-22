@@ -4,8 +4,8 @@ import { ImportFormat, importFormats } from "./types";
 import { BetaParams } from "../types";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { betaFromMean } from "../algorithm/priority";
-import { assetToPath } from "../utils/logseq";
-import { generateIbPropsFromBlock, generateNewIbProps } from "../ib/create";
+import { generateNewIbProps } from "../ib/create";
+import sanitize from "sanitize-filename";
 
 interface ImportState {
   busy: boolean,
@@ -49,6 +49,13 @@ export const importHtml = (title: string, html: string) => {
     if (state.import.busy) return;
     dispatch(importSlice.actions.gotBusy(true));
 
+    title = sanitize(title);
+    if (title == '') {
+      logseq.UI.showMsg('Sanitized title is empty string', 'error');
+      dispatch(importSlice.actions.gotBusy(false));
+      return false;
+    }
+
     // Check if page with name already exists
     let page = await logseq.Editor.getPage(title);
     if (page) {
@@ -57,7 +64,7 @@ export const importHtml = (title: string, html: string) => {
       return false;
     }
 
-    // Store file 
+    // Store file
     const storage = logseq.Assets.makeSandboxStorage();
     const filename = `${title}.html`;
     if (await storage.hasItem(filename)) {

@@ -3,6 +3,7 @@ import IbPopover from "./widgets/Popover";
 import { useAppVisible } from "./logseq/events";
 import { useAppDispatch, useAppSelector } from "./state/hooks";
 import { IbViewData, PopoverView, setPopoverView, togglePopoverView } from "./state/viewSlice";
+import sanitize from "sanitize-filename";
 
 export default function PopoverApp() {
   const visible = useAppVisible();
@@ -12,6 +13,9 @@ export default function PopoverApp() {
 
   useEffect(() => {
     logseq.provideModel({
+      sanitize(s: string) {
+        logseq.UI.showMsg(sanitize(s));
+      },
       toggleIbPopover(blockUuid: any) {
         dispatch(togglePopoverView({ 
           view: PopoverView.ib,
