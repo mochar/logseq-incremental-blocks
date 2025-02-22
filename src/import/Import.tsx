@@ -1,19 +1,19 @@
-import React, { useState } from "react";
-import Beta from "../algorithm/beta";
-import { initialIntervalFromMean } from "../algorithm/scheduling";
-import PrioritySlider from "../widgets/PrioritySlider";
-import { betaFromMean } from "../algorithm/priority";
+import React from "react";
 import { capitalize } from "../utils/utils";
 import YtUpload from "./YtUpload";
 import HtmlUpload from "./HTMLUpload";
 import DioUpload from "./DioUpload";
-import { ImportFormat, importFormats } from "../types";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
+import { formatSelected } from "./importSlice";
+import { importFormats } from "./types";
 
 export default function Import() {
-  const [format, setFormat] = React.useState<ImportFormat>(importFormats[0]);
-
-  function formatSelected(e: any) {
-    setFormat(e.target.value);
+  const busy = useAppSelector(state => state.import.busy);
+  const format = useAppSelector(state => state.import.format);
+  const dispatch = useAppDispatch();
+  
+  function selectFormat(e: any) {
+    dispatch(formatSelected(e.target.value));
   }
 
   let uploadEl = <></>;
@@ -22,7 +22,7 @@ export default function Import() {
   } else if (format == 'html') {
     uploadEl = <HtmlUpload />;
   } else {
-    uploadEl = <DioUpload format={format} setFormat={setFormat} />;
+    uploadEl = <DioUpload />;
   }
   
   return (
@@ -39,7 +39,7 @@ export default function Import() {
                   name="format"
                   value={f}
                   checked={format == f}
-                  onChange={formatSelected}
+                  onChange={selectFormat}
                 />
                 <span>{f == 'html' ? 'Web page' : capitalize(f)}</span>
               </label>
@@ -49,53 +49,7 @@ export default function Import() {
 
         {uploadEl}
       </div>
-      
-      <hr className="my-2" />
-      
-      <ExtractPanel />
     </div>
   );
 }
 
-function ExtractPanel() {
-  const [beta, setBeta] = useState<Beta>(new Beta(1, 1));
-  const [interval, setInterval] = useState<number>(initialIntervalFromMean(beta.mean));
-
-  function update(priority: number) {
-    setBeta(betaFromMean(priority));
-    setInterval(initialIntervalFromMean(priority));
-  }
-
-  return (
-    <div className="flex items-center space-x-1">
-      <p>Priority</p>
-      
-      <div className="">
-        <PrioritySlider
-          beta={beta}
-          varianceSlider={false}
-          onMeanChange={update}
-        ></PrioritySlider>
-      </div>
-
-      <p className="">Interval</p>
-      <input 
-        className="w-16 p-0 ml-2"
-        type="number" 
-        value={interval}
-        onChange={(e) => setInterval(parseFloat(e.target.value))}
-        min="1" 
-        step="1"
-      ></input>
-
-      <div className="flex-1"></div>
-
-      <button 
-        className="py-1 px-2 rounded bg-primary/90 hover:bg-primary border-b-2 border-primary-700 hover:border-primary-500 text-primary-foreground border" 
-        onClick={() => {}}
-      >
-         Import
-      </button>
-    </div>
-  );
-}

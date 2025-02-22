@@ -1,11 +1,15 @@
 import React, { useEffect } from "react";
-import { ImportFormat } from "../types";
 import { basename } from "path";
+import { useAppDispatch, useAppSelector } from "../state/hooks";
+import { formatSelected } from "./importSlice";
 
-export default function DioUpload({ format, setFormat }: { format: ImportFormat, setFormat: Function }) {
+export default function DioUpload() {
+  const busy = useAppSelector(state => state.import.busy);
+  const format = useAppSelector(state => state.import.format);
   const [path, setPath] = React.useState<string>('');
   const [title, setTitle] = React.useState<string>('');
   const keep = React.useRef<boolean>(false);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     if (keep.current) {
@@ -35,7 +39,7 @@ export default function DioUpload({ format, setFormat }: { format: ImportFormat,
     setTitle(parsedTitle);
     if (parsedFormat != format) {
       keep.current = true;
-      setFormat(parsedFormat);
+      dispatch(formatSelected(parsedFormat));
     }
   }
 

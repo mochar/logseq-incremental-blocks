@@ -1,6 +1,6 @@
 import React, { useMemo, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../state/hooks";
-import { gotBusy, refreshAll, selectInterval } from "./mainSlice";
+import { gotBusy, refreshAll } from "./mainSlice";
 import IbsView from "./IbsView";
 import { startLearning } from "../learn/learnSlice";
 import { queryIncrementalBlocks } from "../logseq/query";
@@ -9,7 +9,6 @@ import DueDateView from "./DueDateView";
 import RefsView from "./RefsView";
 import { EditorView, ModalView, setEditorView, setModalView } from "../state/viewSlice";
 import IntervalView from "./IntervalView";
-import { readFile } from "../import/Import";
 
 
 export default function MainWindow() {

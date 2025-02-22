@@ -97,3 +97,10 @@ export function updateVisiblity(state: RootState) {
     logseq.showMainUI();
   }
 }
+
+export function assetToPath(filename: string) : string {
+  // https://github.com/logseq/logseq/pull/6488
+  // file stored in `${current_graph_root}/assets/storages/${Plugin_ID}/data.json`
+  const pluginId = logseq.baseInfo.id;
+  return `../assets/storages/${pluginId}/${filename}`;
+}
