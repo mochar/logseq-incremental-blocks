@@ -5,6 +5,7 @@ import learnReducer from '../learn/learnSlice';
 import mainReducer from '../main/mainSlice';
 import medxReducer from '../medx/medxSlice';
 import importReducer from '../import/importSlice';
+import docxReducer from '../docx/docxSlice';
 import { listenerMiddleware } from './listenerMiddleware';
 
 export const store = configureStore({
@@ -14,7 +15,8 @@ export const store = configureStore({
     learn: learnReducer,
     medx: medxReducer,
     main: mainReducer,
-    import: importReducer
+    import: importReducer,
+    docx: docxReducer
   },
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware().prepend(listenerMiddleware.middleware)

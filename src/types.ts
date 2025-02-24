@@ -52,7 +52,7 @@ export interface MedData {
 }
 
 export interface DocData {
-  docname: string;
+  readpoint: number
 }
 
 export type ExtractData = DocData | MedData;

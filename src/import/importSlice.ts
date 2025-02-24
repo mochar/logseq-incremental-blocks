@@ -4,8 +4,8 @@ import { ImportFormat, importFormats } from "./types";
 import { BetaParams } from "../types";
 import { initialIntervalFromMean } from "../algorithm/scheduling";
 import { betaFromMean } from "../algorithm/priority";
-import { generateNewIbProps } from "../ib/create";
 import sanitize from "sanitize-filename";
+import { createDoc, generateNewDocIbProps } from "../docx/docx";
 
 interface ImportState {
   busy: boolean,
@@ -64,20 +64,8 @@ export const importHtml = (title: string, html: string) => {
       return false;
     }
 
-    // Store file
-    const storage = logseq.Assets.makeSandboxStorage();
-    const filename = `${title}.html`;
-    if (await storage.hasItem(filename)) {
-      logseq.UI.showMsg('Asset already exists with given title', 'error');
-      dispatch(importSlice.actions.gotBusy(false));
-      return false;
-    }
-    await storage.setItem(filename, html);
-
     // Create page
-    const props = await generateNewIbProps();
-    props['ib-docname'] = title;
-    page = await logseq.Editor.createPage(title, props, { redirect: true });
+    const newPage = await createDoc({ title, html });
 
     dispatch(importSlice.actions.gotBusy(false));
     return true;

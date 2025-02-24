@@ -13,6 +13,7 @@ import { Provider, useStore } from "react-redux";
 import EditorApp from "./EditorApp";
 import { addListener } from "@reduxjs/toolkit";
 import { parseFragment } from "./medx/media";
+import { openDocFromUUID } from "./docx/docxSlice";
 
 export default function App() {
   const view = useAppSelector(state => state.view);
@@ -34,8 +35,9 @@ export default function App() {
       editBlock(e: any) {
         logseq.Editor.editBlock(e.dataset.blockUuid);
       },
-      openDoc(e: any) {
-        
+      async openDoc(e: any) {
+        const uuid = e.dataset.blockUuid;
+        await dispatch(openDocFromUUID(uuid));
         dispatch(setEditorView({ view: EditorView.doc }));    
       },
       async nextRep() {

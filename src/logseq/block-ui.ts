@@ -35,15 +35,14 @@ export function generateIbUI(ib: IncrementalBlock): string {
   // Document extract
   let extractHtml = '';
   if (!ib.extractData) {
-  } else if ('docname' in ib.extractData) {
-    const docname = ib.extractData.docname;
+  } else if ('readpoint' in ib.extractData) {
+    console.log(ib);
     extractHtml = `    
     ${sepDiv}
     <button
       class="flex items-center rounded py-0.5 bg-base-4 hover:bg-secondary/70"
       style="font-size: .85rem"
       data-block-uuid="${ib.uuid}"
-      data-docname="${docname}"
       data-on-click="openDoc"
     >
       <div class="flex px-1">

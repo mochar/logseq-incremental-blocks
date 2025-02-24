@@ -84,3 +84,16 @@ export function counter<T>(array: T[]) : Map<T, number> {
 export function capitalize(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
+
+/**
+ * html string -> doc
+ * Envelops html with html/head/body if absent
+ * Access html with document.documentElement.
+ */ 
+export function parseHtml(html: string) : Document {
+  // html string -> doc
+  // access html with document.documentElement
+  const parser = new DOMParser();
+  const document = parser.parseFromString(html, 'text/html');
+  return document;
+}

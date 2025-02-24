@@ -24,8 +24,8 @@ function blockRefsToBeta(refIbs: IncrementalBlock[]) : Beta | null {
   return null;
 }
 
-export async function generateNewIbProps() : Promise<Record<string, any>> {
-  const uuid = await logseq.Editor.newBlockUUID();
+export async function generateNewIbProps(uuid?: string) : Promise<Record<string, any>> {
+  if (!uuid) uuid = await logseq.Editor.newBlockUUID();
   const multiplier = logseq.settings?.defaultMultiplier as number ?? 2.;
   const interval = initialIntervalFromMean(.5);
   const due = addDays(todayMidnight(), interval);

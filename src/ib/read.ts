@@ -1,5 +1,5 @@
 import Beta from "../algorithm/beta";
-import { Doc, ExtractData, IncrementalBlock, Scheduling } from "../types";
+import { ExtractData, IncrementalBlock, Scheduling } from "../types";
 
 /*
  * Block recognized as ib if at least a and b properties.
@@ -37,9 +37,9 @@ export function ibFromProperties(uuid: string, props: Record<string, any>): Incr
   }
 
   let extractData: ExtractData | undefined;
-  const docname = props['ibDocname'];
-  if (docname) {
-    extractData = { docname };
+  const readpoint = props['ibReadpoint'];
+  if (readpoint != undefined) {
+    extractData = { readpoint };
   }
   // TODO medx
   // TODO pdf
