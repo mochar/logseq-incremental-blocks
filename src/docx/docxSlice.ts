@@ -94,7 +94,7 @@ export const extractSelection = (document: Document) => {
     const uuid = await logseq.Editor.newBlockUUID();
     highlightSelection(selection, document, ['extract', `extract-${uuid}`]);
 
-    const parent = data.block.parent.id === data.block.page.id ? data.page.uuid : data.block.uuid;
+    const parent = data.block.left.id === data.block.page.id ? data.page.uuid : data.block.uuid;
     const container = document.createElement('div');
     container.appendChild(selection.getRangeAt(0).cloneContents());
     const html = container.innerHTML;
