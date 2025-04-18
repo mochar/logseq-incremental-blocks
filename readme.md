@@ -1,5 +1,7 @@
 # Incremental blocks - Incremental learning in Logseq
 
+# Updates stalled until db API stabilizes 
+
 WIP - alpha
 
 This plugin allows you to mark logseq blocks as incremental blocks (ibs), scheduling them for _repeated_ review.
